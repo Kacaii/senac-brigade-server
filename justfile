@@ -1,6 +1,15 @@
+alias r := run
+alias t := test
+alias wr := watch_run
+alias wt := watch_test
+
 # Print recipes list
 @default:
     just --list
+
+#   pdate project dependencies
+update:
+    gleam deps update
 
 #   Run the project
 run:
