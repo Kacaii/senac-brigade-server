@@ -1,11 +1,11 @@
-import app/web.{type Context, Context}
+import app/web.{type Context}
 import wisp
 
 pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
-  use req <- web.middleware(req)
+  use req <- web.middleware(request: req, context: ctx)
 
   case wisp.path_segments(req) {
-    [] -> todo as "handle '/'"
+    [] -> wisp.no_content()
     _ -> wisp.not_found()
   }
 }
