@@ -1,8 +1,10 @@
 import app/router
 import app/web.{Context}
+import envoy
 import gleam/erlang/process
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
+import gleam/result
 import mist
 import pog
 import wisp
@@ -14,7 +16,6 @@ pub fn main() -> Nil {
 
   let db_process_name = process.new_name("db_conn")
   let assert Ok(pog_config) = read_connection_uri(db_process_name)
-  echo pog_config
   let assert Ok(_) = start_application_supervised(pog_config)
 
   // Database connection
@@ -48,7 +49,7 @@ pub fn start_application_supervised(
 pub fn read_connection_uri(
   name: process.Name(pog.Message),
 ) -> Result(pog.Config, Nil) {
-  use postgres_url <- todo as "Connect to  Database"
+  use postgres_url <- result.try(envoy.get("PG_URL"))
   pog.url_config(name, postgres_url)
 }
 
