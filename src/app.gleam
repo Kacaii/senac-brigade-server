@@ -49,7 +49,7 @@ pub fn start_application_supervised(
 pub fn read_connection_uri(
   name: process.Name(pog.Message),
 ) -> Result(pog.Config, Nil) {
-  use postgres_url <- result.try(envoy.get("PG_URL"))
+  use postgres_url <- result.try(envoy.get("DATABASE_URL"))
   pog.url_config(name, postgres_url)
 }
 

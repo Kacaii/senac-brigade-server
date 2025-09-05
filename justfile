@@ -1,4 +1,5 @@
 alias r := run
+alias s := squirrel
 alias t := test
 alias wr := watch_run
 alias wt := watch_test
@@ -7,13 +8,17 @@ alias wt := watch_test
 @default:
     just --list
 
-#   pdate project dependencies
+#   Update project dependencies
 update:
     gleam deps update
 
 #   Run the project
 run:
     gleam run
+
+#   Generate SQL
+squirrel:
+    gleam run -m squirrel
 
 # 󰙨  Run all unit tests
 test:
