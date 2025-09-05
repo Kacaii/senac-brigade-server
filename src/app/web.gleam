@@ -1,11 +1,10 @@
-// import pog
+import pog
 import wisp
 
 /// Holds any additional data that the request handlers need in addition to the request:
 /// Like API Keys, configurations,  database connections, and others
 pub type Context {
-  // Context(static_directory: String, conn: pog.Connection)
-  Context(static_directory: String)
+  Context(static_directory: String, conn: pog.Connection)
 }
 
 pub fn middleware(
