@@ -7,6 +7,8 @@ pub type Context {
   Context(static_directory: String, conn: pog.Connection)
 }
 
+/// Middleware that runs before every request.
+/// It sets up the request, and then calls the next handler.
 pub fn middleware(
   request req: wisp.Request,
   context ctx: Context,

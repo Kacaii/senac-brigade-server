@@ -1,6 +1,7 @@
 import app/web.{type Context}
 import wisp
 
+/// Handle the incoming requests
 pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
   use req <- web.middleware(request: req, context: ctx)
 
