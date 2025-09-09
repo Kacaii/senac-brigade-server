@@ -1,3 +1,3 @@
 # 👩‍🚒 SENAC Brigade
 
-![Backend Architecture](priv/static/backend_architecture.png)
+![Backend Architecture](assets/backend_architecture.png)
