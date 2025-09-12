@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS role (
 );
 
 CREATE TABLE IF NOT EXISTS user_account (
-    -- TODO: Add index
     id SERIAL PRIMARY KEY,
     id_role INTEGER REFERENCES role (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
@@ -25,7 +24,6 @@ CREATE TABLE IF NOT EXISTS user_account (
     is_active BOOLEAN DEFAULT true
 );
 
--- TODO: Criar tipo personalizado
 CREATE TABLE IF NOT EXISTS ocurrence_type (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
@@ -33,11 +31,8 @@ CREATE TABLE IF NOT EXISTS ocurrence_type (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- TODO: Criar tipo personalizado
 CREATE TABLE IF NOT EXISTS ocurrence_subtype (
     id SERIAL PRIMARY KEY,
-    id_type INTEGER REFERENCES ocurrence_type (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -45,7 +40,6 @@ CREATE TABLE IF NOT EXISTS ocurrence_subtype (
 
 CREATE TABLE IF NOT EXISTS ocurrence (
     id SERIAL PRIMARY KEY,
-    -- TODO: Add index
     id_applicant INTEGER REFERENCES user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     id_type INTEGER REFERENCES ocurrence_type (id)
@@ -55,7 +49,7 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     description TEXT,
     address VARCHAR(255) NOT NULL,
     reference_point VARCHAR(255) NOT NULL,
-    loss_percentage INTEGER,
+    loss_percentage NUMERIC(2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP NULL
