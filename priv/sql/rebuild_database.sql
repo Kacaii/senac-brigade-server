@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS ocurrence_subtype (
 );
 
 CREATE TABLE IF NOT EXISTS ocurrence (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     applicant_id UUID REFERENCES user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     type_id INTEGER REFERENCES ocurrence_type (id)
