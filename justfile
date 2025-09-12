@@ -1,6 +1,8 @@
+alias b := build
 alias r := run
 alias s := squirrel
 alias t := test
+alias u := update
 alias wr := watch_run
 alias wt := watch_test
 
@@ -23,6 +25,10 @@ squirrel:
 # 󰙨  Run all unit tests
 test:
     gleam test
+
+# 󰏓  Builds the project for production
+build:
+    gleam export erlang-shipment
 
 #   Watch for file changes and run the project
 watch_run:
