@@ -1,11 +1,17 @@
 --   DROP -------------------------------------------------------------------
+BEGIN;
+
 DROP TABLE IF EXISTS ocurrence;
 DROP TABLE IF EXISTS ocurrence_subtype;
 DROP TABLE IF EXISTS ocurrence_type;
 DROP TABLE IF EXISTS user_account;
 DROP TABLE IF EXISTS user_role;
 
+COMMIT;
+
 --   CREATE -----------------------------------------------------------------
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS user_role (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -54,3 +60,5 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP NULL
 );
+
+COMMIT;
