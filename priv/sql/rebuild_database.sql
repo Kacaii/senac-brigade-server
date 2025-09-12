@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS user_role (
 
 CREATE TABLE IF NOT EXISTS user_account (
     id SERIAL PRIMARY KEY,
-    id_role INTEGER REFERENCES user_role (id)
+    role_id INTEGER REFERENCES user_role (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
     password_hash TEXT NOT NULL,
@@ -46,11 +46,11 @@ CREATE TABLE IF NOT EXISTS ocurrence_subtype (
 
 CREATE TABLE IF NOT EXISTS ocurrence (
     id SERIAL PRIMARY KEY,
-    id_applicant INTEGER REFERENCES user_account (id)
+    applicant_id INTEGER REFERENCES user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    id_type INTEGER REFERENCES ocurrence_type (id)
+    type_id INTEGER REFERENCES ocurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    id_subtype INTEGER REFERENCES ocurrence_subtype (id)
+    subtype_id INTEGER REFERENCES ocurrence_subtype (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     description TEXT,
 
