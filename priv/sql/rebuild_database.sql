@@ -53,7 +53,10 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     id_subtype INTEGER REFERENCES ocurrence_subtype (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     description TEXT,
+
+    -- HACK:   There might be a better way to store this
     address VARCHAR(255) NOT NULL,
+
     reference_point VARCHAR(255) NOT NULL,
     loss_percentage NUMERIC(2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
