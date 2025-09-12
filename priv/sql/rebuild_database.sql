@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS user_role (
 );
 
 CREATE TABLE IF NOT EXISTS user_account (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     role_id INTEGER REFERENCES user_role (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS ocurrence_subtype (
 
 CREATE TABLE IF NOT EXISTS ocurrence (
     id SERIAL PRIMARY KEY,
-    applicant_id INTEGER REFERENCES user_account (id)
+    applicant_id UUID REFERENCES user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     type_id INTEGER REFERENCES ocurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
