@@ -3,10 +3,10 @@ DROP TABLE IF EXISTS ocurrence;
 DROP TABLE IF EXISTS ocurrence_subtype;
 DROP TABLE IF EXISTS ocurrence_type;
 DROP TABLE IF EXISTS user_account;
-DROP TABLE IF EXISTS role;
+DROP TABLE IF EXISTS user_role;
 
 --   CREATE -----------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS role (
+CREATE TABLE IF NOT EXISTS user_role (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS role (
 
 CREATE TABLE IF NOT EXISTS user_account (
     id SERIAL PRIMARY KEY,
-    id_role INTEGER REFERENCES role (id)
+    id_role INTEGER REFERENCES user_role (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
     password_hash TEXT NOT NULL,
