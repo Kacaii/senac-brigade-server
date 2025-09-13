@@ -13,14 +13,14 @@ COMMIT;
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS user_role (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     name VARCHAR(255) NOT NULL,
     description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS user_account (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    role_id INTEGER REFERENCES user_role (id)
+    role_id UUID REFERENCES user_role (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     full_name VARCHAR(255) NOT NULL,
     password_hash TEXT NOT NULL,
@@ -31,14 +31,14 @@ CREATE TABLE IF NOT EXISTS user_account (
 );
 
 CREATE TABLE IF NOT EXISTS ocurrence_type (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS ocurrence_subtype (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     applicant_id UUID REFERENCES user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    type_id INTEGER REFERENCES ocurrence_type (id)
+    type_id UUID REFERENCES ocurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    subtype_id INTEGER REFERENCES ocurrence_subtype (id)
+    subtype_id UUID REFERENCES ocurrence_subtype (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     description TEXT,
 
