@@ -9,12 +9,6 @@
 ```mermaid
 ---
 title: SENAC Brigade
-config:
-  look: handDrawn
-  theme: neutral
-
-  layout: elk
-  nodePlacementStrategy: SIMPLE
 ---
 erDiagram
 
