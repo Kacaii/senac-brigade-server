@@ -2,7 +2,6 @@
 BEGIN;
 
 DROP TABLE IF EXISTS ocurrence;
-DROP TABLE IF EXISTS ocurrence_subtype;
 DROP TABLE IF EXISTS ocurrence_type;
 DROP TABLE IF EXISTS user_account;
 DROP TABLE IF EXISTS user_role;
@@ -32,17 +31,14 @@ CREATE TABLE IF NOT EXISTS user_account (
 
 CREATE TABLE IF NOT EXISTS ocurrence_type (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
+    -- This way we dont need to have separate tables for type and subtype
+    --                                          vv
+    parent_type UUID REFERENCES ocurrence_type (id),
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS ocurrence_subtype (
-    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    name VARCHAR(255) UNIQUE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 CREATE TABLE IF NOT EXISTS ocurrence (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -50,7 +46,7 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     ON UPDATE CASCADE ON DELETE SET NULL,
     type_id UUID REFERENCES ocurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    subtype_id UUID REFERENCES ocurrence_subtype (id)
+    subtype_id UUID REFERENCES ocurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     description TEXT,
 

@@ -18,7 +18,7 @@ erDiagram
         TEXT description
     }
 
-    user_account }|..|| user_role : is
+    user_account }|--|| user_role : is
     user_account {
         UUID id PK
         INTEGER role_id FK
@@ -30,23 +30,17 @@ erDiagram
         BOOLEAN is_active
     }
 
+    ocurrence_type |o--o{ ocurrence_type : has_parent
     ocurrence_type {
         UUID id PK
+        UUID parent_type FK
         VARCHAR(255) name UK
         TEXT description
         TIMESTAMP created_at
     }
 
-    ocurrence_subtype {
-        UUID id PK
-        VARCHAR(255) name UK
-        TEXT description
-        TIMESTAMP created_at
-    }
-
-    ocurrence }|..|| user_account : submit
-    ocurrence }|..|| ocurrence_type : is
-    ocurrence }|..|| ocurrence_subtype : is
+    ocurrence }|--|| user_account : submit
+    ocurrence }|--|| ocurrence_type : is
     ocurrence {
         UUID id PK
         UUID applicant_id FK
