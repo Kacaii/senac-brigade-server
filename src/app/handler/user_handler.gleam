@@ -17,6 +17,7 @@ type RegisterUserFormData {
 ///   Register a new user on our database
 pub fn register_new_user(req: wisp.Request, ctx: Context) -> wisp.Response {
   use form_data <- wisp.require_form(req)
+  // TODO: Try using the formal package
   let form_result = {
     use name <- result.try(list.key_find(form_data.values, "nome"))
     use registration <- result.try(list.key_find(form_data.values, "matricula"))
