@@ -30,8 +30,8 @@ fn signup_form() -> form.Form(SignUp) {
   })
 }
 
-///   Register a new user on our database
-pub fn signup(req: wisp.Request, ctx: Context) -> wisp.Response {
+///   Inserts a new user account on the database
+pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response {
   use form_data <- wisp.require_form(req)
   let form_result =
     signup_form()
