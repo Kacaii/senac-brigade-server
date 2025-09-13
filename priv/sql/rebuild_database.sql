@@ -26,14 +26,15 @@ CREATE TABLE IF NOT EXISTS user_account (
     registration VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    is_active BOOLEAN DEFAULT true
+    is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS ocurrence_type (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     -- This way we dont need to have separate tables for type and subtype
     --                                          vv
-    parent_type UUID REFERENCES ocurrence_type (id),
+    parent_type UUID REFERENCES ocurrence_type (id)
+    ON UPDATE CASCADE ON DELETE CASCADE DEFAULT NULL,
     name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -47,7 +48,7 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     type_id UUID REFERENCES ocurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     subtype_id UUID REFERENCES ocurrence_type (id)
-    ON UPDATE CASCADE ON DELETE SET NULL,
+    ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
     description TEXT,
 
     -- HACK:   There might be a better way to store this
@@ -57,7 +58,7 @@ CREATE TABLE IF NOT EXISTS ocurrence (
     loss_percentage NUMERIC(2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resolved_at TIMESTAMP NULL
+    resolved_at TIMESTAMP DEFAULT NULL
 );
 
 COMMIT;
