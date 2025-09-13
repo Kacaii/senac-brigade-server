@@ -1,3 +1,4 @@
+import app/handler/user_handler
 import app/web.{type Context}
 import wisp
 
@@ -7,6 +8,7 @@ pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
 
   case wisp.path_segments(req) {
     [] -> wisp.ok()
+    ["cadastrar", "usuario"] -> user_handler.register_new_user(req, ctx)
     _ -> wisp.not_found()
   }
 }
