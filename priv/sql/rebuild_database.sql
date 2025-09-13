@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS user_account (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     role_id INTEGER REFERENCES user_role (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    name VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
     password_hash TEXT NOT NULL,
     registration VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(255),
