@@ -4,8 +4,8 @@ import gleam/list
 import gleam/result
 import wisp
 
-type RegisterUserFormData {
-  RegisterUserFormData(
+type SignupData {
+  SignupData(
     name: String,
     registration: String,
     email: String,
@@ -28,13 +28,7 @@ pub fn register_new_user(req: wisp.Request, ctx: Context) -> wisp.Response {
       "confirma_senha",
     ))
 
-    Ok(RegisterUserFormData(
-      name:,
-      registration:,
-      email:,
-      password:,
-      confirm_password:,
-    ))
+    Ok(SignupData(name:, registration:, email:, password:, confirm_password:))
   }
 
   case form_result {
