@@ -22,6 +22,10 @@ run:
 squirrel:
     gleam run -m squirrel
 
+# 󰜉  Rebuild the database from the ground up
+rebuild:
+  psql senac_brigade -f priv/sql/rebuild_database.sql
+
 # 󰙨  Run all unit tests
 test:
     gleam test
