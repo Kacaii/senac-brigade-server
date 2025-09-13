@@ -24,7 +24,7 @@ squirrel:
 
 # 󰜉  Rebuild the database from the ground up
 rebuild:
-  psql senac_brigade -f priv/sql/rebuild_database.sql
+    psql senac_brigade -f priv/sql/rebuild_database.sql
 
 # 󰙨  Run all unit tests
 test:
@@ -41,3 +41,7 @@ watch_run:
 #   Watch for file changes and run unit tests
 watch_test:
     watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "clear; gleam run"
+
+#   Runs a SELECT statement to query the users
+list_user_accounts:
+    psql senac_brigade -c "SELECT * FROM user_account LIMIT 20;"
