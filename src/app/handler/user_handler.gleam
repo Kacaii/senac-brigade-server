@@ -1,46 +1,54 @@
 import app/sql
 import app/web.{type Context}
-import gleam/list
-import gleam/result
+import formal/form
 import wisp
 
-type SignupData {
-  SignupData(
-    name: String,
-    registration: String,
-    email: String,
-    password: String,
-    confirm_password: String,
-  )
+type SignUp {
+  SignUp(name: String, registration: String, email: String, password: String)
+}
+
+/// 󱐁  A form that decodes the `SignUp` value.
+fn signup_form() -> form.Form(SignUp) {
+  form.new({
+    use name <- form.field("nome", {
+      form.parse_string |> form.check_not_empty()
+    })
+    use registration <- form.field("matricula", {
+      form.parse_string |> form.check_not_empty()
+    })
+    use email <- form.field("email", {
+      form.parse_email |> form.check_not_empty()
+    })
+    use password <- form.field("senha", {
+      form.parse_string |> form.check_not_empty()
+    })
+    use _ <- form.field("confirma_senha", {
+      form.parse_string |> form.check_confirms(password)
+    })
+
+    form.success(SignUp(name:, registration:, email:, password:))
+  })
 }
 
 ///   Register a new user on our database
-pub fn register_new_user(req: wisp.Request, ctx: Context) -> wisp.Response {
+pub fn signup(req: wisp.Request, ctx: Context) -> wisp.Response {
   use form_data <- wisp.require_form(req)
-  // TODO: Try using the formal package
-  let form_result = {
-    use name <- result.try(list.key_find(form_data.values, "nome"))
-    use registration <- result.try(list.key_find(form_data.values, "matricula"))
-    use email <- result.try(list.key_find(form_data.values, "email"))
-    use password <- result.try(list.key_find(form_data.values, "senha"))
-    use confirm_password <- result.try(list.key_find(
-      form_data.values,
-      "confirma_senha",
-    ))
-
-    Ok(SignupData(name:, registration:, email:, password:, confirm_password:))
-  }
+  let form_result =
+    signup_form()
+    |> form.add_values(form_data.values)
+    |> form.run
 
   case form_result {
     Error(_) -> wisp.bad_request("Dados inválidos")
-    Ok(user_form_data) -> {
+    Ok(signup_data) -> {
       let register_result =
+        // TODO: 󱔼  Hash the password before storing it
         sql.register_new_user(
           ctx.conn,
-          user_form_data.name,
-          user_form_data.registration,
-          user_form_data.email,
-          user_form_data.password,
+          signup_data.name,
+          signup_data.registration,
+          signup_data.email,
+          signup_data.password,
         )
 
       case register_result {
