@@ -30,7 +30,7 @@ fn signup_form() -> form.Form(SignUp) {
   })
 }
 
-///   Inserts a new user account on the database
+///   Inserts a new `user_account` into the database
 pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response {
   use form_data <- wisp.require_form(req)
   let form_result =
@@ -52,8 +52,14 @@ pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response 
         )
 
       case register_result {
-        Error(_) -> wisp.internal_server_error()
-        Ok(_) -> wisp.created()
+        Error(_) -> {
+          wisp.internal_server_error()
+          |> wisp.set_body(wisp.Text("Ocorreu um erro ao cadastrar um usuário"))
+        }
+        Ok(_) -> {
+          wisp.created()
+          |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
+        }
       }
     }
   }
