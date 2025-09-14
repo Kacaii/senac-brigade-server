@@ -36,6 +36,21 @@ erDiagram
         BOOLEAN is_active
     }
 
+     brigade {
+        UUID id PK
+        varchar(255) name
+        TEXT description
+        BOOLEAN is_active
+    }
+
+    brigade_membership }o--o{ user_account : is_member_of
+    brigade_membership }o--o{ brigade : is_part_of
+    brigade_membership {
+        UUID id PK
+        UUID user_id FK
+        UUID group_id FK
+    }
+
     ocurrence_type |o--o{ ocurrence_type : has_parent
     ocurrence_type {
         UUID id PK
