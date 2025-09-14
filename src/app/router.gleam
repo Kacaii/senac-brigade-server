@@ -8,7 +8,7 @@ pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
 
   case wisp.path_segments(req) {
     [] -> wisp.ok()
-    ["cadastro"] -> signup.handle_form_submission(req, ctx)
+    ["cadastrar"] -> signup.handle_form_submission(req, ctx)
     _ -> wisp.not_found()
   }
 }
