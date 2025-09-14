@@ -6,9 +6,9 @@
 
 ## Routes
 
-| Route     | Description                 | Expected |
-| --------- | --------------------------- | -------- |
-| /cadastro | Register a new user account | Form     |
+| Route      | Description                 | Expected |
+| ---------- | --------------------------- | -------- |
+| /cadastrar | Register a new user account | Form     |
 
 ## Entity RelationShip Diagram
 
