@@ -4,6 +4,12 @@
 
 ![Backend Architecture](assets/backend_architecture.png)
 
+## Routes
+
+| Route     | Description                 | Expected |
+| --------- | --------------------------- | -------- |
+| /cadastro | Register a new user account | Form     |
+
 ## Entity RelationShip Diagram
 
 ```mermaid
