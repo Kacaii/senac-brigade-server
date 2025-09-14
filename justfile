@@ -44,4 +44,4 @@ watch_test:
 
 #   Runs a SELECT statement to query the users
 list_user_accounts:
-    psql senac_brigade -c "SELECT * FROM user_account LIMIT 20;"
+    psql senac_brigade -c "SELECT * FROM user_account LIMIT 20;" | bat --language=markdown
