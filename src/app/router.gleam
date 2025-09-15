@@ -1,3 +1,4 @@
+import app/handler/brigade
 import app/handler/signup
 import app/web.{type Context}
 import wisp
@@ -9,6 +10,8 @@ pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
   case wisp.path_segments(req) {
     [] -> wisp.ok()
     ["cadastrar"] -> signup.handle_form_submission(req, ctx)
+    ["listar_membros", brigade_id] ->
+      brigade.get_brigade_members(req, ctx, brigade_id)
     _ -> wisp.not_found()
   }
 }

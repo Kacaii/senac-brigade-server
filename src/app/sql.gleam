@@ -5,6 +5,7 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/json
 import pog
 import youid/uuid.{type Uuid}
 

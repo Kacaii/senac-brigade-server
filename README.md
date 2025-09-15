@@ -6,9 +6,10 @@
 
 ## Routes
 
-| Route      | Description                 | Expected |
-| ---------- | --------------------------- | -------- |
-| /cadastrar | Register a new user account | Form     |
+| Route               | Description                 | Expected    |
+| ------------------- | --------------------------- | ----------- |
+| /cadastrar          | Register a new user account | POST (Form) |
+| /listar_membros/:id | List brigade members        | GET         |
 
 ## Entity RelationShip Diagram
 
