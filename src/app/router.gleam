@@ -1,5 +1,5 @@
-import app/handler/brigade
-import app/handler/signup
+import app/routes/brigade
+import app/routes/signup
 import app/web.{type Context}
 import wisp
 
