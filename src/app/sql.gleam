@@ -5,7 +5,6 @@
 ////
 
 import gleam/dynamic/decode
-import gleam/json
 import pog
 import youid/uuid.{type Uuid}
 
@@ -97,16 +96,8 @@ pub fn register_new_user(
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
   "INSERT INTO user_account (
-    full_name,
-    password_hash,
-    registration,
-    email
-) VALUES (
-    $1,
-    $2,
-    $3,
-    $4
-)
+    full_name, password_hash, registration, email
+) VALUES ($1, $2, $3, $4)
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
