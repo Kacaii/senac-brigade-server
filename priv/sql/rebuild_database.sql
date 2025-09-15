@@ -94,6 +94,6 @@ CREATE TABLE IF NOT EXISTS occurrence (
 );
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
-ON occurence (applicant_id);
+ON occurrence (applicant_id);
 
 COMMIT;
