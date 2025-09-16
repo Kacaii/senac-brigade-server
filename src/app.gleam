@@ -65,7 +65,7 @@ pub fn read_connection_uri(
 /// Access to Erlang's Priv directory
 pub fn static_directory() -> String {
   let assert Ok(priv_directory) = wisp.priv_directory("app")
-    as "Failed to acces priv directory"
+    as "Failed to access priv directory"
 
   priv_directory <> "/static"
 }
