@@ -9,8 +9,8 @@ pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
 
   case wisp.path_segments(req) {
     [] -> wisp.ok()
-    ["cadastrar"] -> signup.handle_form_submission(req, ctx)
-    ["listar_membros", brigade_id] ->
+    ["api", "user", "signup"] -> signup.handle_form_submission(req, ctx)
+    ["api", "brigade", brigade_id] ->
       brigade.get_brigade_members(req, ctx, brigade_id)
     _ -> wisp.not_found()
   }
