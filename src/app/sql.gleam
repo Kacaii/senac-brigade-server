@@ -92,18 +92,20 @@ pub fn register_new_user(
   arg_2: String,
   arg_3: String,
   arg_4: String,
+  arg_5: String,
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
   "INSERT INTO user_account (
-    full_name, registration, email, password_hash
-) VALUES ($1, $2, $3, $4)
+    full_name, registration, phone, email, password_hash
+) VALUES ($1, $2, $3, $4, $5)
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
   |> pog.parameter(pog.text(arg_2))
   |> pog.parameter(pog.text(arg_3))
   |> pog.parameter(pog.text(arg_4))
+  |> pog.parameter(pog.text(arg_5))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

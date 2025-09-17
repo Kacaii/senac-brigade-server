@@ -6,7 +6,13 @@ import gleam/result
 import wisp
 
 type SignUp {
-  SignUp(name: String, registration: String, email: String, password: String)
+  SignUp(
+    name: String,
+    registration: String,
+    phone_number: String,
+    email: String,
+    password: String,
+  )
 }
 
 /// 󱐁  A form that decodes the `SignUp` value.
@@ -18,6 +24,9 @@ fn signup_form() -> form.Form(SignUp) {
     use registration <- form.field("matricula", {
       form.parse_string |> form.check_not_empty()
     })
+    use phone_number <- form.field("telefone", {
+      form.parse_phone_number |> form.check_not_empty()
+    })
     use email <- form.field("email", {
       form.parse_email |> form.check_not_empty()
     })
@@ -27,8 +36,7 @@ fn signup_form() -> form.Form(SignUp) {
     use _ <- form.field("confirma_senha", {
       form.parse_string |> form.check_confirms(password)
     })
-
-    form.success(SignUp(name:, registration:, email:, password:))
+    form.success(SignUp(name:, registration:, phone_number:, email:, password:))
   })
 }
 
@@ -81,7 +89,7 @@ fn insert_in_database(
   signup data: SignUp,
   context ctx: Context,
 ) -> Result(Nil, SignupError) {
-  use hashes <- result.try(
+  use hashed_password <- result.try(
     argus.hasher()
     |> argus.hash(data.password, argus.gen_salt())
     |> result.replace_error(HashFailure),
@@ -92,8 +100,9 @@ fn insert_in_database(
       ctx.conn,
       data.name,
       data.registration,
+      data.phone_number,
       data.email,
-      hashes.encoded_hash,
+      hashed_password.encoded_hash,
     )
     |> result.replace_error(InsertError),
   )
