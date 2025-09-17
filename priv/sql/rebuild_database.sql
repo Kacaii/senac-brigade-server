@@ -82,10 +82,7 @@ CREATE TABLE IF NOT EXISTS occurrence (
     subtype_id UUID REFERENCES occurrence_type (id)
     ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
     description TEXT,
-
-    -- HACK:   There might be a better way to store this
-    address TEXT NOT NULL,
-
+    location POINT NOT NULL,
     reference_point TEXT NOT NULL,
     loss_percentage NUMERIC(2),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

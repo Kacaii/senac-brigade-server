@@ -21,7 +21,7 @@ erDiagram
 
     user_role {
         UUID id PK
-        VARCHAR(255) name
+        TEXT name
         TEXT description
     }
 
@@ -29,17 +29,19 @@ erDiagram
     user_account {
         UUID id PK
         INTEGER role_id FK
-        VARCHAR(255) email UK
-        VARCHAR(255) full_name
+        TEXT full_name
         TEXT password_hash
-        VARCHAR(255) registration
-        VARCHAR(255) phone
+        TEXT registration
+        TEXT phone
+        TEXT email UK
         BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
-     brigade {
+    brigade {
         UUID id PK
-        varchar(255) name
+        TEXT name
         TEXT description
         BOOLEAN is_active
     }
@@ -52,24 +54,25 @@ erDiagram
         UUID group_id FK
     }
 
-    ocurrence_type |o--o{ ocurrence_type : has_parent
-    ocurrence_type {
+    occurrence_type |o--o{ occurrence_type : subtype_of
+    occurrence_type {
         UUID id PK
         UUID parent_type FK
-        VARCHAR(255) name UK
+        TEXT name UK
         TEXT description
         TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
-    ocurrence }|--|| user_account : submit
-    ocurrence }|--|| ocurrence_type : is
-    ocurrence {
+    occurrence }|--|| user_account : submit
+    occurrence }|--|| occurrence_type : is
+    occurrence {
         UUID id PK
         UUID applicant_id FK
         UUID type_id FK
         TEXT description
-        VARCHAR(255) address
-        VARCHAR(255) reference_point
+        POINT location
+        TEXT reference_point
         NUMERIC(2) loss_percentage
         TIMESTAMP created_at
         TIMESTAMP updated_at
