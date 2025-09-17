@@ -96,7 +96,7 @@ pub fn register_new_user(
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
   "INSERT INTO user_account (
-    full_name, password_hash, registration, email
+    full_name, registration, email, password_hash
 ) VALUES ($1, $2, $3, $4)
 "
   |> pog.query

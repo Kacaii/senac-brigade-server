@@ -20,7 +20,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS user_role (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    name VARCHAR(255) NOT NULL,
+    name TEXT NOT NULL,
     description TEXT
 );
 
@@ -28,11 +28,11 @@ CREATE TABLE IF NOT EXISTS user_account (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     role_id UUID REFERENCES user_role (id)
     ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
-    full_name VARCHAR(255) NOT NULL,
+    full_name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
-    registration VARCHAR(255) UNIQUE NOT NULL,
-    phone VARCHAR(255) DEFAULT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
+    registration TEXT UNIQUE NOT NULL,
+    phone TEXT DEFAULT NULL,
+    email TEXT UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS user_account (
 
 CREATE TABLE IF NOT EXISTS brigade (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    name VARCHAR(255) DEFAULT NULL,
+    name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
     is_active BOOLEAN DEFAULT FALSE
 );
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS occurrence_type (
     --                                          vv
     parent_type UUID REFERENCES occurrence_type (id)
     ON UPDATE CASCADE ON DELETE CASCADE DEFAULT NULL,
-    name VARCHAR(255) UNIQUE NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -84,9 +84,9 @@ CREATE TABLE IF NOT EXISTS occurrence (
     description TEXT,
 
     -- HACK:   There might be a better way to store this
-    address VARCHAR(255) NOT NULL,
+    address TEXT NOT NULL,
 
-    reference_point VARCHAR(255) NOT NULL,
+    reference_point TEXT NOT NULL,
     loss_percentage NUMERIC(2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

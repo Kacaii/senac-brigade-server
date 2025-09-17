@@ -1,6 +1,8 @@
 import app/sql
 import app/web.{type Context}
+import argus
 import formal/form
+import gleam/result
 import wisp
 
 type SignUp {
@@ -40,27 +42,62 @@ pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response 
 
   case form_result {
     Error(_) -> wisp.bad_request("Dados inválidos")
-    Ok(signup_data) -> {
-      let register_result =
-        // TODO: 󱔼  Hash the password before storing it
-        sql.register_new_user(
-          ctx.conn,
-          signup_data.name,
-          signup_data.registration,
-          signup_data.email,
-          signup_data.password,
-        )
+    Ok(signup) -> {
+      // TODO: Check if the user exists first, before trying to insert.
+      // == -------------------------------------------------------- ==
+      case insert_in_database(signup:, context: ctx) {
+        Error(err) -> {
+          let error_message = case err {
+            // 󱔼  Hashing went wrong
+            HashFailure ->
+              wisp.Text("Ocorreu um erro ao encriptografar a senha do usuário")
+            //   Something when wrong inside the database
+            InsertError ->
+              wisp.Text(
+                "Ocorreu um erro ao inserir o usuário no banco de dados",
+              )
+          }
 
-      case register_result {
-        Error(_) -> {
           wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text("Ocorreu um erro ao cadastrar um usuário"))
+          |> wisp.set_body({ error_message })
         }
+
         Ok(_) -> {
           wisp.created()
+          // User registred successfully
           |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
         }
       }
     }
   }
+}
+
+type SignupError {
+  HashFailure
+  InsertError
+}
+
+fn insert_in_database(
+  signup data: SignUp,
+  context ctx: Context,
+) -> Result(Nil, SignupError) {
+  use hashes <- result.try(
+    argus.hasher()
+    |> argus.hash(data.password, argus.gen_salt())
+    |> result.replace_error(HashFailure),
+  )
+
+  use _ <- result.try(
+    sql.register_new_user(
+      ctx.conn,
+      data.name,
+      data.registration,
+      data.email,
+      hashes.encoded_hash,
+    )
+    |> result.replace_error(InsertError),
+  )
+
+  // No need to return anything from this function
+  Ok(Nil)
 }
