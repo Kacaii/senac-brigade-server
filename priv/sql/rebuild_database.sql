@@ -4,6 +4,7 @@ BEGIN;
 DROP INDEX IF EXISTS idx_brigade_membership_brigade_id;
 DROP INDEX IF EXISTS idx_brigade_membership_user_id;
 DROP INDEX IF EXISTS idx_occurrence_applicant_id;
+DROP INDEX IF EXISTS idx_user_registration;
 
 DROP TABLE IF EXISTS occurrence;
 DROP TABLE IF EXISTS occurrence_type;
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS user_account (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_user_registration ON user_account (registration);
 
 CREATE TABLE IF NOT EXISTS brigade (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
