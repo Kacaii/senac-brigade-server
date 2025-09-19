@@ -80,6 +80,41 @@ WHERE bm.brigade_id = $1 -- <- Brigade ID here
   |> pog.execute(db)
 }
 
+/// A row you get from running the `get_user_password_by_registration` query
+/// defined in `./src/app/sql/get_user_password_by_registration.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetUserPasswordByRegistrationRow {
+  GetUserPasswordByRegistrationRow(password_hash: String)
+}
+
+/// Runs the `get_user_password_by_registration` query
+/// defined in `./src/app/sql/get_user_password_by_registration.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_user_password_by_registration(
+  db: pog.Connection,
+  arg_1: String,
+) -> Result(pog.Returned(GetUserPasswordByRegistrationRow), pog.QueryError) {
+  let decoder = {
+    use password_hash <- decode.field(0, decode.string)
+    decode.success(GetUserPasswordByRegistrationRow(password_hash:))
+  }
+
+  "SELECT u.password_hash
+FROM user_account AS u
+WHERE u.registration = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(arg_1))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// Runs the `register_new_user` query
 /// defined in `./src/app/sql/register_new_user.sql`.
 ///

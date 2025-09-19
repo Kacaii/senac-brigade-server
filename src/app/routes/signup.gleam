@@ -41,7 +41,10 @@ fn signup_form() -> form.Form(SignUp) {
 }
 
 ///   Inserts a new `user_account` into the database
-pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response {
+pub fn handle_form_submission(
+  req req: wisp.Request,
+  ctx ctx: Context,
+) -> wisp.Response {
   use form_data <- wisp.require_form(req)
   let form_result =
     signup_form()
@@ -52,22 +55,18 @@ pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response 
     Error(_) -> wisp.bad_request("Dados inválidos")
     Ok(signup) -> {
       // TODO: Check if the user exists first, before trying to insert.
-      // == -------------------------------------------------------- ==
       case insert_in_database(signup:, context: ctx) {
         Error(err) -> {
           let error_message = case err {
             // 󱔼  Hashing went wrong
-            HashFailure ->
-              wisp.Text("Ocorreu um erro ao encriptografar a senha do usuário")
+            HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
             //   Something when wrong inside the database
             InsertError ->
-              wisp.Text(
-                "Ocorreu um erro ao inserir o usuário no banco de dados",
-              )
+              "Ocorreu um erro ao inserir o usuário no banco de dados"
           }
 
           wisp.internal_server_error()
-          |> wisp.set_body({ error_message })
+          |> wisp.set_body(wisp.Text(error_message))
         }
 
         Ok(_) -> {
@@ -81,7 +80,7 @@ pub fn handle_form_submission(req: wisp.Request, ctx: Context) -> wisp.Response 
 }
 
 type SignupError {
-  HashFailure
+  HashError
   InsertError
 }
 
@@ -92,7 +91,7 @@ fn insert_in_database(
   use hashed_password <- result.try(
     argus.hasher()
     |> argus.hash(data.password, argus.gen_salt())
-    |> result.replace_error(HashFailure),
+    |> result.replace_error(HashError),
   )
 
   use _ <- result.try(
