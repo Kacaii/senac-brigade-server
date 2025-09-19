@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS user_role;
 
 CREATE TABLE IF NOT EXISTS user_role (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    name TEXT NOT NULL,
+    role_name TEXT NOT NULL,
     description TEXT
 );
 
@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_user_registration ON user_account (registration);
 
 CREATE TABLE IF NOT EXISTS brigade (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    name TEXT DEFAULT NULL,
+    brigade_name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
     is_active BOOLEAN DEFAULT FALSE
 );
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS occurrence_category (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     parent_category UUID REFERENCES occurrence_category (id)
     ON UPDATE CASCADE ON DELETE CASCADE DEFAULT NULL,
-    name TEXT UNIQUE NOT NULL,
+    category_name TEXT UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -73,7 +73,7 @@ pub fn get_brigade_members(
     u.registration
 FROM user_account AS u
 INNER JOIN brigade_membership AS bm ON u.id = bm.user_id
-WHERE bm.brigade_id = $1 -- <- Brigade ID here
+WHERE bm.brigade_id = $1
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

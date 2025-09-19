@@ -23,8 +23,15 @@ squirrel:
     gleam run -m squirrel
 
 # 󰜉  Rebuild the database from the ground up
-rebuild:
+create_tables:
     psql senac_brigade -f priv/sql/rebuild_database.sql
+
+insert_categories:
+    psql senac_brigade -f priv/sql/insert_occurrence_categories.sql
+
+rebuild_full:
+    just create_tables
+    just insert_categories
 
 # 󰙨  Run all unit tests
 test:
@@ -45,3 +52,6 @@ watch_test:
 #   Runs a SELECT statement to query the users
 list_user_accounts:
     psql senac_brigade -c "SELECT u.full_name, u.registration, u.phone, u.email FROM user_account as u LIMIT 20;" | bat --language=markdown
+
+list_occurrence_categories:
+    psql senac_brigade -c "SELECT c.category_name, c.description from occurrence_category as c LIMIT 20;" | bat --language=markdown
