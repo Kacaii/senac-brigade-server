@@ -13,11 +13,7 @@ DROP TABLE IF EXISTS brigade;
 DROP TABLE IF EXISTS user_account;
 DROP TABLE IF EXISTS user_role;
 
-
-COMMIT;
-
 --   CREATE -----------------------------------------------------------------
-BEGIN;
 
 CREATE TABLE IF NOT EXISTS user_role (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
@@ -71,7 +67,6 @@ CREATE TABLE IF NOT EXISTS occurrence_category (
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
 
 CREATE TABLE IF NOT EXISTS occurrence (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
