@@ -54,15 +54,16 @@ pub fn handle_form_submission(
   case form_result {
     Error(_) -> wisp.bad_request("Dados inválidos")
     Ok(signup) -> {
-      // TODO: Check if the user exists first, before trying to insert.
-      case insert_in_database(signup:, context: ctx) {
+      case insert_in_database(signup:, ctx:) {
         Error(err) -> {
           let error_message = case err {
             // 󱔼  Hashing went wrong
             HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
             //   Something when wrong inside the database
-            InsertError ->
+            DataBaseError ->
               "Ocorreu um erro ao inserir o usuário no banco de dados"
+            // 󰆼  User is already registred
+            AlreadyRegistred -> "Matrícula já cadastrada"
           }
 
           wisp.internal_server_error()
@@ -81,31 +82,43 @@ pub fn handle_form_submission(
 
 type SignupError {
   HashError
-  InsertError
+  DataBaseError
+  AlreadyRegistred
 }
 
 fn insert_in_database(
   signup data: SignUp,
-  context ctx: Context,
+  ctx ctx: Context,
 ) -> Result(Nil, SignupError) {
-  use hashed_password <- result.try(
-    argus.hasher()
-    |> argus.hash(data.password, argus.gen_salt())
-    |> result.replace_error(HashError),
+  use returned <- result.try(
+    sql.get_user_id_by_registration(ctx.conn, data.registration)
+    |> result.replace_error(DataBaseError),
   )
 
-  use _ <- result.try(
-    sql.register_new_user(
-      ctx.conn,
-      data.name,
-      data.registration,
-      data.phone_number,
-      data.email,
-      hashed_password.encoded_hash,
-    )
-    |> result.replace_error(InsertError),
-  )
+  case returned.count {
+    0 -> {
+      use hashed_password <- result.try(
+        argus.hasher()
+        |> argus.hash(data.password, argus.gen_salt())
+        |> result.replace_error(HashError),
+      )
 
-  // No need to return anything from this function
-  Ok(Nil)
+      use _ <- result.try(
+        sql.register_new_user(
+          ctx.conn,
+          data.name,
+          data.registration,
+          data.phone_number,
+          data.email,
+          hashed_password.encoded_hash,
+        )
+        |> result.replace_error(DataBaseError),
+      )
+
+      // No need to return anything from this function
+      Ok(Nil)
+    }
+
+    _ -> Error(AlreadyRegistred)
+  }
 }

@@ -120,6 +120,41 @@ WHERE o.applicant_id = $1
   |> pog.execute(db)
 }
 
+/// A row you get from running the `get_user_id_by_registration` query
+/// defined in `./src/app/sql/get_user_id_by_registration.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetUserIdByRegistrationRow {
+  GetUserIdByRegistrationRow(id: Uuid)
+}
+
+/// Runs the `get_user_id_by_registration` query
+/// defined in `./src/app/sql/get_user_id_by_registration.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_user_id_by_registration(
+  db: pog.Connection,
+  arg_1: String,
+) -> Result(pog.Returned(GetUserIdByRegistrationRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(GetUserIdByRegistrationRow(id:))
+  }
+
+  "SELECT u.id
+FROM user_account AS u
+WHERE u.registration = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(arg_1))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `get_user_password_by_registration` query
 /// defined in `./src/app/sql/get_user_password_by_registration.sql`.
 ///
@@ -183,4 +218,16 @@ pub fn register_new_user(
   |> pog.parameter(pog.text(arg_5))
   |> pog.returning(decoder)
   |> pog.execute(db)
+}
+
+// --- Encoding/decoding utils -------------------------------------------------
+
+/// A decoder to decode `Uuid`s coming from a Postgres query.
+///
+fn uuid_decoder() {
+  use bit_array <- decode.then(decode.bit_array)
+  case uuid.from_bit_array(bit_array) {
+    Ok(uuid) -> decode.success(uuid)
+    Error(_) -> decode.failure(uuid.v7(), "Uuid")
+  }
 }
