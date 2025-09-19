@@ -1,6 +1,8 @@
 --   DROP -------------------------------------------------------------------
 BEGIN;
 
+DROP FUNCTION IF EXISTS get_user_id_by_registration;
+
 DROP INDEX IF EXISTS idx_brigade_membership_brigade_id;
 DROP INDEX IF EXISTS idx_brigade_membership_user_id;
 DROP INDEX IF EXISTS idx_occurrence_applicant_id;
@@ -87,5 +89,24 @@ CREATE TABLE IF NOT EXISTS occurrence (
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
 ON occurrence (applicant_id);
+
+-- 󰊕  CREATE FUNCTIONS ---------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION GET_USER_ID_BY_REGISTRATION(r TEXT)
+RETURNS UUID AS $$
+
+DECLARE user_id UUID;
+
+BEGIN
+
+SELECT u.id INTO user_id
+  FROM user_account AS u
+WHERE u.registration = r;
+
+RETURN user_id;
+
+END;
+$$ LANGUAGE plpgsql;
+
 
 COMMIT;
