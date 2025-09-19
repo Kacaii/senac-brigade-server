@@ -7,7 +7,7 @@ DROP INDEX IF EXISTS idx_occurrence_applicant_id;
 DROP INDEX IF EXISTS idx_user_registration;
 
 DROP TABLE IF EXISTS occurrence;
-DROP TABLE IF EXISTS occurrence_type;
+DROP TABLE IF EXISTS occurrence_category;
 DROP TABLE IF EXISTS brigade_membership;
 DROP TABLE IF EXISTS brigade;
 DROP TABLE IF EXISTS user_account;
@@ -63,11 +63,9 @@ CREATE INDEX IF NOT EXISTS idx_brigade_membership_brigade_id
 ON brigade_membership (brigade_id);
 
 
-CREATE TABLE IF NOT EXISTS occurrence_type (
+CREATE TABLE IF NOT EXISTS occurrence_category (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    -- This way we dont need to have separate tables for type and subtype
-    --                                          vv
-    parent_type UUID REFERENCES occurrence_type (id)
+    parent_category UUID REFERENCES occurrence_category (id)
     ON UPDATE CASCADE ON DELETE CASCADE DEFAULT NULL,
     name TEXT UNIQUE NOT NULL,
     description TEXT,
@@ -79,9 +77,9 @@ CREATE TABLE IF NOT EXISTS occurrence (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     applicant_id UUID REFERENCES user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    type_id UUID REFERENCES occurrence_type (id)
+    category_id UUID REFERENCES occurrence_category (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    subtype_id UUID REFERENCES occurrence_type (id)
+    subcategory_id UUID REFERENCES occurrence_category (id)
     ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
     description TEXT,
     location POINT NOT NULL,

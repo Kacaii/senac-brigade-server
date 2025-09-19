@@ -5,6 +5,7 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/option.{type Option}
 import pog
 import youid/uuid.{type Uuid}
 
@@ -73,6 +74,45 @@ pub fn get_brigade_members(
 FROM user_account AS u
 INNER JOIN brigade_membership AS bm ON u.id = bm.user_id
 WHERE bm.brigade_id = $1 -- <- Brigade ID here
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `get_ocurrences_by_applicant` query
+/// defined in `./src/app/sql/get_ocurrences_by_applicant.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetOcurrencesByApplicantRow {
+  GetOcurrencesByApplicantRow(description: Option(String))
+}
+
+/// Runs the `get_ocurrences_by_applicant` query
+/// defined in `./src/app/sql/get_ocurrences_by_applicant.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_ocurrences_by_applicant(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(GetOcurrencesByApplicantRow), pog.QueryError) {
+  let decoder = {
+    use description <- decode.field(0, decode.optional(decode.string))
+    decode.success(GetOcurrencesByApplicantRow(description:))
+  }
+
+  "SELECT o.description
+FROM occurrence AS o
+INNER JOIN occurrence_category AS ot
+    ON
+        o.category_id = ot.id
+        AND o.subcategory_id = ot.id
+WHERE o.applicant_id = $1
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
