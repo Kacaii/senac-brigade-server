@@ -75,7 +75,7 @@ fn verify_login(login data: LogIn, ctx ctx: Context) {
   )
 
   use is_correct_password <- result.try(
-    argus.verify(data.password, row.password_hash)
+    argus.verify(row.password_hash, data.password)
     |> result.replace_error(HashError),
   )
 
