@@ -27,18 +27,19 @@ squirrel:
 
 # 󰜉  Rebuild an empty database
 [group('  postgres')]
-rebuild:
+rebuild_empty:
     psql senac_brigade -f priv/sql/rebuild_database.sql
 
 #   Insert the basic categories
+[group('  insert')]
 [group('  postgres')]
 insert_categories:
-    psql senac_brigade -f priv/sql/insert_occurrence_categories.sql
+    psql senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
 
 # 󰜉 Rebuild the database with values in it
 [group('  postgres')]
 rebuild_full:
-    just rebuild
+    just rebuild_empty
     just insert_categories
 
 # 󰙨  Run all unit tests
@@ -65,10 +66,10 @@ watch_test:
 [group('  postgres')]
 [group('  query')]
 list_user_accounts:
-    psql senac_brigade -c "SELECT u.full_name, u.registration, u.phone, u.email FROM user_account as u LIMIT 20;" | bat --language=markdown
+    psql senac_brigade -f priv/sql/query/list_user_accounts.sql | bat --language=markdown
 
 #   Runs a SELECT statement to query the occurrence caregories
 [group('  postgres')]
 [group('  query')]
 list_occurrence_categories:
-    psql senac_brigade -c "SELECT c.category_name, c.description from occurrence_category as c LIMIT 20;" | bat --language=markdown
+    psql senac_brigade -f priv/sql/query/list_categories.sql | bat --language=markdown

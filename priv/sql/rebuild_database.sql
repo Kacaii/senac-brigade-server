@@ -2,6 +2,7 @@
 BEGIN;
 
 DROP FUNCTION IF EXISTS get_user_id_by_registration;
+DROP FUNCTION IF EXISTS get_category_id_by_name;
 
 DROP INDEX IF EXISTS idx_brigade_membership_brigade_id;
 DROP INDEX IF EXISTS idx_brigade_membership_user_id;
@@ -63,7 +64,7 @@ ON brigade_membership (brigade_id);
 
 CREATE TABLE IF NOT EXISTS occurrence_category (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
-    parent_category UUID REFERENCES occurrence_category (id)
+    parent_category_id UUID REFERENCES occurrence_category (id)
     ON UPDATE CASCADE ON DELETE CASCADE DEFAULT NULL,
     category_name TEXT UNIQUE NOT NULL,
     description TEXT,
@@ -104,6 +105,23 @@ SELECT u.id INTO user_id
 WHERE u.registration = $1;
 
 RETURN user_id;
+
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION GET_CATEGORY_ID_BY_NAME(name TEXT)
+RETURNS UUID AS $$
+
+DECLARE category_id UUID;
+
+BEGIN
+
+SELECT oc.id INTO category_id
+FROM occurrence_category AS oc
+WHERE oc.category_name = $1;
+
+RETURN category_id;
 
 END;
 $$ LANGUAGE plpgsql;
