@@ -20,27 +20,10 @@ update:
 run:
     gleam run
 
-#   Generate SQL
+#   Generate code from SQL files
 [group('  gleam')]
 squirrel:
     gleam run -m squirrel
-
-# 󰜉  Rebuild an empty database
-[group('  postgres')]
-rebuild_empty:
-    psql senac_brigade -f priv/sql/rebuild_database.sql
-
-#   Insert the basic categories
-[group('  insert')]
-[group('  postgres')]
-insert_categories:
-    psql senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
-
-# 󰜉 Rebuild the database with values in it
-[group('  postgres')]
-rebuild_full:
-    just rebuild_empty
-    just insert_categories
 
 # 󰙨  Run all unit tests
 [group('  gleam')]
@@ -62,14 +45,33 @@ watch_run:
 watch_test:
     watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "clear; gleam run"
 
-#   Runs a SELECT statement to query the users
+#   Insert basic values into the category table
 [group('  postgres')]
-[group('  query')]
+[group('  insert')]
+insert_categories:
+    psql senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
+
+# 󰜉  Rebuild an empty database
+[group('  postgres')]
+rebuild_empty:
+    psql senac_brigade -f priv/sql/rebuild_database.sql
+    @echo '{{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
+
+# 󰜉 Rebuild the database with values in it
+[group('  postgres')]
+rebuild_full:
+    just rebuild_empty
+    just insert_categories
+    @echo '{{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ GREEN }}filled{{ NORMAL }} tables'
+
+#   Runs a SELECT statement to query the user accounts
+[group('  postgres')]
+[group('󰤏  query')]
 list_user_accounts:
     psql senac_brigade -f priv/sql/query/list_user_accounts.sql | bat --language=markdown
 
-#   Runs a SELECT statement to query the occurrence caregories
+#   Runs a SELECT statement to query the occurrence categories
 [group('  postgres')]
-[group('  query')]
+[group('󰤏  query')]
 list_occurrence_categories:
     psql senac_brigade -f priv/sql/query/list_categories.sql | bat --language=markdown
