@@ -92,7 +92,7 @@ ON occurrence (applicant_id);
 
 -- 󰊕  CREATE FUNCTIONS ---------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION GET_USER_ID_BY_REGISTRATION(r TEXT)
+CREATE OR REPLACE FUNCTION GET_USER_ID_BY_REGISTRATION(registration TEXT)
 RETURNS UUID AS $$
 
 DECLARE user_id UUID;
@@ -101,7 +101,7 @@ BEGIN
 
 SELECT u.id INTO user_id
   FROM user_account AS u
-WHERE u.registration = r;
+WHERE u.registration = $1;
 
 RETURN user_id;
 
