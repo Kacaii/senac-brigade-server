@@ -10,7 +10,7 @@ DROP INDEX IF EXISTS idx_occurrence_applicant_id;
 DROP INDEX IF EXISTS idx_user_registration;
 DROP INDEX IF EXISTS idx_user_id;
 
--- pgt-ignore-start lint/safety/banDropTable: RESET
+-- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
 DROP TABLE IF EXISTS occurrence;
 DROP TABLE IF EXISTS occurrence_category;
 DROP TABLE IF EXISTS brigade_membership;
@@ -96,6 +96,7 @@ ON occurrence (applicant_id);
 
 -- 󰊕  CREATE FUNCTIONS ---------------------------------------------------------
 
+--   In case we need the database ID
 CREATE OR REPLACE FUNCTION GET_USER_ID_BY_REGISTRATION(registration TEXT)
 RETURNS UUID AS $$
 
@@ -112,7 +113,7 @@ RETURN user_id;
 END;
 $$ LANGUAGE plpgsql;
 
-
+--   In case we only know the name.
 CREATE OR REPLACE FUNCTION GET_CATEGORY_ID_BY_NAME(name TEXT)
 RETURNS UUID AS $$
 
