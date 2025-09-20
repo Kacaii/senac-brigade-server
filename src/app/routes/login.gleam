@@ -4,6 +4,8 @@ import argus
 import formal/form
 import gleam/list
 import gleam/result
+import gleam/string
+import pog
 import wisp
 
 type LogIn {
@@ -42,9 +44,41 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
           let error_message = case err {
             //   Input errors
             InvalidPassword -> "Senha incorreta"
-            DatabaseReturnedEmptyRow -> "Usuário não cadastrado"
+            DataBaseReturnedEmptyRow -> "Usuário não cadastrado"
             //   Internal errors
-            DataBaseError -> "Ocorreu um erro ao accessar o Banco de Dados"
+            DataBaseError(err) -> {
+              case err {
+                pog.ConnectionUnavailable ->
+                  "Conexão com o banco de dados não disponível"
+                pog.ConstraintViolated(message:, constraint:, detail:) -> {
+                  "
+                    Uma das restrições do banco de dados foi violada
+
+                  Mensagem:     {{message}}
+                  Restrição:    {{constraint}}
+                  Detalhes:     {{detail}}
+                  "
+                  |> string.replace("{{message}}", message)
+                  |> string.replace("{{constraint}}", constraint)
+                  |> string.replace("{{detail}}", detail)
+                }
+                pog.PostgresqlError(code:, name:, message:) -> {
+                  "
+                    O banco de dados apresentou um erro
+
+                  Código:     {{code}}
+                  Nome:       {{name}}
+                  Mensagem:   {{message}}
+                  "
+                  |> string.replace("{{code}}", code)
+                  |> string.replace("{{name}}", name)
+                  |> string.replace("{{message}}", message)
+                }
+                pog.QueryTimeout ->
+                  "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
+                _ -> "Ocorreu um erro ao accessar o Banco de Dados"
+              }
+            }
             HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
           }
 
@@ -57,8 +91,8 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
 }
 
 type LoginError {
-  DatabaseReturnedEmptyRow
-  DataBaseError
+  DataBaseReturnedEmptyRow
+  DataBaseError(pog.QueryError)
   InvalidPassword
   HashError
 }
@@ -66,12 +100,12 @@ type LoginError {
 fn verify_login(login data: LogIn, ctx ctx: Context) {
   use returned <- result.try(
     sql.get_user_password_by_registration(ctx.conn, data.registration)
-    |> result.replace_error(DataBaseError),
+    |> result.map_error(DataBaseError),
   )
 
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(DatabaseReturnedEmptyRow),
+    |> result.replace_error(DataBaseReturnedEmptyRow),
   )
 
   use is_correct_password <- result.try(

@@ -3,6 +3,8 @@ import app/web.{type Context}
 import argus
 import formal/form
 import gleam/result
+import gleam/string
+import pog
 import wisp
 
 type SignUp {
@@ -58,12 +60,48 @@ pub fn handle_form_submission(
         Error(err) -> {
           let error_message = case err {
             // 󱔼  Hashing went wrong
-            HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
+            HashError -> {
+              "Ocorreu um erro ao encriptografar a senha do usuário"
+            }
             //   Something when wrong inside the database
-            DataBaseError ->
-              "Ocorreu um erro ao inserir o usuário no banco de dados"
-            // 󰆼  User is already registred
-            AlreadyRegistred -> "Matrícula já cadastrada"
+            DataBaseError(err) -> {
+              case err {
+                pog.ConnectionUnavailable ->
+                  "Conexão com o banco de dados não disponível"
+                pog.ConstraintViolated(message:, constraint:, detail:) -> {
+                  case constraint {
+                    "user_account_registration_key" -> "Matrícula já cadastrada"
+                    "user_account_email_key" -> "Email já cadastrado"
+                    _ ->
+                      "
+                        O banco de dados apresentou um erro
+
+                      Constraint: {{constraint}}
+                      Mensagem:   {{message}}
+                      Detalhe:    {{detail}}
+                      "
+                      |> string.replace("{{constraint}}", constraint)
+                      |> string.replace("{{message}}", message)
+                      |> string.replace("{{detail}}", detail)
+                  }
+                }
+                pog.PostgresqlError(code:, name:, message:) -> {
+                  "
+                    O banco de dados apresentou um erro
+
+                  Código:     {{code}}
+                  Nome:       {{name}}
+                  Mensagem:   {{message}}
+                  "
+                  |> string.replace("{{code}}", code)
+                  |> string.replace("{{name}}", name)
+                  |> string.replace("{{message}}", message)
+                }
+                pog.QueryTimeout ->
+                  "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
+                _ -> "Ocorreu um erro ao inserir o usuário no banco de dados"
+              }
+            }
           }
 
           wisp.internal_server_error()
@@ -82,43 +120,31 @@ pub fn handle_form_submission(
 
 type SignupError {
   HashError
-  DataBaseError
-  AlreadyRegistred
+  DataBaseError(pog.QueryError)
 }
 
 fn insert_in_database(
   signup data: SignUp,
   ctx ctx: Context,
 ) -> Result(Nil, SignupError) {
-  use returned <- result.try(
-    sql.get_user_id_by_registration(ctx.conn, data.registration)
-    |> result.replace_error(DataBaseError),
+  use hashed_password <- result.try(
+    argus.hasher()
+    |> argus.hash(data.password, argus.gen_salt())
+    |> result.replace_error(HashError),
   )
 
-  case returned.count {
-    0 -> {
-      use hashed_password <- result.try(
-        argus.hasher()
-        |> argus.hash(data.password, argus.gen_salt())
-        |> result.replace_error(HashError),
-      )
+  use _ <- result.try(
+    sql.register_new_user(
+      ctx.conn,
+      data.name,
+      data.registration,
+      data.phone_number,
+      data.email,
+      hashed_password.encoded_hash,
+    )
+    |> result.map_error(DataBaseError),
+  )
 
-      use _ <- result.try(
-        sql.register_new_user(
-          ctx.conn,
-          data.name,
-          data.registration,
-          data.phone_number,
-          data.email,
-          hashed_password.encoded_hash,
-        )
-        |> result.replace_error(DataBaseError),
-      )
-
-      // No need to return anything from this function
-      Ok(Nil)
-    }
-
-    _ -> Error(AlreadyRegistred)
-  }
+  // No need to return anything from this function
+  Ok(Nil)
 }
