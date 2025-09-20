@@ -49,20 +49,24 @@ watch_test:
 [group('  postgres')]
 [group('  insert')]
 insert_categories:
-    psql senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
+    @psql senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
+    @echo '  {{ MAGENTA }}OCCURRENCE TABLE{{ NORMAL }} filled successfully'
 
 # 󰜉  Rebuild an empty database
 [group('  postgres')]
 rebuild_empty:
-    psql senac_brigade -f priv/sql/rebuild_database.sql
-    @echo '{{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
+    @psql senac_brigade -f priv/sql/create/tables.sql
+    @echo '󱏀  {{ MAGENTA }}TABLES{{ NORMAL }} created successfully'
+    @psql senac_brigade -f priv/sql/create/functions.sql
+    @echo '󰊕  {{ MAGENTA }}FUNCTIONS{{ NORMAL }} created successfully'
+    @echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
 
 # 󰜉  Rebuild the database with values in it
 [group('  postgres')]
 rebuild_full:
     @just rebuild_empty
     @just insert_categories
-    @echo '{{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ GREEN }}filled{{ NORMAL }} tables'
+    @echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} is {{ GREEN }}ready{{ NORMAL }} to use'
 
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]

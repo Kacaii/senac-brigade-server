@@ -1,9 +1,6 @@
 --   DROP -------------------------------------------------------------------
 BEGIN;
 
-DROP FUNCTION IF EXISTS public.get_user_id_by_registration;
-DROP FUNCTION IF EXISTS public.get_category_id_by_name;
-
 DROP INDEX IF EXISTS public.idx_brigade_membership_brigade_id;
 DROP INDEX IF EXISTS public.idx_brigade_membership_user_id;
 DROP INDEX IF EXISTS public.idx_occurrence_applicant_id;
@@ -96,41 +93,5 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
 ON public.occurrence (applicant_id);
-
--- 󰊕  CREATE FUNCTIONS ---------------------------------------------------------
-
---   In case we need the database ID
-CREATE OR REPLACE FUNCTION public.get_user_id_by_registration(registration TEXT)
-RETURNS UUID AS $$
-
-DECLARE user_id UUID;
-
-BEGIN
-
-SELECT u.id INTO user_id
-  FROM public.user_account AS u
-WHERE u.registration = $1;
-
-RETURN user_id;
-
-END;
-$$ LANGUAGE plpgsql;
-
---   In case we only know the name.
-CREATE OR REPLACE FUNCTION public.get_category_id_by_name(name TEXT)
-RETURNS UUID AS $$
-
-DECLARE category_id UUID;
-
-BEGIN
-
-SELECT oc.id INTO category_id
-FROM public.occurrence_category AS oc
-WHERE oc.category_name = $1;
-
-RETURN category_id;
-
-END;
-$$ LANGUAGE plpgsql;
 
 COMMIT;
