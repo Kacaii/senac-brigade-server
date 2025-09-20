@@ -1,3 +1,3 @@
 SELECT COUNT(id)
-FROM brigade
+FROM public.brigade
 WHERE is_active = TRUE;

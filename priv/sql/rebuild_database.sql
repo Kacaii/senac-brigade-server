@@ -65,7 +65,6 @@ ON brigade_membership (user_id);
 CREATE INDEX IF NOT EXISTS idx_brigade_membership_brigade_id
 ON brigade_membership (brigade_id);
 
-
 CREATE TABLE IF NOT EXISTS occurrence_category (
     id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
     parent_category_id UUID REFERENCES occurrence_category (id)

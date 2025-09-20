@@ -1,7 +1,7 @@
 SELECT o.description
-FROM occurrence AS o
-INNER JOIN occurrence_category AS ot
+FROM public.occurrence AS o
+INNER JOIN public.occurrence_category AS category
     ON
-        o.category_id = ot.id
-        AND o.subcategory_id = ot.id
+        o.category_id = category.id
+        AND o.subcategory_id = category.id
 WHERE o.applicant_id = $1

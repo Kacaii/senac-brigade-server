@@ -34,7 +34,7 @@ pub fn count_active_brigades(
   }
 
   "SELECT COUNT(id)
-FROM brigade
+FROM public.brigade
 WHERE is_active = TRUE;
 "
   |> pog.query
@@ -71,8 +71,8 @@ pub fn get_brigade_members(
   "SELECT
     u.full_name,
     u.registration
-FROM user_account AS u
-INNER JOIN brigade_membership AS bm ON u.id = bm.user_id
+FROM public.user_account AS u
+INNER JOIN public.brigade_membership AS bm ON u.id = bm.user_id
 WHERE bm.brigade_id = $1
 "
   |> pog.query
@@ -107,11 +107,11 @@ pub fn get_ocurrences_by_applicant(
   }
 
   "SELECT o.description
-FROM occurrence AS o
-INNER JOIN occurrence_category AS ot
+FROM public.occurrence AS o
+INNER JOIN public.occurrence_category AS category
     ON
-        o.category_id = ot.id
-        AND o.subcategory_id = ot.id
+        o.category_id = category.id
+        AND o.subcategory_id = category.id
 WHERE o.applicant_id = $1
 "
   |> pog.query
@@ -146,7 +146,7 @@ pub fn get_user_id_by_registration(
   }
 
   "SELECT u.id
-FROM user_account AS u
+FROM public.user_account AS u
 WHERE u.registration = $1;
 "
   |> pog.query
@@ -181,7 +181,7 @@ pub fn get_user_password_by_registration(
   }
 
   "SELECT u.password_hash
-FROM user_account AS u
+FROM public.user_account AS u
 WHERE u.registration = $1;
 "
   |> pog.query
@@ -206,8 +206,12 @@ pub fn register_new_user(
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
-  "INSERT INTO user_account (
-    full_name, registration, phone, email, password_hash
+  "INSERT INTO public.user_account (
+    full_name,
+    registration,
+    phone,
+    email,
+    password_hash
 ) VALUES ($1, $2, $3, $4, $5)
 "
   |> pog.query

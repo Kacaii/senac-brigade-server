@@ -3,5 +3,5 @@ SELECT
     u.registration,
     u.phone,
     u.email
-FROM user_account AS u
+FROM public.user_account AS u
 LIMIT 20;
