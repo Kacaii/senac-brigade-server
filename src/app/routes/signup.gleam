@@ -54,9 +54,17 @@ pub fn handle_form_submission(
     |> form.run
 
   case form_result {
+    //   Invalid form
     Error(_) -> wisp.bad_request("Dados inválidos")
+
+    //   Valid form
     Ok(signup) -> {
-      case insert_in_database(signup:, ctx:) {
+      case try_insert_into_database(signup:, ctx:) {
+        Ok(_) -> {
+          // User registred successfully
+          wisp.created()
+          |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
+        }
         Error(err) -> {
           let error_message = case err {
             // 󱔼  Hashing went wrong
@@ -107,12 +115,6 @@ pub fn handle_form_submission(
           wisp.internal_server_error()
           |> wisp.set_body(wisp.Text(error_message))
         }
-
-        Ok(_) -> {
-          wisp.created()
-          // User registred successfully
-          |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
-        }
       }
     }
   }
@@ -123,7 +125,7 @@ type SignupError {
   DataBaseError(pog.QueryError)
 }
 
-fn insert_in_database(
+fn try_insert_into_database(
   signup data: SignUp,
   ctx ctx: Context,
 ) -> Result(Nil, SignupError) {
