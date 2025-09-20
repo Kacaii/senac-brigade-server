@@ -57,7 +57,7 @@ rebuild_empty:
     psql senac_brigade -f priv/sql/rebuild_database.sql
     @echo '{{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
 
-# 󰜉 Rebuild the database with values in it
+# 󰜉  Rebuild the database with values in it
 [group('  postgres')]
 rebuild_full:
     just rebuild_empty
