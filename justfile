@@ -60,8 +60,8 @@ rebuild_empty:
 # 󰜉  Rebuild the database with values in it
 [group('  postgres')]
 rebuild_full:
-    just rebuild_empty
-    just insert_categories
+    @just rebuild_empty
+    @just insert_categories
     @echo '{{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ GREEN }}filled{{ NORMAL }} tables'
 
 #   Runs a SELECT statement to query the user accounts
