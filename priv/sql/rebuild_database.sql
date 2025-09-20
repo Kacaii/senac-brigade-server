@@ -10,12 +10,14 @@ DROP INDEX IF EXISTS idx_occurrence_applicant_id;
 DROP INDEX IF EXISTS idx_user_registration;
 DROP INDEX IF EXISTS idx_user_id;
 
+-- pgt-ignore-start lint/safety/banDropTable: RESET
 DROP TABLE IF EXISTS occurrence;
 DROP TABLE IF EXISTS occurrence_category;
 DROP TABLE IF EXISTS brigade_membership;
 DROP TABLE IF EXISTS brigade;
 DROP TABLE IF EXISTS user_account;
 DROP TABLE IF EXISTS user_role;
+-- pgt-ignore-end lint/safety/banDropTable
 
 --   CREATE -----------------------------------------------------------------
 
