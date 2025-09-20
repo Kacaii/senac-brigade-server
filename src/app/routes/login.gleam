@@ -100,7 +100,7 @@ type LoginError {
   HashError
 }
 
-fn try_login(login data: LogIn, ctx ctx: Context) {
+fn try_login(login data: LogIn, ctx ctx: Context) -> Result(Nil, LoginError) {
   use returned <- result.try(
     sql.get_user_password_by_registration(ctx.conn, data.registration)
     |> result.map_error(DataBaseError),
