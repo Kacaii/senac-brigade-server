@@ -36,18 +36,22 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
   case form_result {
     Error(_) -> wisp.bad_request("Dados inválidos")
     Ok(login) -> {
-      let login_result = verify_login(login:, ctx:)
+      let login_result = try_login(login:, ctx:)
       case login_result {
         Ok(_) ->
           wisp.set_body(wisp.ok(), wisp.Text("Login realizado com sucesso"))
         Error(err) -> {
           let error_message = case err {
-            //   Input errors
+            //   User errors --------------------------------------------------
             InvalidPassword -> "Senha incorreta"
             DataBaseReturnedEmptyRow -> "Usuário não cadastrado"
-            //   Internal errors
-            DataBaseError(err) -> {
-              case err {
+            //   Server errors ------------------------------------------------
+            HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
+            //   Database Errors
+            DataBaseError(db_err) -> {
+              case db_err {
+                pog.QueryTimeout ->
+                  "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
                 pog.ConnectionUnavailable ->
                   "Conexão com o banco de dados não disponível"
                 pog.ConstraintViolated(message:, constraint:, detail:) -> {
@@ -74,12 +78,11 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
                   |> string.replace("{{name}}", name)
                   |> string.replace("{{message}}", message)
                 }
-                pog.QueryTimeout ->
-                  "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
+
+                //   Unexpected errors
                 _ -> "Ocorreu um erro ao accessar o Banco de Dados"
               }
             }
-            HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
           }
 
           wisp.internal_server_error()
@@ -97,7 +100,7 @@ type LoginError {
   HashError
 }
 
-fn verify_login(login data: LogIn, ctx ctx: Context) {
+fn try_login(login data: LogIn, ctx ctx: Context) {
   use returned <- result.try(
     sql.get_user_password_by_registration(ctx.conn, data.registration)
     |> result.map_error(DataBaseError),
