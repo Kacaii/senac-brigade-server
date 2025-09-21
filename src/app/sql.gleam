@@ -212,7 +212,13 @@ pub fn register_new_user(
     phone,
     email,
     password_hash
-) VALUES ($1, $2, $3, $4, $5)
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5
+)
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
