@@ -49,7 +49,11 @@ WHERE is_active = TRUE;
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type GetBrigadeMembersRow {
-  GetBrigadeMembersRow(full_name: String, registration: String)
+  GetBrigadeMembersRow(
+    full_name: String,
+    registration: String,
+    role_name: Option(String),
+  )
 }
 
 /// Runs the `get_brigade_members` query
@@ -65,15 +69,21 @@ pub fn get_brigade_members(
   let decoder = {
     use full_name <- decode.field(0, decode.string)
     use registration <- decode.field(1, decode.string)
-    decode.success(GetBrigadeMembersRow(full_name:, registration:))
+    use role_name <- decode.field(2, decode.optional(decode.string))
+    decode.success(GetBrigadeMembersRow(full_name:, registration:, role_name:))
   }
 
   "SELECT
     u.full_name,
-    u.registration
+    u.registration,
+    r.role_name
 FROM public.user_account AS u
-INNER JOIN public.brigade_membership AS bm ON u.id = bm.user_id
-WHERE bm.brigade_id = $1
+LEFT JOIN public.user_role AS r
+    ON r.id = u.role_id
+WHERE u.id IN (
+    SELECT *
+    FROM public.get_brigade_members_id($1)
+)
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

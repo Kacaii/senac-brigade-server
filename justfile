@@ -68,6 +68,11 @@ list_user_accounts:
 list_occurrence_categories:
     psql senac_brigade -f priv/sql/query/list_categories.sql | bat --language=markdown
 
+[group('  postgres')]
+[group('󰤏  query')]
+list_brigades:
+    psql senac_brigade -f priv/sql/query/list_brigades.sql | bat --language=markdown
+
 # 󱃜  Send a POST request to login
 [group('󰯊  httpie')]
 login registration password:

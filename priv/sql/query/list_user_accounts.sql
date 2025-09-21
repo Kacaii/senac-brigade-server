@@ -1,4 +1,5 @@
 SELECT
+    u.id,
     u.full_name,
     u.registration,
     u.phone,

@@ -1,6 +1,11 @@
 SELECT
     u.full_name,
-    u.registration
+    u.registration,
+    r.role_name
 FROM public.user_account AS u
-INNER JOIN public.brigade_membership AS bm ON u.id = bm.user_id
-WHERE bm.brigade_id = $1
+LEFT JOIN public.user_role AS r
+    ON r.id = u.role_id
+WHERE u.id IN (
+    SELECT *
+    FROM public.get_brigade_members_id($1)
+)
