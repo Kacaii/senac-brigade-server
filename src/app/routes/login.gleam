@@ -56,7 +56,7 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
                   "Conexão com o banco de dados não disponível"
                 pog.ConstraintViolated(message:, constraint:, detail:) -> {
                   "
-                    Uma das restrições do banco de dados foi violada
+                  🐘  Uma das restrições do banco de dados foi violada
 
                   Mensagem:     {{message}}
                   Restrição:    {{constraint}}
@@ -68,7 +68,7 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
                 }
                 pog.PostgresqlError(code:, name:, message:) -> {
                   "
-                    O banco de dados apresentou um erro
+                  🐘  O banco de dados apresentou um erro
 
                   Código:     {{code}}
                   Nome:       {{name}}
@@ -93,13 +93,19 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
   }
 }
 
+/// Login can fail 
 type LoginError {
+  ///   Database couldn't find target registration
   DataBaseReturnedEmptyRow
+  ///   Something went wrong on the database
   DataBaseError(pog.QueryError)
+  /// 󰣮  Provided password didnt _match_ the one inside our Database
   InvalidPassword
+  /// 󱔼  Hashing went wrong
   HashError
 }
 
+///   Check if the provided password matches the one inside our database
 fn try_login(login data: LogIn, ctx ctx: Context) -> Result(Nil, LoginError) {
   use returned <- result.try(
     sql.get_user_password_by_registration(ctx.conn, data.registration)

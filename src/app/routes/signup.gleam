@@ -54,17 +54,17 @@ pub fn handle_form_submission(
     |> form.run
 
   case form_result {
-    //   Invalid form
-    Error(_) -> wisp.bad_request("Dados inválidos")
+    //   User errors ----------------------------------------------------------
+    Error(_) -> wisp.unprocessable_content()
 
     //   Valid form
     Ok(signup) -> {
       case try_insert_into_database(signup:, ctx:) {
         Ok(_) -> {
-          // User registred successfully
           wisp.created()
           |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
         }
+        //   Server errors ----------------------------------------------------
         Error(err) -> {
           let error_message = case err {
             // 󱔼  Hashing went wrong
@@ -76,13 +76,28 @@ pub fn handle_form_submission(
               case err {
                 pog.ConnectionUnavailable ->
                   "Conexão com o banco de dados não disponível"
+                pog.QueryTimeout ->
+                  "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
                 pog.ConstraintViolated(message:, constraint:, detail:) -> {
                   case constraint {
-                    "user_account_registration_key" -> "Matrícula já cadastrada"
-                    "user_account_email_key" -> "Email já cadastrado"
+                    //   Registration must be unique --------------------------
+                    "user_account_registration_key" ->
+                      "
+                      Matrícula {{registration}} já cadastrada
+                      Experimente fazer login
+                      "
+                      |> string.replace("{{registration}}", signup.registration)
+                    // 󰇮  Email must be unique ---------------------------------
+                    "user_account_email_key" ->
+                      "
+                      Email: {{email}} já cadastrado
+                      Por favor, utilize um diferente
+                      "
+                      |> string.replace("{{email}}", signup.email)
+                    //   Some other constrain ---------------------------------
                     _ ->
                       "
-                        O banco de dados apresentou um erro
+                      🐘  O banco de dados apresentou um erro
 
                       Constraint: {{constraint}}
                       Mensagem:   {{message}}
@@ -95,7 +110,7 @@ pub fn handle_form_submission(
                 }
                 pog.PostgresqlError(code:, name:, message:) -> {
                   "
-                    O banco de dados apresentou um erro
+                  🐘  O banco de dados apresentou um erro
 
                   Código:     {{code}}
                   Nome:       {{name}}
@@ -105,8 +120,6 @@ pub fn handle_form_submission(
                   |> string.replace("{{name}}", name)
                   |> string.replace("{{message}}", message)
                 }
-                pog.QueryTimeout ->
-                  "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
                 _ -> "Ocorreu um erro ao inserir o usuário no banco de dados"
               }
             }
@@ -120,11 +133,16 @@ pub fn handle_form_submission(
   }
 }
 
+///   Signup can fail
 type SignupError {
+  /// 󱔼  Hashing went wrong
   HashError
+  ///   Something went wrong on the database
   DataBaseError(pog.QueryError)
 }
 
+/// 󰆼  Inserts the user in the database.
+/// 󱔼  Hashes the user `password` before inserting.
 fn try_insert_into_database(
   signup data: SignUp,
   ctx ctx: Context,
