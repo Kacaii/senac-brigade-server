@@ -1,10 +1,8 @@
-alias b := build
-alias r := run
+login_route := ':8000/api/user/login'
+signup_route := ':8000/api/user/signup'
+
 alias s := squirrel
-alias t := test
 alias u := update
-alias wr := watch_run
-alias wt := watch_test
 
 # Print recipes list
 @default:
@@ -35,38 +33,28 @@ test:
 build:
     gleam export erlang-shipment
 
-#   Watch for file changes and run the project
-[group('  gleam')]
-watch_run:
-    watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "clear; gleam run"
-
-#   Watch for file changes and run unit tests
-[group('  gleam')]
-watch_test:
-    watchexec --restart --verbose --wrap-process=session --stop-signal SIGTERM --exts gleam --debounce 500ms --watch src/ -- "clear; gleam run"
-
 #   Insert basic values into the category table
 [group('  postgres')]
 [group('  insert')]
-insert_categories:
-    @psql senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
-    @echo '  {{ MAGENTA }}OCCURRENCE TABLE{{ NORMAL }} filled successfully'
+@insert_categories:
+    psql  senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
+    echo '  {{ MAGENTA }}OCCURRENCE TABLE{{ NORMAL }} filled successfully'
 
 # 󰜉  Rebuild an empty database
 [group('  postgres')]
-rebuild_empty:
+@rebuild_empty:
     @psql senac_brigade -f priv/sql/create/tables.sql
-    @echo '󱏀  {{ MAGENTA }}TABLES{{ NORMAL }} created successfully'
+    echo '󱏀  {{ MAGENTA }}TABLES{{ NORMAL }} created successfully'
     @psql senac_brigade -f priv/sql/create/functions.sql
-    @echo '󰊕  {{ MAGENTA }}FUNCTIONS{{ NORMAL }} created successfully'
-    @echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
+    echo '󰊕  {{ MAGENTA }}FUNCTIONS{{ NORMAL }} created successfully'
+    echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
 
 # 󰜉  Rebuild the database with values in it
 [group('  postgres')]
-rebuild_full:
-    @just rebuild_empty
-    @just insert_categories
-    @echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} is {{ GREEN }}ready{{ NORMAL }} to use'
+@rebuild_full:
+    just rebuild_empty
+    just insert_categories
+    echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} is {{ GREEN }}ready{{ NORMAL }} to use'
 
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]
@@ -79,3 +67,13 @@ list_user_accounts:
 [group('󰤏  query')]
 list_occurrence_categories:
     psql senac_brigade -f priv/sql/query/list_categories.sql | bat --language=markdown
+
+# 󱃜  Send a POST request to login
+[group('󰯊  httpie')]
+login registration password:
+    http --form {{ login_route }} matricula={{ registration }} senha={{ password }}
+
+# 󱃜  Send a POST request to signup
+[group('󰯊  httpie')]
+signup name registration phone email password confirm_password:
+    http --form {{ signup_route }} nome="{{ name }}" matricula={{ registration }} telefone={{ phone }} email={{ email }} senha={{ password }} confirma_senha={{ confirm_password }}
