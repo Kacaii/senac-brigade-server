@@ -1,3 +1,5 @@
+<!-- markdownlint-disable  MD013 -->
+
 # 👩‍🚒 SENAC Brigade
 
 ## Architecture
@@ -6,11 +8,12 @@
 
 ## Routes
 
-| Route                        | Description                  | Expected    |
-| ---------------------------- | ---------------------------- | ----------- |
-| /api/user/signup             | Register a new user account  | POST (Form) |
-| /api/user/login              | Login with your user account | POST (Form) |
-| /api/brigade/get_members/:id | List brigade members         | GET         |
+| Route                                         | Description                  | Expected    |
+| --------------------------------------------- | ---------------------------- | ----------- |
+| /api/user/signup                              | Register a new user account  | POST (Form) |
+| /api/user/login                               | Login with your user account | POST (Form) |
+| /api/user/get_fellow_brigade_members/:user_id | List fellow brigade members  | GET         |
+| /api/brigade/get_members/:brigade_id          | List brigade members         | GET         |
 
 ## Entity RelationShip Diagram
 

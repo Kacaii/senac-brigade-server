@@ -51,8 +51,8 @@ WHERE is_active = TRUE;
 pub type GetBrigadeMembersRow {
   GetBrigadeMembersRow(
     full_name: String,
-    registration: String,
     role_name: Option(String),
+    description: Option(String),
   )
 }
 
@@ -68,19 +68,75 @@ pub fn get_brigade_members(
 ) -> Result(pog.Returned(GetBrigadeMembersRow), pog.QueryError) {
   let decoder = {
     use full_name <- decode.field(0, decode.string)
-    use registration <- decode.field(1, decode.string)
-    use role_name <- decode.field(2, decode.optional(decode.string))
-    decode.success(GetBrigadeMembersRow(full_name:, registration:, role_name:))
+    use role_name <- decode.field(1, decode.optional(decode.string))
+    use description <- decode.field(2, decode.optional(decode.string))
+    decode.success(GetBrigadeMembersRow(full_name:, role_name:, description:))
   }
 
   "SELECT
     u.full_name,
-    u.registration,
-    r.role_name
+    r.role_name,
+    r.description
 FROM public.user_account AS u
-LEFT JOIN public.user_role AS r ON r.id = u.role_id
-INNER JOIN public.get_brigade_members_id($1) AS brigade_members (id)
-    ON brigade_members.id = u.id;
+LEFT JOIN
+    public.user_role AS r
+    ON u.role_id = r.id
+INNER JOIN
+    public.get_brigade_members_id($1) AS brigade_members (id)
+    ON u.id = brigade_members.id;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `get_fellow_brigade_members` query
+/// defined in `./src/app/sql/get_fellow_brigade_members.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetFellowBrigadeMembersRow {
+  GetFellowBrigadeMembersRow(
+    full_name: String,
+    role_name: Option(String),
+    description: Option(String),
+  )
+}
+
+/// Runs the `get_fellow_brigade_members` query
+/// defined in `./src/app/sql/get_fellow_brigade_members.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_fellow_brigade_members(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(GetFellowBrigadeMembersRow), pog.QueryError) {
+  let decoder = {
+    use full_name <- decode.field(0, decode.string)
+    use role_name <- decode.field(1, decode.optional(decode.string))
+    use description <- decode.field(2, decode.optional(decode.string))
+    decode.success(GetFellowBrigadeMembersRow(
+      full_name:,
+      role_name:,
+      description:,
+    ))
+  }
+
+  "SELECT
+    u.full_name,
+    r.role_name,
+    r.description
+FROM GET_FELLOW_BRIGADE_MEMBERS_ID($1) AS fellow_members (id)
+INNER JOIN
+    public.user_account AS u
+    ON fellow_members.id = u.id
+LEFT JOIN
+    public.user_role AS r
+    ON u.role_id = r.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -98,8 +154,7 @@ pub type GetOcurrencesByApplicantRow {
   GetOcurrencesByApplicantRow(description: Option(String))
 }
 
-/// Runs the `get_ocurrences_by_applicant` query
-/// defined in `./src/app/sql/get_ocurrences_by_applicant.sql`.
+/// TODO: Move to a function and return their UUID's
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -113,9 +168,11 @@ pub fn get_ocurrences_by_applicant(
     decode.success(GetOcurrencesByApplicantRow(description:))
   }
 
-  "SELECT o.description
+  "-- TODO: Move to a function and return their UUID's
+SELECT o.description
 FROM public.occurrence AS o
-INNER JOIN public.occurrence_category AS category
+INNER JOIN
+    public.occurrence_category AS category
     ON
         o.category_id = category.id
         AND o.subcategory_id = category.id

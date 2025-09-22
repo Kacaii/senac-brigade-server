@@ -4,6 +4,7 @@ BEGIN;
 DROP FUNCTION IF EXISTS public.get_user_id_by_registration;
 DROP FUNCTION IF EXISTS public.get_category_id_by_name;
 DROP FUNCTION IF EXISTS public.get_brigade_members_id;
+DROP FUNCTION IF EXISTS public.get_fellow_brigade_members_id;
 
 --   CREATE -------------------------------------------------------------------
 
@@ -46,6 +47,7 @@ RETURNS SETOF UUID AS $$
 BEGIN
 
 RETURN QUERY
+
 SELECT
     u.id
 FROM public.user_account AS u
@@ -55,30 +57,24 @@ WHERE bm.brigade_id = $1;
 END;
 $$ LANGUAGE plpgsql;
 
-
--- TODO: Maybe something similar to the file bellow:
--- >       src/app/sql/get_brigade_members.sql
--- Also, this should be a SELECT statement somewhere in src/app/sql
--- 
+--   Returns all users that are in the same brigades as the target user -------
 CREATE OR REPLACE FUNCTION public.get_fellow_brigade_members_id(user_id UUID)
 RETURNS SETOF UUID AS $$
 BEGIN
 
 RETURN QUERY
-SELECT
-    u.id AS user_id,
-    b.id AS brigade_id,
-    b.brigade_name
+
+SELECT u.id
 FROM public.user_account AS u
 INNER JOIN public.brigade_membership AS bm
     ON u.id = bm.user_id
 INNER JOIN public.brigade AS b
-    ON b.id = bm.brigade_id
+    ON bm.brigade_id = b.id
 WHERE bm.brigade_id IN (
-    SELECT bm.brigade_id
-    FROM brigade_membership AS bm
-    WHERE bm.user_id = $1
-);
+    SELECT membership.brigade_id
+    FROM brigade_membership AS membership
+    WHERE membership.user_id = $1
+) AND u.id != $1;
 
 END;
 $$ LANGUAGE plpgsql;

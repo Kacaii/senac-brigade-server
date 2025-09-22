@@ -8,7 +8,7 @@ import gleam/result
 import wisp
 import youid/uuid
 
-pub fn get_brigade_members(
+pub fn handle_request(
   req req: wisp.Request,
   ctx ctx: Context,
   brigade_id brigade_id: String,
@@ -49,12 +49,12 @@ pub fn get_brigade_members(
 fn get_brigade_members_row_to_json(
   get_brigade_members_row: sql.GetBrigadeMembersRow,
 ) -> json.Json {
-  let sql.GetBrigadeMembersRow(full_name:, registration:, role_name:) =
+  let sql.GetBrigadeMembersRow(full_name:, description:, role_name:) =
     get_brigade_members_row
   json.object([
     #("full_name", json.string(full_name)),
-    #("registration", json.string(registration)),
     #("role_name", json.string(option.unwrap(role_name, ""))),
+    #("description", json.string(option.unwrap(description, ""))),
   ])
 }
 
