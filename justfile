@@ -12,23 +12,31 @@ update:
 
 #   Generate code from SQL files
 [group('  gleam')]
+[group('  dev')]
 squirrel:
     gleam run -m squirrel
 
 # 󰏓  Builds the project for production
+[group('  ship')]
 [group('  gleam')]
 build:
     gleam export erlang-shipment
 
+[group('  ship')]
+prod:
+    ./build/erlang-shipment/entrypoint.sh run
+
 #   Insert basic values into the category table
 [group('  postgres')]
 [group('  insert')]
+[group('  dev')]
 @insert_categories:
-    psql  senac_brigade -f priv/sql/insert/insert_occurrence_categories.sql
+    psql  senac_brigade -f priv/sql/insert/dev_insert_occurrence_categories.sql
     echo '  {{ MAGENTA }}OCCURRENCE TABLE{{ NORMAL }} filled successfully'
 
 # 󰜉  Rebuild an empty database
 [group('  postgres')]
+[group('  ship')]
 @rebuild_empty:
     @psql senac_brigade -f priv/sql/create/tables.sql
     echo '󱏀  {{ MAGENTA }}TABLES{{ NORMAL }} created successfully'
@@ -38,6 +46,7 @@ build:
 
 # 󰜉  Rebuild the database with values in it
 [group('  postgres')]
+[group('  dev')]
 @rebuild_full:
     just rebuild_empty
     just insert_categories
@@ -45,18 +54,21 @@ build:
 
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]
+[group('  dev')]
 [group('󰤏  query')]
 list_user_accounts:
-    psql senac_brigade -f priv/sql/query/list_user_accounts.sql
+    psql senac_brigade -f priv/sql/query/dev_list_user_accounts.sql
 
 #   Runs a SELECT statement to query the occurrence categories
 [group('  postgres')]
+[group('  dev')]
 [group('󰤏  query')]
 list_occurrence_categories:
-    psql senac_brigade -f priv/sql/query/list_categories.sql
+    psql senac_brigade -f priv/sql/query/dev_list_categories.sql
 
 #   Runs a SELECT statement to query the briagdes
 [group('  postgres')]
+[group('  dev')]
 [group('󰤏  query')]
 list_brigades:
-    psql senac_brigade -f priv/sql/query/list_brigades.sql
+    psql senac_brigade -f priv/sql/query/dev_list_brigades.sql
