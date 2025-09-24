@@ -37,7 +37,7 @@ pub fn handle_request(
     Error(err) -> {
       let error_message = case err {
         DataBaseError -> "Ocorreu um erro ao acessar o banco de dados"
-        InvalidUUID -> "ID de usuário inválido"
+        InvalidUUID -> "ID de brigada de incêndio inválido"
       }
 
       wisp.internal_server_error()
