@@ -1,5 +1,6 @@
 import app/routes/get_brigade_members
 import app/routes/get_fellow_brigade_members
+import app/routes/get_ocurrences_by_applicant
 import app/routes/login
 import app/routes/signup
 import app/web.{type Context}
@@ -13,6 +14,8 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     [] -> wisp.ok()
     ["api", "user", "signup"] -> signup.handle_form_submission(request:, ctx:)
     ["api", "user", "login"] -> login.handle_form_submission(request:, ctx:)
+    ["api", "user", "get_occurences", user_id] ->
+      get_ocurrences_by_applicant.handle_request(request:, ctx:, user_id:)
 
     ["api", "brigade", "get_members", brigade_id] ->
       get_brigade_members.handle_request(request:, ctx:, brigade_id:)

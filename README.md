@@ -8,12 +8,13 @@
 
 ## Routes
 
-| Route                                         | Description                  | Expected    |
-| --------------------------------------------- | ---------------------------- | ----------- |
-| /api/user/signup                              | Register a new user account  | POST (Form) |
-| /api/user/login                               | Login with your user account | POST (Form) |
-| /api/user/get_fellow_brigade_members/:user_id | List fellow brigade members  | GET         |
-| /api/brigade/get_members/:brigade_id          | List brigade members         | GET         |
+| Route                                          | Description                              | Method      |
+| ---------------------------------------------- | ---------------------------------------- | ----------- |
+| /api/user/signup                               | Register a new user account              | POST (Form) |
+| /api/user/login                                | Login with your user account             | POST (Form) |
+| /api/user/get_occurrences/{user_id}            | Get all occurrences applied by this user | GET         |
+| /api/user/get_fellow_brigade_members/{user_id} | List fellow brigade members of this user | GET         |
+| /api/brigade/get_members/{brigade_id}          | List brigade members                     | GET         |
 
 ## Entity RelationShip Diagram
 

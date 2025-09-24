@@ -43,82 +43,6 @@ WHERE is_active = TRUE;
   |> pog.execute(db)
 }
 
-/// A row you get from running the `get_all_ocurrences_by_user` query
-/// defined in `./src/app/sql/get_all_ocurrences_by_user.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type GetAllOcurrencesByUserRow {
-  GetAllOcurrencesByUserRow(
-    description: Option(String),
-    category: Option(String),
-    subcategory: Option(String),
-    created_at: Option(Timestamp),
-    resolved_at: Option(Timestamp),
-    location: List(Float),
-    reference_point: String,
-    loss_percentage: Option(Float),
-  )
-}
-
-/// Runs the `get_all_ocurrences_by_user` query
-/// defined in `./src/app/sql/get_all_ocurrences_by_user.sql`.
-///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn get_all_ocurrences_by_user(
-  db: pog.Connection,
-  arg_1: Uuid,
-) -> Result(pog.Returned(GetAllOcurrencesByUserRow), pog.QueryError) {
-  let decoder = {
-    use description <- decode.field(0, decode.optional(decode.string))
-    use category <- decode.field(1, decode.optional(decode.string))
-    use subcategory <- decode.field(2, decode.optional(decode.string))
-    use created_at <- decode.field(3, decode.optional(pog.timestamp_decoder()))
-    use resolved_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
-    use location <- decode.field(5, decode.list(decode.float))
-    use reference_point <- decode.field(6, decode.string)
-    use loss_percentage <- decode.field(
-      7,
-      decode.optional(pog.numeric_decoder()),
-    )
-    decode.success(GetAllOcurrencesByUserRow(
-      description:,
-      category:,
-      subcategory:,
-      created_at:,
-      resolved_at:,
-      location:,
-      reference_point:,
-      loss_percentage:,
-    ))
-  }
-
-  "SELECT
-    o.description,
-    oc_cat.category_name AS category,
-    sub_cat.category_name AS subcategory,
-    o.created_at,
-    o.resolved_at,
-    o.location,
-    o.reference_point,
-    o.loss_percentage
-FROM public.query_all_ocurrences_by_user_id($1) AS oc_list (id)
-INNER JOIN public.occurrence AS o
-    ON oc_list.id = o.id
-LEFT JOIN public.occurrence_category AS oc_cat
-    ON o.category_id = oc_cat.id
-LEFT JOIN public.occurrence_category AS sub_cat
-    ON o.subcategory_id = sub_cat.id;
-"
-  |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
 /// A row you get from running the `get_brigade_members` query
 /// defined in `./src/app/sql/get_brigade_members.sql`.
 ///
@@ -259,19 +183,78 @@ WHERE u.registration = $1;
   |> pog.execute(db)
 }
 
-/// Runs the `get_ocurrences_by_applicant` query
-/// defined in `./src/app/sql/get_ocurrences_by_applicant.sql`.
+/// A row you get from running the `get_occurences_by_applicant` query
+/// defined in `./src/app/sql/get_occurences_by_applicant.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetOccurencesByApplicantRow {
+  GetOccurencesByApplicantRow(
+    description: Option(String),
+    category: Option(String),
+    subcategory: Option(String),
+    created_at: Option(Timestamp),
+    resolved_at: Option(Timestamp),
+    location: List(Float),
+    reference_point: String,
+    loss_percentage: Option(Float),
+  )
+}
+
+/// Runs the `get_occurences_by_applicant` query
+/// defined in `./src/app/sql/get_occurences_by_applicant.sql`.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn get_ocurrences_by_applicant(
+pub fn get_occurences_by_applicant(
   db: pog.Connection,
-) -> Result(pog.Returned(Nil), pog.QueryError) {
-  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+  arg_1: Uuid,
+) -> Result(pog.Returned(GetOccurencesByApplicantRow), pog.QueryError) {
+  let decoder = {
+    use description <- decode.field(0, decode.optional(decode.string))
+    use category <- decode.field(1, decode.optional(decode.string))
+    use subcategory <- decode.field(2, decode.optional(decode.string))
+    use created_at <- decode.field(3, decode.optional(pog.timestamp_decoder()))
+    use resolved_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
+    use location <- decode.field(5, decode.list(decode.float))
+    use reference_point <- decode.field(6, decode.string)
+    use loss_percentage <- decode.field(
+      7,
+      decode.optional(pog.numeric_decoder()),
+    )
+    decode.success(GetOccurencesByApplicantRow(
+      description:,
+      category:,
+      subcategory:,
+      created_at:,
+      resolved_at:,
+      location:,
+      reference_point:,
+      loss_percentage:,
+    ))
+  }
 
-  ""
+  "SELECT
+    o.description,
+    oc_cat.category_name AS category,
+    sub_cat.category_name AS subcategory,
+    o.created_at,
+    o.resolved_at,
+    o.location,
+    o.reference_point,
+    o.loss_percentage
+FROM public.query_all_ocurrences_by_user_id($1) AS oc_list (id)
+INNER JOIN public.occurrence AS o
+    ON oc_list.id = o.id
+LEFT JOIN public.occurrence_category AS oc_cat
+    ON o.category_id = oc_cat.id
+LEFT JOIN public.occurrence_category AS sub_cat
+    ON o.subcategory_id = sub_cat.id;
+"
   |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
