@@ -82,7 +82,7 @@ LEFT JOIN
     public.user_role AS r
     ON u.role_id = r.id
 INNER JOIN
-    public.get_brigade_members_id($1) AS brigade_members (id)
+    public.query_brigade_members_id($1) AS brigade_members (id)
     ON u.id = brigade_members.id;
 "
   |> pog.query
@@ -130,7 +130,7 @@ pub fn get_fellow_brigade_members(
     u.full_name,
     r.role_name,
     r.description
-FROM GET_FELLOW_BRIGADE_MEMBERS_ID($1) AS fellow_members (id)
+FROM QUERY_FELLOW_BRIGADE_MEMBERS_ID($1) AS fellow_members (id)
 INNER JOIN
     public.user_account AS u
     ON fellow_members.id = u.id
@@ -182,42 +182,19 @@ WHERE u.registration = $1;
   |> pog.execute(db)
 }
 
-/// A row you get from running the `get_ocurrences_by_applicant` query
+/// Runs the `get_ocurrences_by_applicant` query
 /// defined in `./src/app/sql/get_ocurrences_by_applicant.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type GetOcurrencesByApplicantRow {
-  GetOcurrencesByApplicantRow(description: Option(String))
-}
-
-/// TODO: Move to a function and return their UUID's
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn get_ocurrences_by_applicant(
   db: pog.Connection,
-  arg_1: Uuid,
-) -> Result(pog.Returned(GetOcurrencesByApplicantRow), pog.QueryError) {
-  let decoder = {
-    use description <- decode.field(0, decode.optional(decode.string))
-    decode.success(GetOcurrencesByApplicantRow(description:))
-  }
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
-  "-- TODO: Move to a function and return their UUID's
-SELECT o.description
-FROM public.occurrence AS o
-INNER JOIN
-    public.occurrence_category AS category
-    ON
-        o.category_id = category.id
-        AND o.subcategory_id = category.id
-WHERE o.applicant_id = $1
-"
+  ""
   |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

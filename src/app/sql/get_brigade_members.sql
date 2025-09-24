@@ -7,5 +7,5 @@ LEFT JOIN
     public.user_role AS r
     ON u.role_id = r.id
 INNER JOIN
-    public.get_brigade_members_id($1) AS brigade_members (id)
+    public.query_brigade_members_id($1) AS brigade_members (id)
     ON u.id = brigade_members.id;
