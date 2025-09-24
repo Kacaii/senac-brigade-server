@@ -1,6 +1,3 @@
-login_route := ':8000/api/user/login'
-signup_route := ':8000/api/user/signup'
-
 alias s := squirrel
 alias u := update
 
@@ -13,20 +10,10 @@ alias u := update
 update:
     gleam deps update
 
-#   Run the project
-[group('  gleam')]
-run:
-    gleam run
-
 #   Generate code from SQL files
 [group('  gleam')]
 squirrel:
     gleam run -m squirrel
-
-# 󰙨  Run all unit tests
-[group('  gleam')]
-test:
-    gleam test
 
 # 󰏓  Builds the project for production
 [group('  gleam')]
@@ -60,25 +47,16 @@ build:
 [group('  postgres')]
 [group('󰤏  query')]
 list_user_accounts:
-    psql senac_brigade -f priv/sql/query/list_user_accounts.sql | bat --language=markdown
+    psql senac_brigade -f priv/sql/query/list_user_accounts.sql
 
 #   Runs a SELECT statement to query the occurrence categories
 [group('  postgres')]
 [group('󰤏  query')]
 list_occurrence_categories:
-    psql senac_brigade -f priv/sql/query/list_categories.sql | bat --language=markdown
+    psql senac_brigade -f priv/sql/query/list_categories.sql
 
+#   Runs a SELECT statement to query the briagdes
 [group('  postgres')]
 [group('󰤏  query')]
 list_brigades:
-    psql senac_brigade -f priv/sql/query/list_brigades.sql | bat --language=markdown
-
-# 󱃜  Send a POST request to login
-[group('󰯊  httpie')]
-login registration password:
-    http --form {{ login_route }} matricula={{ registration }} senha={{ password }}
-
-# 󱃜  Send a POST request to signup
-[group('󰯊  httpie')]
-signup name registration phone email password confirm_password:
-    http --form {{ signup_route }} nome="{{ name }}" matricula={{ registration }} telefone={{ phone }} email={{ email }} senha={{ password }} confirma_senha={{ confirm_password }}
+    psql senac_brigade -f priv/sql/query/list_brigades.sql
