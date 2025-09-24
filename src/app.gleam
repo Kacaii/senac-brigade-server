@@ -13,7 +13,6 @@ import wisp/wisp_mist
 /// Application entry
 pub fn main() -> Nil {
   wisp.configure_logger()
-  let secret_key_base = wisp.random_string(64)
 
   //   Setup the postgres database connection ---------------------------------
   let db_process_name = process.new_name("db_conn")
@@ -30,14 +29,24 @@ pub fn main() -> Nil {
   let ctx = Context(static_directory: static_directory(), conn:)
   let handler = router.handle_request(_, ctx)
 
+  // Secret key used for signing and encryption
+  let assert Ok(secret_cookie_token) = read_cookie_token()
+    as "Failed to read the cookie Token"
+
   let assert Ok(_) =
-    wisp_mist.handler(handler, secret_key_base)
+    wisp_mist.handler(handler, secret_cookie_token)
     |> mist.new()
     |> mist.port(8000)
     |> mist.start
 
   // ⏾ 󰒲
   process.sleep_forever()
+}
+
+//   Read the `COOKIE_TOKEN` enviroment variable
+fn read_cookie_token() -> Result(String, Nil) {
+  use cookie_token <- result.try(envoy.get("COOKIE_TOKEN"))
+  Ok(cookie_token)
 }
 
 ///   Start the postgres application supervisor
