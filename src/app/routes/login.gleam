@@ -7,6 +7,9 @@ import gleam/result
 import gleam/string
 import pog
 import wisp
+import youid/uuid
+
+const cookie_name = "user_id"
 
 type LogIn {
   LogIn(registration: String, password: String)
@@ -26,8 +29,8 @@ fn login_form() -> form.Form(LogIn) {
 }
 
 ///   Verifies if a user is registred
-pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
-  use form_data <- wisp.require_form(req)
+pub fn handle_form_submission(request request: wisp.Request, ctx ctx: Context) {
+  use form_data <- wisp.require_form(request)
   let form_result =
     login_form()
     |> form.add_values(form_data.values)
@@ -35,21 +38,41 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
 
   case form_result {
     Error(_) -> wisp.bad_request("Dados inválidos")
-    Ok(login) -> {
-      let login_result = try_login(login:, ctx:)
+    Ok(login_data) -> {
+      let login_result = get_login_token(login: login_data, ctx:)
       case login_result {
-        Ok(_) ->
-          wisp.set_body(wisp.ok(), wisp.Text("Login realizado com sucesso"))
+        Ok(user_uuid) -> {
+          wisp.set_cookie(
+            response: wisp.ok(),
+            request: request,
+            name: cookie_name,
+            value: uuid.to_string(user_uuid),
+            security: wisp.Signed,
+            max_age: 60 * 60,
+          )
+        }
+
         Error(err) -> {
-          let error_message = case err {
+          case err {
             //   User errors --------------------------------------------------
-            InvalidPassword -> "Senha incorreta"
-            DataBaseReturnedEmptyRow -> "Usuário não cadastrado"
+            InvalidPassword ->
+              //   401 Not Authorized
+              wisp.response(401) |> wisp.set_body(wisp.Text("Senha incorreta"))
+            DataBaseReturnedEmptyRow ->
+              //   403 Forbitten
+              wisp.response(403)
+              |> wisp.set_body(wisp.Text("Usuário não cadastrado"))
+
             //   Server errors ------------------------------------------------
-            HashError -> "Ocorreu um erro ao encriptografar a senha do usuário"
+            HashError ->
+              wisp.internal_server_error()
+              |> wisp.set_body(wisp.Text(
+                "Ocorreu um erro ao encriptografar a senha do usuário",
+              ))
+
             //   Database Errors
             DataBaseError(db_err) -> {
-              case db_err {
+              let internal_err_msg = case db_err {
                 pog.QueryTimeout ->
                   "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
                 pog.ConnectionUnavailable ->
@@ -82,11 +105,11 @@ pub fn handle_form_submission(req req: wisp.Request, ctx ctx: Context) {
                 //   Unexpected errors
                 _ -> "Ocorreu um erro ao accessar o Banco de Dados"
               }
+
+              wisp.internal_server_error()
+              |> wisp.set_body(wisp.Text(internal_err_msg))
             }
           }
-
-          wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text(error_message))
         }
       }
     }
@@ -106,9 +129,13 @@ type LoginError {
 }
 
 ///   Check if the provided password matches the one inside our database
-fn try_login(login data: LogIn, ctx ctx: Context) -> Result(Nil, LoginError) {
+/// Returns the user's UUID if successfull.
+fn get_login_token(
+  login data: LogIn,
+  ctx ctx: Context,
+) -> Result(uuid.Uuid, LoginError) {
   use returned <- result.try(
-    sql.get_user_password_by_registration(ctx.conn, data.registration)
+    sql.get_login_token(ctx.conn, data.registration)
     |> result.map_error(DataBaseError),
   )
 
@@ -123,7 +150,8 @@ fn try_login(login data: LogIn, ctx ctx: Context) -> Result(Nil, LoginError) {
   )
 
   case is_correct_password {
-    True -> Ok(Nil)
+    // Return the user's uuid
+    True -> Ok(row.id)
     False -> Error(InvalidPassword)
   }
 }

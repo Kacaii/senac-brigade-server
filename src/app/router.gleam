@@ -6,18 +6,19 @@ import app/web.{type Context}
 import wisp
 
 /// Handle the incoming requests
-pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
-  use req <- web.middleware(request: req, context: ctx)
+pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
+  use request <- web.middleware(request: request, context: ctx)
 
-  case wisp.path_segments(req) {
+  case wisp.path_segments(request) {
     [] -> wisp.ok()
-    ["api", "user", "signup"] -> signup.handle_form_submission(req:, ctx:)
-    ["api", "user", "login"] -> login.handle_form_submission(req:, ctx:)
+    ["api", "user", "signup"] -> signup.handle_form_submission(request:, ctx:)
+    ["api", "user", "login"] -> login.handle_form_submission(request:, ctx:)
 
     ["api", "brigade", "get_members", brigade_id] ->
-      get_brigade_members.handle_request(req:, ctx:, brigade_id:)
+      get_brigade_members.handle_request(request:, ctx:, brigade_id:)
     ["api", "user", "get_fellow_members", user_id] ->
-      get_fellow_brigade_members.handle_request(req:, ctx:, user_id:)
+      get_fellow_brigade_members.handle_request(request:, ctx:, user_id:)
+
     _ -> wisp.not_found()
   }
 }

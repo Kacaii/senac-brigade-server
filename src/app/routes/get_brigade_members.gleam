@@ -9,7 +9,7 @@ import wisp
 import youid/uuid
 
 pub fn handle_request(
-  req req: wisp.Request,
+  request req: wisp.Request,
   ctx ctx: Context,
   brigade_id brigade_id: String,
 ) -> wisp.Response {

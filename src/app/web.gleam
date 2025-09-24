@@ -16,14 +16,18 @@ pub fn middleware(
   context ctx: Context,
   next handle_request: fn(wisp.Request) -> wisp.Response,
 ) -> wisp.Response {
-  let req = wisp.method_override(req)
-  use <- wisp.log_request(req)
+  let request = wisp.method_override(req)
+  use <- wisp.log_request(request)
   use <- wisp.rescue_crashes()
-  use req <- wisp.handle_head(req)
-  use req <- cors.wisp_middleware(req, cors_config())
-  use <- wisp.serve_static(req, under: "/static", from: ctx.static_directory)
+  use request <- wisp.handle_head(request)
+  use request <- cors.wisp_middleware(request, cors_config())
+  use <- wisp.serve_static(
+    request,
+    under: "/static",
+    from: ctx.static_directory,
+  )
 
-  handle_request(req)
+  handle_request(request)
 }
 
 fn cors_config() -> cors.Cors {
