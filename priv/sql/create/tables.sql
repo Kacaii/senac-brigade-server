@@ -6,6 +6,7 @@ DROP INDEX IF EXISTS public.idx_brigade_membership_user_id;
 DROP INDEX IF EXISTS public.idx_occurrence_applicant_id;
 DROP INDEX IF EXISTS public.idx_user_registration;
 DROP INDEX IF EXISTS public.idx_user_id;
+DROP INDEX IF EXISTS public.idx_occurrence_id;
 
 -- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
 DROP TABLE IF EXISTS public.occurrence;
@@ -93,5 +94,8 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
 ON public.occurrence (applicant_id);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_id
+ON public.occurrence (id);
 
 COMMIT;
