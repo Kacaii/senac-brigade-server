@@ -32,17 +32,13 @@ prod:
 [group('  dev')]
 @insert_categories:
     psql  senac_brigade -f priv/sql/insert/dev_insert_occurrence_categories.sql
-    echo '  {{ MAGENTA }}OCCURRENCE TABLE{{ NORMAL }} filled successfully'
 
 # 󰜉  Rebuild an empty database
 [group('  postgres')]
 [group('  ship')]
 @rebuild_empty:
     @psql senac_brigade -f priv/sql/create/tables.sql
-    echo '󱏀  {{ MAGENTA }}TABLES{{ NORMAL }} created successfully'
     @psql senac_brigade -f priv/sql/create/functions.sql
-    echo '󰊕  {{ MAGENTA }}FUNCTIONS{{ NORMAL }} created successfully'
-    echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} rebuilt successfully with {{ YELLOW }}empty{{ NORMAL }} tables'
 
 # 󰜉  Rebuild the database with values in it
 [group('  postgres')]
@@ -50,7 +46,6 @@ prod:
 @rebuild_full:
     just rebuild_empty
     just insert_categories
-    echo '󰪩  {{ BLUE }}DATABASE{{ NORMAL }} is {{ GREEN }}ready{{ NORMAL }} to use'
 
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]
