@@ -294,13 +294,13 @@ WHERE u.registration = $1;
   |> pog.execute(db)
 }
 
-/// Runs the `register_new_user` query
-/// defined in `./src/app/sql/register_new_user.sql`.
+/// Runs the `insert_new_user` query
+/// defined in `./src/app/sql/insert_new_user.sql`.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn register_new_user(
+pub fn insert_new_user(
   db: pog.Connection,
   arg_1: String,
   arg_2: String,

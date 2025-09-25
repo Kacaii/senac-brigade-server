@@ -154,7 +154,7 @@ fn try_insert_into_database(
   )
 
   use _ <- result.try(
-    sql.register_new_user(
+    sql.insert_new_user(
       ctx.conn,
       data.name,
       data.registration,
