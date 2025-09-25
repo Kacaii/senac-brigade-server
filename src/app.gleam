@@ -14,13 +14,8 @@ import wisp/wisp_mist
 pub fn main() -> Nil {
   wisp.configure_logger()
 
-  //   Setup the postgres database connection ---------------------------------
+  //   Setup the postgresql database connection -------------------------------
   let db_process_name = process.new_name("db_conn")
-
-  let assert Ok(pog_config) = read_connection_uri(db_process_name)
-    as "Failed to read connection URI"
-  let assert Ok(_) = start_application_supervised(pog_config)
-    as "Failed to database supervisor"
 
   //   Database connection
   let conn = pog.named_connection(db_process_name)
@@ -30,33 +25,47 @@ pub fn main() -> Nil {
   let handler = router.handle_request(_, ctx)
 
   // Secret key used for signing and encryption
-  let assert Ok(secret_cookie_token) = read_cookie_token()
-    as "Failed to read the cookie Token"
+  let assert Ok(secret_key) = read_cookie_token()
+    as "  Failed to read the cookie secret key"
 
+  // Postgresql connection URI
+  let assert Ok(pog_config) = read_connection_uri(db_process_name)
+    as "  Failed to read DataBase connection URI"
+
+  // Start both HHTP Server and DataBase connection under a supervision tree ---
   let assert Ok(_) =
-    wisp_mist.handler(handler, secret_cookie_token)
-    |> mist.new()
-    |> mist.port(8000)
-    |> mist.start
+    start_application_supervised(pog_config:, handler:, secret_key:)
+    as "󰪋  Failed to start the application supervisor"
 
   // ⏾ 󰒲
   process.sleep_forever()
 }
 
-//   Read the `COOKIE_TOKEN` enviroment variable
+///   Read the `COOKIE_TOKEN` enviroment variable
 fn read_cookie_token() -> Result(String, Nil) {
   use cookie_token <- result.try(envoy.get("COOKIE_TOKEN"))
   Ok(cookie_token)
 }
 
-///   Start the postgres application supervisor
+/// 󰪋  Start the application supervisor
 pub fn start_application_supervised(
-  pog_config: pog.Config,
+  pog_config pog_config: pog.Config,
+  handler handler: fn(wisp.Request) -> wisp.Response,
+  secret_key secret_key: String,
 ) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
-  let pool_child = pog.supervised(pog_config)
+  // Adding Pog to the supervision tree
+  let pog_pool_child = pog.supervised(pog_config)
+
+  // Adding Mist to the supervision tree
+  let mist_pool_child = {
+    wisp_mist.handler(handler, secret_key)
+    |> mist.new()
+    |> mist.port(8000)
+  }
 
   supervisor.new(supervisor.RestForOne)
-  |> supervisor.add(pool_child)
+  |> supervisor.add(pog_pool_child)
+  |> supervisor.add(mist.supervised(mist_pool_child))
   |> supervisor.start
 }
 

@@ -6,7 +6,7 @@ import app/routes/signup
 import app/web.{type Context}
 import wisp
 
-/// Handle the incoming requests
+/// Handle the incoming HTTP Requests
 pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
   use request <- web.middleware(request: request, context: ctx)
 
