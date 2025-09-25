@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.user_account (
     password_hash TEXT NOT NULL,
     registration TEXT UNIQUE NOT NULL,
     phone TEXT DEFAULT NULL,
-    email TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE DEFAULT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
