@@ -1,5 +1,6 @@
 import cors_builder as cors
 import gleam/http
+import glight
 import pog
 import wisp
 
@@ -28,6 +29,25 @@ pub fn middleware(
   )
 
   handle_request(request)
+}
+
+///   Configure the Erlang logger
+pub fn configure_logger() {
+  glight.configure([
+    glight.Console,
+    glight.File(log_directory() <> "/server.log"),
+  ])
+
+  glight.set_log_level(glight.Debug)
+  glight.set_is_color(True)
+}
+
+/// Access to log directory
+fn log_directory() -> String {
+  let assert Ok(priv_directory) = wisp.priv_directory("app")
+    as "Failed to access priv directory"
+
+  priv_directory <> "/log"
 }
 
 fn cors_config() -> cors.Cors {

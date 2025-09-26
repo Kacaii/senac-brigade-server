@@ -12,7 +12,7 @@ import wisp/wisp_mist
 
 /// Application entry
 pub fn main() -> Nil {
-  wisp.configure_logger()
+  web.configure_logger()
 
   //   Setup the postgresql database connection -------------------------------
   let db_process_name = process.new_name("db_conn")
@@ -80,7 +80,7 @@ pub fn read_connection_uri(
   pog.url_config(name, postgres_url)
 }
 
-/// Access to Erlang's Priv directory
+/// Access to static files
 pub fn static_directory() -> String {
   let assert Ok(priv_directory) = wisp.priv_directory("app")
     as "Failed to access priv directory"
