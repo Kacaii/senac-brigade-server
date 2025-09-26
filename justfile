@@ -67,3 +67,8 @@ list_occurrence_categories:
 [group('󰤏  query')]
 list_brigades:
     psql senac_brigade -f priv/sql/query/dev_list_brigades.sql
+
+#   Clears the server's log file
+[group('  dev')]
+@clear_log_file:
+    echo "" > priv/log/server.log
