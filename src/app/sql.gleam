@@ -197,7 +197,7 @@ pub type GetOccurencesByApplicantRow {
     created_at: Option(Timestamp),
     resolved_at: Option(Timestamp),
     location: List(Float),
-    reference_point: String,
+    reference_point: Option(String),
     loss_percentage: Option(Float),
   )
 }
@@ -219,7 +219,7 @@ pub fn get_occurences_by_applicant(
     use created_at <- decode.field(3, decode.optional(pog.timestamp_decoder()))
     use resolved_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
     use location <- decode.field(5, decode.list(decode.float))
-    use reference_point <- decode.field(6, decode.string)
+    use reference_point <- decode.field(6, decode.optional(decode.string))
     use loss_percentage <- decode.field(
       7,
       decode.optional(pog.numeric_decoder()),
@@ -290,6 +290,55 @@ WHERE u.registration = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// Runs the `insert_new_occurence` query
+/// defined in `./src/app/sql/insert_new_occurence.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn insert_new_occurence(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: Uuid,
+  arg_3: Uuid,
+  arg_4: String,
+  arg_5: List(Float),
+  arg_6: String,
+  arg_7: String,
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "INSERT INTO public.occurrence (
+    applicant_id,
+    category_id,
+    subcategory_id,
+    description,
+    location,
+    reference_point,
+    vehicle_code
+)
+VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7
+);
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
+  |> pog.parameter(pog.text(uuid.to_string(arg_3)))
+  |> pog.parameter(pog.text(arg_4))
+  |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_5))
+  |> pog.parameter(pog.text(arg_6))
+  |> pog.parameter(pog.text(arg_7))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

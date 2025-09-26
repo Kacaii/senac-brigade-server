@@ -107,7 +107,7 @@ fn get_occurences_by_applicant_row_to_json(
       }
     }),
     #("location", json.array(location, json.float)),
-    #("reference_point", json.string(reference_point)),
+    #("reference_point", json.string(option.unwrap(reference_point, ""))),
     #("loss_percentage", case loss_percentage {
       option.None -> json.null()
       option.Some(value) -> json.float(value)
