@@ -5,11 +5,12 @@ import formal/form
 import gleam/list
 import gleam/result
 import gleam/string
+import glight
 import pog
 import wisp
 import youid/uuid
 
-const cookie_name = "user_id"
+const cookie_name = "USER_ID"
 
 type LogIn {
   LogIn(registration: String, password: String)
@@ -42,6 +43,10 @@ pub fn handle_form_submission(request request: wisp.Request, ctx ctx: Context) {
       let login_result = get_login_token(login: login_data, ctx:)
       case login_result {
         Ok(user_uuid) -> {
+          //   Logs user registration
+          log_login(login_data)
+
+          //   Store UUID cookie
           wisp.set_cookie(
             response: wisp.ok(),
             request: request,
@@ -114,6 +119,14 @@ pub fn handle_form_submission(request request: wisp.Request, ctx ctx: Context) {
       }
     }
   }
+}
+
+fn log_login(login: LogIn) -> Nil {
+  glight.logger()
+  |> glight.with("registration", login.registration)
+  |> glight.info("login")
+
+  glight.set_log_level(glight.Debug)
 }
 
 /// Login can fail 

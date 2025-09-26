@@ -62,7 +62,10 @@ pub fn handle_form_submission(
     Ok(signup) -> {
       case try_insert_into_database(signup:, ctx:) {
         Ok(_) -> {
+          //   Logs new user account
           log_signup(signup)
+
+          // 󱅡  All good!
           wisp.created()
           |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
         }
