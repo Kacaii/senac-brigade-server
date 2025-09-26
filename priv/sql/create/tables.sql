@@ -7,10 +7,13 @@ DROP INDEX IF EXISTS public.idx_occurrence_applicant_id;
 DROP INDEX IF EXISTS public.idx_user_registration;
 DROP INDEX IF EXISTS public.idx_user_id;
 DROP INDEX IF EXISTS public.idx_occurrence_id;
+DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_user_id;
+DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_occurrence_id;
 
 -- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
 DROP TABLE IF EXISTS public.occurrence;
 DROP TABLE IF EXISTS public.occurrence_category;
+DROP TABLE IF EXISTS public.occurrence_brigade_member;
 DROP TABLE IF EXISTS public.brigade_membership;
 DROP TABLE IF EXISTS public.brigade;
 DROP TABLE IF EXISTS public.user_account;
@@ -85,7 +88,8 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
     ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
     description TEXT,
     location POINT NOT NULL,
-    reference_point TEXT NOT NULL,
+    reference_point TEXT,
+    vehicle_code TEXT NOT NULL,
     loss_percentage NUMERIC(2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -97,5 +101,19 @@ ON public.occurrence (applicant_id);
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_id
 ON public.occurrence (id);
+
+CREATE TABLE IF NOT EXISTS public.occurrence_brigade_member (
+    id UUID PRIMARY KEY DEFAULT UUIDV7(),
+    user_id UUID REFERENCES public.user_account (id)
+    ON UPDATE CASCADE,
+    occurrence_id UUID REFERENCES public.user_account (id)
+    ON UPDATE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_member_user_id
+ON public.occurrence_brigade_member (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_member_occurrence_id
+ON public.occurrence_brigade_member (occurrence_id);
 
 COMMIT;
