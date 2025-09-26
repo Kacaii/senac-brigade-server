@@ -22,6 +22,7 @@ squirrel:
 build:
     gleam export erlang-shipment
 
+#   Runs erlang-shipment entrypoint
 [group('  ship')]
 prod:
     ./build/erlang-shipment/entrypoint.sh run
@@ -72,3 +73,6 @@ list_brigades:
 [group('  dev')]
 @clear_log_file:
     echo "" > priv/log/server.log
+
+@peek_log_file:
+    bat priv/log/server.log

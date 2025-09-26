@@ -4,6 +4,7 @@ import argus
 import formal/form
 import gleam/result
 import gleam/string
+import glight
 import pog
 import wisp
 
@@ -61,6 +62,7 @@ pub fn handle_form_submission(
     Ok(signup) -> {
       case try_insert_into_database(signup:, ctx:) {
         Ok(_) -> {
+          log_signup(signup)
           wisp.created()
           |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
         }
@@ -168,6 +170,18 @@ pub fn handle_form_submission(
       }
     }
   }
+}
+
+fn log_signup(signup: SignUp) -> Nil {
+  glight.logger()
+  |> glight.with("name", signup.name)
+  |> glight.with("registration", signup.registration)
+  |> glight.with("phone_number", signup.phone_number)
+  |> glight.with("email", signup.email)
+  |> glight.info("signup")
+
+  // Set back to debug after logging
+  glight.set_log_level(glight.Debug)
 }
 
 ///   Signup can fail
