@@ -1,3 +1,30 @@
+//// Handler for user authentication and login.
+////
+//// This module handles `POST /api/user/login` requests.
+//// It authenticates users by verifying their registration number and password,
+//// and upon successful login, sets a signed cookie containing the user's UUID.
+////
+//// ## Form Fields
+//// - `matricula`: User's registration number (required)
+//// - `senha`: User's password (required)
+////
+//// ## Authentication Process
+//// 1. Validates form data
+//// 2. Queries database for user registration
+//// 3. Verifies password hash using Argon2
+//// 4. Sets signed cookie with user UUID (1-hour expiration)
+//// 5. Logs successful login attempts
+////
+//// ## Response Codes
+//// - 200: Successful login (with cookie set)
+//// - 400: Invalid form data
+//// - 401: Incorrect password
+//// - 403: User not registered
+//// - 500: Server errors (hashing failure, database issues)
+////
+//// ## Security
+//// Uses signed cookies to prevent tampering and logs all login attempts.
+
 import app/sql
 import app/web.{type Context}
 import argus

@@ -1,3 +1,33 @@
+//// Handler for user registration and account creation.
+////
+//// This module handles `POST /api/user/signup` requests.
+//// It creates new user accounts by validating form data and inserting
+//// the user information into the database with proper password hashing.
+////
+//// ## Form Fields
+//// - `nome`: User's full name (required)
+//// - `matricula`: User's registration number (required, unique)
+//// - `telefone`: User's phone number (required)
+//// - `email`: User's email address (required, unique)
+//// - `senha`: User's password (required)
+//// - `confirma_senha`: Password confirmation (must match senha)
+////
+//// ## Registration Process
+//// 1. Validates all form fields including email format and password confirmation
+//// 2. Hashes password using Argon2 with generated salt
+//// 3. Inserts user data into the database
+//// 4. Logs successful registrations
+////
+//// ## Response Codes
+//// - 201: Account created successfully
+//// - 422: Invalid form data
+//// - 400: Duplicate registration or email (constraint violations)
+//// - 500: Server errors (hashing failure, database issues)
+////
+//// ## Security
+//// Passwords are hashed using Argon2 before storage and all sensitive
+//// operations are logged for audit purposes.
+
 import app/sql
 import app/web.{type Context}
 import argus

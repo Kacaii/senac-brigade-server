@@ -1,3 +1,24 @@
+//// Web application context and middleware configuration.
+////
+//// This module defines the core web infrastructure including:
+//// - The `Context` type that holds application dependencies for request handlers
+//// - Middleware pipeline for request processing
+//// - CORS configuration for cross-origin requests
+//// - Logger configuration for application logging
+////
+//// ## Middleware Pipeline
+//// The middleware function applies the following processing to each request:
+//// - HTTP method overriding (for REST clients)
+//// - Request logging
+//// - Crash recovery and error handling
+//// - HEAD request normalization
+//// - CORS headers
+//// - Static file serving from `/static` path
+////
+//// ## CORS Configuration
+//// Currently configured to allow requests from `http://localhost:5173`
+//// with GET and POST methods enabled.
+
 import cors_builder as cors
 import gleam/http
 import glight

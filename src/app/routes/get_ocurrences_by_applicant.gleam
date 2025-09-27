@@ -1,3 +1,36 @@
+//// Handler for retrieving occurrences reported by a specific applicant.
+////
+//// This module handles `GET /api/user/get_occurences/{user_id}` requests.
+//// It returns a list of occurrences (incidents/reports) that were submitted
+//// by the specified user, including detailed information about each occurrence.
+////
+//// ## Request Validation
+//// - Validates that the user_id is a properly formatted UUID
+//// - Ensures the request uses the HTTP GET method
+////
+//// ## Response
+//// Returns a JSON array of occurrences with the following structure:
+//// ```json
+//// [
+////   {
+////     "description": "string|null",
+////     "category": "string|null",
+////     "subcategory": "string|null",
+////     "created_at": "string|null", // Unix timestamp
+////     "resolved_at": "string|null", // Unix timestamp
+////     "location": [float, float],
+////     "reference_point": "string",
+////     "loss_percentage": "float|null"
+////   }
+//// ]
+//// ```
+////
+//// ## Error Handling
+//// Returns appropriate error messages for:
+//// - Invalid UUID format
+//// - Database connection issues
+//// - Query timeouts and other database errors
+
 import app/sql
 import app/web
 import gleam/float

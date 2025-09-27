@@ -15,7 +15,7 @@ pub opaque type Occurrence {
   )
 }
 
-// 󱐀  A form that decodes the `Occurrence` type
+/// 󱐀  A form that decodes the `Occurrence` type
 fn occurence_form() -> form.Form(Occurrence) {
   form.new({
     use applicant_id <- form.field(todo as "form value", {
@@ -57,6 +57,13 @@ pub fn handle_form_submission(
     occurence_form()
     |> form.add_values(form_data.values)
     |> form.run
+
+  case form_result {
+    Error(_) -> wisp.bad_request("Formulário inválido")
+    Ok(occurence) -> {
+      todo
+    }
+  }
 
   todo as "handle request"
 }

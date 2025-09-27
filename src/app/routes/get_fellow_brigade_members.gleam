@@ -1,3 +1,30 @@
+//// Handler for retrieving members from the same brigade as a given user.
+////
+//// This module handles `GET /api/user/get_fellow_members/{user_id}` requests.
+//// It returns a list of brigade members who belong to the same brigade as the
+//// specified user, including their full name, role, and description.
+////
+//// ## Request Validation
+//// - Validates that the user_id is a properly formatted UUID
+//// - Ensures the request uses the HTTP GET method
+////
+//// ## Response
+//// Returns a JSON array of fellow brigade members with the following structure:
+//// ```json
+//// [
+////   {
+////     "full_name": "string",
+////     "role_name": "string",
+////     "description": "string"
+////   }
+//// ]
+//// ```
+////
+//// ## Error Handling
+//// Returns appropriate error messages for:
+//// - Invalid UUID format
+//// - Database access failuresimport app/sql
+
 import app/sql
 import app/web.{type Context}
 import gleam/http

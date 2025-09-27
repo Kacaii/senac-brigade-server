@@ -1,3 +1,30 @@
+//// Handler for retrieving members of a specific fire brigade.
+////
+//// This module handles `GET /api/brigade/get_members/{brigade_id}` requests.
+//// It returns a list of members belonging to the specified brigade, including
+//// their full name, role, and description.
+////
+//// ## Request Validation
+//// - Validates that the brigade_id is a properly formatted UUID
+//// - Ensures the request uses the HTTP GET method
+////
+//// ## Response
+//// Returns a JSON array of brigade members with the following structure:
+//// ```json
+//// [
+////   {
+////     "full_name": "string",
+////     "role_name": "string",
+////     "description": "string"
+////   }
+//// ]
+//// ```
+////
+//// ## Error Handling
+//// Returns appropriate error messages for:
+//// - Invalid UUID format
+//// - Database access failures
+
 import app/sql
 import app/web.{type Context}
 import gleam/http
