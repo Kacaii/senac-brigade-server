@@ -95,26 +95,3 @@ erDiagram
         UUID brigade_id
     }
 ```
-
-## File Tree
-
-```bash
-senac-brigade-server/
-│
-├── assets/               #   Images, diagramas, etc.
-│
-├── priv/                 #   Everything that is not a gleam source file.
-│   └── sql/              # 󰆼  SQL files meant to be used during development
-│                         #    and runned directly with the justfile.
-├── src/
-│   ├── app/
-│   │   ├── sql/          #   Squirrel uses this directory to generate code.
-│   │   ├── routes/       # 󰛳  Handler functions.
-│   │   ├── router.gleam  #   Wisp router.
-│   │   └── web.gleam     # 󰽝  Wisp middleware.
-│   │
-│   └── app.gleam         # <--   Entry point.
-│
-├── justfile              # Recipes for easy access during development.
-└── README.mod            # README file.
-```
