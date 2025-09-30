@@ -38,9 +38,11 @@ prod:
 [group('  postgres')]
 [group('  ship')]
 @rebuild_empty:
-    @psql senac_brigade -f priv/sql/create/triggers.sql
+    @psql senac_brigade -f priv/sql/drop.sql
     @psql senac_brigade -f priv/sql/create/tables.sql
+    @psql senac_brigade -f priv/sql/create/triggers.sql
     @psql senac_brigade -f priv/sql/create/functions.sql
+    @psql senac_brigade -f priv/sql/create/views.sql
 
 # 󰜉  Rebuild the database with values in it
 [group('  postgres')]

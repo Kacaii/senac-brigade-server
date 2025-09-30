@@ -9,39 +9,6 @@ import gleam/option.{type Option}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `count_active_brigades` query
-/// defined in `./src/app/routes/brigade/sql/count_active_brigades.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type CountActiveBrigadesRow {
-  CountActiveBrigadesRow(count: Int)
-}
-
-/// 󰆙  Counts the number of active brigades in the database.
-///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn count_active_brigades(
-  db: pog.Connection,
-) -> Result(pog.Returned(CountActiveBrigadesRow), pog.QueryError) {
-  let decoder = {
-    use count <- decode.field(0, decode.int)
-    decode.success(CountActiveBrigadesRow(count:))
-  }
-
-  "-- 󰆙  Counts the number of active brigades in the database.
-SELECT COUNT(id)
-FROM public.brigade
-WHERE is_active = TRUE;
-"
-  |> pog.query
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
 /// A row you get from running the `get_brigade_members` query
 /// defined in `./src/app/routes/brigade/sql/get_brigade_members.sql`.
 ///

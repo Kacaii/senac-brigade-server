@@ -1,6 +1,8 @@
-import app/routes/occurrence.{type Occurrence}
-import app/routes/occurrence/count_active_occurrences
+import app/routes/dashboard/sql
 import app/web.{type Context}
+import gleam/http
+import gleam/json
+import gleam/list
 import gleam/result
 import wisp
 
@@ -9,17 +11,56 @@ pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,
 ) -> wisp.Response {
+  use <- wisp.require_method(request, http.Get)
+
   let query_result = {
-    use active_occurrences <- result.try({
-      count_active_occurrences.handle_query(ctx:)
-    })
-    todo
+    use returned <- result.try(
+      sql.get_dashboard_stats(ctx.conn)
+      |> result.replace_error(DatabaseError),
+    )
+    use row <- result.try(
+      list.first(returned.rows)
+      |> result.replace_error(DatabaseReturnedEmptyRow),
+    )
+
+    Ok(get_dashboard_stats_row_to_json(row))
   }
 
-  todo
+  case query_result {
+    Ok(value) -> wisp.json_response(json.to_string(value), 200)
+    Error(err) -> {
+      case err {
+        DatabaseError ->
+          wisp.internal_server_error()
+          |> wisp.set_body(wisp.Text(
+            "Ocorreu um erro ao acessar o Banco de Dados",
+          ))
+        DatabaseReturnedEmptyRow ->
+          wisp.internal_server_error()
+          |> wisp.set_body(wisp.Text("O Banco de dados não retornou resultados"))
+      }
+    }
+  }
 }
 
-// TODO: Docs
-pub type DashBoard {
-  DashBoard(active_occurrences: Int, recent_occurrence: List(Occurrence))
+fn get_dashboard_stats_row_to_json(
+  get_dashboard_stats_row: sql.GetDashboardStatsRow,
+) -> json.Json {
+  let sql.GetDashboardStatsRow(
+    active_brigades_count:,
+    total_occurrences_count:,
+    active_occurrences_count:,
+    recent_occurrences_count:,
+  ) = get_dashboard_stats_row
+  json.object([
+    #("active_brigades_count", json.int(active_brigades_count)),
+    #("total_occurrences_count", json.int(total_occurrences_count)),
+    #("active_occurrences_count", json.int(active_occurrences_count)),
+    #("recent_occurrences_count", json.int(recent_occurrences_count)),
+  ])
+}
+
+pub type GetDashboardStatsError {
+  DatabaseReturnedEmptyRow
+  DatabaseError
 }

@@ -1,0 +1,27 @@
+--------------------------------------------------------------------------------
+DROP VIEW IF EXISTS vw_count_active_occurrences;
+DROP VIEW IF EXISTS vw_count_recent_occurrences;
+DROP VIEW IF EXISTS vw_count_total_occurrences;
+DROP VIEW IF EXISTS vw_count_active_brigades;
+
+--------------------------------------------------------------------------------
+DROP TRIGGER IF EXISTS tgr_insert_member_participation ON occurrence;
+DROP FUNCTION IF EXISTS public.dump_occurrence_participants;
+--------------------------------------------------------------------------------
+
+DROP INDEX IF EXISTS public.idx_brigade_membership_brigade_id;
+DROP INDEX IF EXISTS public.idx_brigade_membership_user_id;
+DROP INDEX IF EXISTS public.idx_occurrence_applicant_id;
+DROP INDEX IF EXISTS public.idx_user_registration;
+DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_user_id;
+DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_occurrence_id;
+
+-- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
+DROP TABLE IF EXISTS public.occurrence;
+DROP TABLE IF EXISTS public.occurrence_category;
+DROP TABLE IF EXISTS public.occurrence_brigade_member;
+DROP TABLE IF EXISTS public.brigade_membership;
+DROP TABLE IF EXISTS public.brigade;
+DROP TABLE IF EXISTS public.user_account;
+DROP TABLE IF EXISTS public.user_role;
+-- pgt-ignore-end lint/safety/banDropTable

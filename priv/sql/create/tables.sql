@@ -1,26 +1,4 @@
---   DROP -------------------------------------------------------------------
 BEGIN;
-
-DROP INDEX IF EXISTS public.idx_brigade_membership_brigade_id;
-DROP INDEX IF EXISTS public.idx_brigade_membership_user_id;
-DROP INDEX IF EXISTS public.idx_occurrence_applicant_id;
-DROP INDEX IF EXISTS public.idx_user_registration;
-DROP INDEX IF EXISTS public.idx_user_id;
-DROP INDEX IF EXISTS public.idx_occurrence_id;
-DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_user_id;
-DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_occurrence_id;
-
--- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
-DROP TABLE IF EXISTS public.occurrence;
-DROP TABLE IF EXISTS public.occurrence_category;
-DROP TABLE IF EXISTS public.occurrence_brigade_member;
-DROP TABLE IF EXISTS public.brigade_membership;
-DROP TABLE IF EXISTS public.brigade;
-DROP TABLE IF EXISTS public.user_account;
-DROP TABLE IF EXISTS public.user_role;
--- pgt-ignore-end lint/safety/banDropTable
-
---   CREATE -----------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.user_role (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),

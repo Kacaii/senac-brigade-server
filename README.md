@@ -8,14 +8,15 @@
 
 ## Routes
 
-| Route                       | Description                              | Method      |
-| --------------------------- | ---------------------------------------- | ----------- |
-| /api/user/signup            | Register a new user account              | POST (Form) |
-| /api/user/login             | Login with your user account             | POST (Form) |
-| /api/occurrence/new         | Register new occurrence                  | POST (Form) |
-| /api/user/{id}/occurrences  | Get all occurrences applied by this user | GET         |
-| /api/user/{id}/crew_members | List fellow brigade members of this user | GET         |
-| /api/brigade/{id}/members   | List brigade members                     | GET         |
+| Route                       | Description                                  | Method      |
+| --------------------------- | -------------------------------------------- | ----------- |
+| /api/user/signup            | Register a new user account                  | POST (Form) |
+| /api/user/login             | Login with your user account                 | POST (Form) |
+| /api/occurrence/new         | Register new occurrence                      | POST (Form) |
+| /api/dashboard/stats        | Retrieves useful information from the server | GET         |
+| /api/user/{id}/occurrences  | Get all occurrences applied by this user     | GET         |
+| /api/user/{id}/crew_members | List fellow brigade members of this user     | GET         |
+| /api/brigade/{id}/members   | List brigade members                         | GET         |
 
 ## Entity RelationShip Diagram
 
@@ -79,10 +80,19 @@ erDiagram
         TEXT description
         POINT location
         TEXT reference_point
-        NUMERIC(2) loss_percentage
+        TEXT vehicle_code
+        UUID[] participants_id
         TIMESTAMP created_at
         TIMESTAMP updated_at
         TIMESTAMP resolved_at
+    }
+
+    occurrence_brigade_member }o--o{ user_account : participant
+    occurrence_brigade_member }o--o{ brigade : participates_of
+    occurrence_brigade_member {
+        UUID id
+        UUID user_id
+        UUID brigade_id
     }
 ```
 

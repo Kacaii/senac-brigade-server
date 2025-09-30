@@ -1,7 +1,3 @@
-DROP FUNCTION IF EXISTS public.dump_occurrence_participants;
-DROP TRIGGER IF EXISTS tgr_insert_member_participation ON occurrence;
-
--- 
 CREATE OR REPLACE FUNCTION public.dump_occurrence_participants()
 RETURNS TRIGGER AS $$
 BEGIN

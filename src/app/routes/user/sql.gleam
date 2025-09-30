@@ -6,7 +6,6 @@
 
 import gleam/dynamic/decode
 import gleam/option.{type Option}
-import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
@@ -100,81 +99,6 @@ WHERE u.registration = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
-/// A row you get from running the `get_occurences_by_applicant` query
-/// defined in `./src/app/routes/user/sql/get_occurences_by_applicant.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type GetOccurencesByApplicantRow {
-  GetOccurencesByApplicantRow(
-    id: Uuid,
-    description: Option(String),
-    category: Option(String),
-    subcategory: Option(String),
-    created_at: Option(Timestamp),
-    resolved_at: Option(Timestamp),
-    location: List(Float),
-    reference_point: Option(String),
-  )
-}
-
-///   Retrieves all occurrences associated with a user,
-/// including detailed category information and resolution status.
-///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn get_occurences_by_applicant(
-  db: pog.Connection,
-  arg_1: Uuid,
-) -> Result(pog.Returned(GetOccurencesByApplicantRow), pog.QueryError) {
-  let decoder = {
-    use id <- decode.field(0, uuid_decoder())
-    use description <- decode.field(1, decode.optional(decode.string))
-    use category <- decode.field(2, decode.optional(decode.string))
-    use subcategory <- decode.field(3, decode.optional(decode.string))
-    use created_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
-    use resolved_at <- decode.field(5, decode.optional(pog.timestamp_decoder()))
-    use location <- decode.field(6, decode.list(decode.float))
-    use reference_point <- decode.field(7, decode.optional(decode.string))
-    decode.success(GetOccurencesByApplicantRow(
-      id:,
-      description:,
-      category:,
-      subcategory:,
-      created_at:,
-      resolved_at:,
-      location:,
-      reference_point:,
-    ))
-  }
-
-  "--   Retrieves all occurrences associated with a user,
--- including detailed category information and resolution status.
-SELECT
-    o.id,
-    o.description,
-    oc_cat.category_name AS category,
-    sub_cat.category_name AS subcategory,
-    o.created_at,
-    o.resolved_at,
-    o.location,
-    o.reference_point
-FROM public.query_all_ocurrences_by_user_id($1) AS oc_list (id)
-INNER JOIN public.occurrence AS o
-    ON oc_list.id = o.id
-LEFT JOIN public.occurrence_category AS oc_cat
-    ON o.category_id = oc_cat.id
-LEFT JOIN public.occurrence_category AS sub_cat
-    ON o.subcategory_id = sub_cat.id;
-"
-  |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

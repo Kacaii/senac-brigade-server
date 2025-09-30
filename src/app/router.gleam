@@ -8,6 +8,7 @@
 //// Unmatched routes return a 404 Not Found response.
 
 import app/routes/brigade/get_brigade_members
+import app/routes/dashboard
 import app/routes/occurrence/register_new_occurrence
 import app/routes/user/get_crew_members
 import app/routes/user/get_ocurrences_by_applicant
@@ -25,6 +26,10 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     //   Authorization routes
     http.Post, ["api", "user", "signup"] -> signup.handle_form(request:, ctx:)
     http.Post, ["api", "user", "login"] -> login.handle_form(request:, ctx:)
+
+    // 󰨇  Dashboard stats
+    http.Get, ["api", "dashboard", "stats"] ->
+      dashboard.handle_request(request:, ctx:)
 
     //   User data routes
     http.Get, ["api", "user", id, "occurrences"] ->
