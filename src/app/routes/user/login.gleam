@@ -68,8 +68,7 @@ pub fn handle_form(request cookie_user_uuid: wisp.Request, ctx ctx: Context) {
               //   401 Not Authorized
               wisp.response(401) |> wisp.set_body(wisp.Text("Senha incorreta"))
             DataBaseReturnedEmptyRow ->
-              //   403 Forbitten
-              wisp.response(403)
+              wisp.response(401)
               |> wisp.set_body(wisp.Text("Usuário não cadastrado"))
 
             //   Server errors ------------------------------------------------

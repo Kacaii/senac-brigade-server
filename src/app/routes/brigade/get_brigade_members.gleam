@@ -16,11 +16,11 @@ import youid/uuid
 /// Retrieves all members of a specific fire brigade from the database
 /// and returns them as formatted JSON data.
 pub fn handle_request(
-  request req: wisp.Request,
+  request request: wisp.Request,
   ctx ctx: Context,
   id brigade_id: String,
 ) -> wisp.Response {
-  use <- wisp.require_method(req, http.Get)
+  use <- wisp.require_method(request, http.Get)
 
   let members_list_result = {
     use brigade_id <- result.try(

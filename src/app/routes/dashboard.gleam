@@ -4,6 +4,7 @@ import gleam/http
 import gleam/json
 import gleam/list
 import gleam/result
+import pog
 import wisp
 
 // TODO: Docs
@@ -16,7 +17,7 @@ pub fn handle_request(
   let query_result = {
     use returned <- result.try(
       sql.get_dashboard_stats(ctx.conn)
-      |> result.replace_error(DatabaseError),
+      |> result.map_error(DatabaseError),
     )
     use row <- result.try(
       list.first(returned.rows)
@@ -30,14 +31,21 @@ pub fn handle_request(
     Ok(value) -> wisp.json_response(json.to_string(value), 200)
     Error(err) -> {
       case err {
-        DatabaseError ->
-          wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text(
-            "Ocorreu um erro ao acessar o Banco de Dados",
-          ))
-        DatabaseReturnedEmptyRow ->
+        DatabaseReturnedEmptyRow -> {
           wisp.internal_server_error()
           |> wisp.set_body(wisp.Text("O Banco de dados não retornou resultados"))
+        }
+        DatabaseError(err) -> {
+          let err_message = case err {
+            pog.ConnectionUnavailable ->
+              "Conexão com o Banco de Dados não disponível"
+            pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
+            _ -> "Ocorreu um erro ao acessar o Banco de Dados"
+          }
+
+          wisp.internal_server_error()
+          |> wisp.set_body(wisp.Text(err_message))
+        }
       }
     }
   }
@@ -62,5 +70,5 @@ fn get_dashboard_stats_row_to_json(
 
 pub type GetDashboardStatsError {
   DatabaseReturnedEmptyRow
-  DatabaseError
+  DatabaseError(pog.QueryError)
 }
