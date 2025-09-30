@@ -1,6 +1,6 @@
 //// Handler for retrieving members from the same brigade as a given user.
 
-import app/sql
+import app/routes/user/sql
 import app/web.{type Context}
 import gleam/http
 import gleam/json

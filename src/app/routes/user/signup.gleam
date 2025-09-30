@@ -6,7 +6,7 @@
 //// Passwords are hashed using Argon2 before storage and all sensitive
 //// operations are logged for audit purposes.
 
-import app/sql
+import app/routes/user/sql
 import app/web.{type Context}
 import argus
 import formal/form

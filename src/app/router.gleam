@@ -7,12 +7,12 @@
 //// All requests are processed through the web middleware pipeline before routing.
 //// Unmatched routes return a 404 Not Found response.
 
-import app/routes/get_brigade_members
-import app/routes/get_crew_members
-import app/routes/get_ocurrences_by_applicant
-import app/routes/login
-import app/routes/register_new_occurrence
-import app/routes/signup
+import app/routes/brigade/get_brigade_members
+import app/routes/occurrence/register_new_occurrence
+import app/routes/user/get_crew_members
+import app/routes/user/get_ocurrences_by_applicant
+import app/routes/user/login
+import app/routes/user/signup
 import app/web.{type Context}
 import gleam/http
 import wisp

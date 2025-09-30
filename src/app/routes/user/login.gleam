@@ -2,7 +2,7 @@
 ////
 ////   Uses signed cookies to prevent tampering and logs all login attempts.
 
-import app/sql
+import app/routes/user/sql
 import app/web.{type Context}
 import argus
 import formal/form

@@ -1,5 +1,5 @@
 //// This module contains the code to run the sql queries defined in
-//// `./src/app/sql`.
+//// `./src/app/routes/user/sql`.
 //// > 🐿️ This module was generated automatically using v4.4.1 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
@@ -10,98 +10,8 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `count_active_brigades` query
-/// defined in `./src/app/sql/count_active_brigades.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type CountActiveBrigadesRow {
-  CountActiveBrigadesRow(count: Int)
-}
-
-/// 󰆙 Counts the number of active brigades in the database.
-///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn count_active_brigades(
-  db: pog.Connection,
-) -> Result(pog.Returned(CountActiveBrigadesRow), pog.QueryError) {
-  let decoder = {
-    use count <- decode.field(0, decode.int)
-    decode.success(CountActiveBrigadesRow(count:))
-  }
-
-  "-- 󰆙 Counts the number of active brigades in the database.
-SELECT COUNT(id)
-FROM public.brigade
-WHERE is_active = TRUE;
-"
-  |> pog.query
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
-/// A row you get from running the `get_brigade_members` query
-/// defined in `./src/app/sql/get_brigade_members.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type GetBrigadeMembersRow {
-  GetBrigadeMembersRow(
-    id: Uuid,
-    full_name: String,
-    role_name: Option(String),
-    description: Option(String),
-  )
-}
-
-///   Find all members of a brigade
-///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn get_brigade_members(
-  db: pog.Connection,
-  arg_1: Uuid,
-) -> Result(pog.Returned(GetBrigadeMembersRow), pog.QueryError) {
-  let decoder = {
-    use id <- decode.field(0, uuid_decoder())
-    use full_name <- decode.field(1, decode.string)
-    use role_name <- decode.field(2, decode.optional(decode.string))
-    use description <- decode.field(3, decode.optional(decode.string))
-    decode.success(GetBrigadeMembersRow(
-      id:,
-      full_name:,
-      role_name:,
-      description:,
-    ))
-  }
-
-  "--   Find all members of a brigade
-SELECT
-    u.id,
-    u.full_name,
-    r.role_name,
-    r.description
-FROM public.user_account AS u
-LEFT JOIN
-    public.user_role AS r
-    ON u.role_id = r.id
-INNER JOIN
-    public.query_brigade_members_id($1) AS brigade_members (id)
-    ON u.id = brigade_members.id;
-"
-  |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
 /// A row you get from running the `get_crew_members` query
-/// defined in `./src/app/sql/get_crew_members.sql`.
+/// defined in `./src/app/routes/user/sql/get_crew_members.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -155,7 +65,7 @@ LEFT JOIN
 }
 
 /// A row you get from running the `get_login_token` query
-/// defined in `./src/app/sql/get_login_token.sql`.
+/// defined in `./src/app/routes/user/sql/get_login_token.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -195,7 +105,7 @@ WHERE u.registration = $1;
 }
 
 /// A row you get from running the `get_occurences_by_applicant` query
-/// defined in `./src/app/sql/get_occurences_by_applicant.sql`.
+/// defined in `./src/app/routes/user/sql/get_occurences_by_applicant.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -270,7 +180,7 @@ LEFT JOIN public.occurrence_category AS sub_cat
 }
 
 /// A row you get from running the `get_user_id_by_registration` query
-/// defined in `./src/app/sql/get_user_id_by_registration.sql`.
+/// defined in `./src/app/routes/user/sql/get_user_id_by_registration.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -305,7 +215,7 @@ WHERE u.registration = $1;
 }
 
 /// A row you get from running the `get_user_name` query
-/// defined in `./src/app/sql/get_user_name.sql`.
+/// defined in `./src/app/routes/user/sql/get_user_name.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -335,51 +245,6 @@ WHERE u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
-///   Inserts a new occurrence into the database
-///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn insert_new_occurence(
-  db: pog.Connection,
-  arg_1: Uuid,
-  arg_2: Uuid,
-  arg_3: Uuid,
-  arg_4: String,
-  arg_5: List(Float),
-  arg_6: String,
-  arg_7: String,
-  arg_8: List(Uuid),
-) -> Result(pog.Returned(Nil), pog.QueryError) {
-  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
-
-  "--   Inserts a new occurrence into the database
-INSERT INTO public.occurrence (
-    applicant_id,
-    category_id,
-    subcategory_id,
-    description,
-    location,
-    reference_point,
-    vehicle_code,
-    participants_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
-"
-  |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
-  |> pog.parameter(pog.text(uuid.to_string(arg_3)))
-  |> pog.parameter(pog.text(arg_4))
-  |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_5))
-  |> pog.parameter(pog.text(arg_6))
-  |> pog.parameter(pog.text(arg_7))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_8),
-  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

@@ -3,7 +3,7 @@
 //// It returns a list of members belonging to the specified brigade, including
 //// their id, full name, role, and description.
 
-import app/sql
+import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/http
 import gleam/json

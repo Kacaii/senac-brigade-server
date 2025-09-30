@@ -3,7 +3,7 @@
 //// It returns a list of occurrences (incidents/reports) that were submitted
 //// by the specified user, including detailed information about each occurrence.
 
-import app/sql
+import app/routes/user/sql
 import app/web
 import gleam/float
 import gleam/http

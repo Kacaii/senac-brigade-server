@@ -1,7 +1,8 @@
 //// Processes occurrence registration form data, validates inputs, and creates
 //// a new occurrence record in the database.
 
-import app/sql
+import app/routes/occurrence.{type Occurrence, Occurrence}
+import app/routes/occurrence/sql
 import app/web.{type Context}
 import formal/form
 import gleam/list
@@ -23,21 +24,6 @@ pub opaque type OccurrenceFormData {
     reference_point: String,
     vehicle_code: String,
     participants_id: List(String),
-  )
-}
-
-/// Validated occurrence data with all IDs converted to UUIDs,
-/// ready for database insertion
-pub opaque type Occurrence {
-  Occurrence(
-    applicant_id: uuid.Uuid,
-    category_id: uuid.Uuid,
-    subcategory_id: uuid.Uuid,
-    description: String,
-    location: List(Float),
-    reference_point: String,
-    vehicle_code: String,
-    participants_id: List(uuid.Uuid),
   )
 }
 
