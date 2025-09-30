@@ -53,10 +53,10 @@ fn get_dashboard_stats_row_to_json(
     recent_occurrences_count:,
   ) = get_dashboard_stats_row
   json.object([
-    #("active_brigades_count", json.int(active_brigades_count)),
-    #("total_occurrences_count", json.int(total_occurrences_count)),
-    #("active_occurrences_count", json.int(active_occurrences_count)),
-    #("recent_occurrences_count", json.int(recent_occurrences_count)),
+    #("equipesAtivas", json.int(active_brigades_count)),
+    #("totalOcorrencias", json.int(total_occurrences_count)),
+    #("emAndamento", json.int(active_occurrences_count)),
+    #("ocorrenciasHoje", json.int(recent_occurrences_count)),
   ])
 }
 
