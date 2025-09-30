@@ -1,4 +1,4 @@
-import app/routes/occurrence.{type Occurrence, Occurrence}
+import app/routes/occurrence.{type Occurrence}
 import app/routes/occurrence/count_active_occurrences
 import app/web.{type Context}
 import gleam/result

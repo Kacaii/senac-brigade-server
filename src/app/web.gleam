@@ -14,10 +14,6 @@
 //// - HEAD request normalization
 //// - CORS headers
 //// - Static file serving from `/static` path
-////
-//// ## CORS Configuration
-//// Currently configured to allow requests from `http://localhost:5173`
-//// with GET and POST methods enabled.
 
 import cors_builder as cors
 import gleam/http
