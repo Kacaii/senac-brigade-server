@@ -1,4 +1,6 @@
+--   Find all members of a brigade
 SELECT
+    u.id,
     u.full_name,
     r.role_name,
     r.description

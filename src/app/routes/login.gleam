@@ -1,3 +1,7 @@
+//// Handler for user authentication and login.
+////
+////   Uses signed cookies to prevent tampering and logs all login attempts.
+
 import app/sql
 import app/web.{type Context}
 import argus
@@ -29,9 +33,9 @@ fn login_form() -> form.Form(LogIn) {
   })
 }
 
-///   Verifies if a user is registred
-pub fn handle_form_submission(request request: wisp.Request, ctx ctx: Context) {
-  use form_data <- wisp.require_form(request)
+///   Handles user login authentication and session management
+pub fn handle_form(request cookie_user_uuid: wisp.Request, ctx ctx: Context) {
+  use form_data <- wisp.require_form(cookie_user_uuid)
   let form_result =
     login_form()
     |> form.add_values(form_data.values)
@@ -49,7 +53,7 @@ pub fn handle_form_submission(request request: wisp.Request, ctx ctx: Context) {
           //   Store UUID cookie
           wisp.set_cookie(
             response: wisp.ok(),
-            request: request,
+            request: cookie_user_uuid,
             name: cookie_name,
             value: uuid.to_string(user_uuid),
             security: wisp.Signed,

@@ -1,3 +1,22 @@
+//// A web application built with the Wisp framework.
+////
+//// This module is the main entry point for the application. It is responsible for:
+//// - Configuring the application's dependencies (database, HTTP server)
+//// - Reading necessary environment variables
+//// - Starting the supervision tree that manages the application's processes
+////
+//// ## Environment Variables
+//// - `DATABASE_URL`: The connection URI for the PostgreSQL database
+//// - `COOKIE_TOKEN`: The secret key used for signing and encrypting cookies
+////
+//// ## Architecture
+//// The application uses a supervisor to manage two main processes:
+//// 1. A PostgreSQL database connection pool using Pog
+//// 2. An HTTP server using Mist (with Wisp handling the web layer)
+////
+//// The supervision strategy is `OneForOne`, meaning if either process fails,
+//// only that specific process will be restarted, leaving the other unaffected.
+
 import app/router
 import app/web.{Context}
 import envoy
@@ -63,7 +82,7 @@ pub fn start_application_supervised(
     |> mist.port(8000)
   }
 
-  supervisor.new(supervisor.RestForOne)
+  supervisor.new(supervisor.OneForOne)
   |> supervisor.add(pog_pool_child)
   |> supervisor.add(mist.supervised(mist_pool_child))
   |> supervisor.start

@@ -38,6 +38,7 @@ prod:
 [group('  postgres')]
 [group('  ship')]
 @rebuild_empty:
+    @psql senac_brigade -f priv/sql/create/triggers.sql
     @psql senac_brigade -f priv/sql/create/tables.sql
     @psql senac_brigade -f priv/sql/create/functions.sql
 

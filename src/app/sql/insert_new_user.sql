@@ -1,3 +1,4 @@
+--   Inserts a new user into the database
 INSERT INTO public.user_account (
     full_name,
     registration,
@@ -5,9 +6,5 @@ INSERT INTO public.user_account (
     email,
     password_hash
 ) VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5
+    $1, $2, $3, $4, $5
 )

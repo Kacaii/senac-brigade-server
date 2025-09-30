@@ -1,3 +1,8 @@
+//// Handler for retrieving members of a specific fire brigade.
+////
+//// It returns a list of members belonging to the specified brigade, including
+//// their id, full name, role, and description.
+
 import app/sql
 import app/web.{type Context}
 import gleam/http
@@ -8,10 +13,12 @@ import gleam/result
 import wisp
 import youid/uuid
 
+/// Retrieves all members of a specific fire brigade from the database
+/// and returns them as formatted JSON data.
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,
-  brigade_id brigade_id: String,
+  id brigade_id: String,
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
@@ -49,16 +56,21 @@ pub fn handle_request(
 fn get_brigade_members_row_to_json(
   get_brigade_members_row: sql.GetBrigadeMembersRow,
 ) -> json.Json {
-  let sql.GetBrigadeMembersRow(full_name:, description:, role_name:) =
+  let sql.GetBrigadeMembersRow(id:, full_name:, description:, role_name:) =
     get_brigade_members_row
   json.object([
+    #("id", json.string(uuid.to_string(id))),
     #("full_name", json.string(full_name)),
     #("role_name", json.string(option.unwrap(role_name, ""))),
     #("description", json.string(option.unwrap(description, ""))),
   ])
 }
 
+/// Represents possible errors that can occur when retrieving brigade members
+/// from the database
 type GetBrigadeMembersError {
+  /// The provided brigade ID is not a valid UUID format
   InvalidUUID
+  /// An error occurred while accessing the database to retrieve brigade members
   DataBaseError
 }

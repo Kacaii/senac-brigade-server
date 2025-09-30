@@ -1,3 +1,5 @@
+--   Retrieves a user's ID and password hash from their registration
+-- number for authentication purposes.
 SELECT
     u.id,
     u.password_hash

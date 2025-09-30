@@ -20,8 +20,7 @@ pub type CountActiveBrigadesRow {
   CountActiveBrigadesRow(count: Int)
 }
 
-/// Runs the `count_active_brigades` query
-/// defined in `./src/app/sql/count_active_brigades.sql`.
+/// 󰆙 Counts the number of active brigades in the database.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -34,7 +33,8 @@ pub fn count_active_brigades(
     decode.success(CountActiveBrigadesRow(count:))
   }
 
-  "SELECT COUNT(id)
+  "-- 󰆙 Counts the number of active brigades in the database.
+SELECT COUNT(id)
 FROM public.brigade
 WHERE is_active = TRUE;
 "
@@ -51,14 +51,14 @@ WHERE is_active = TRUE;
 ///
 pub type GetBrigadeMembersRow {
   GetBrigadeMembersRow(
+    id: Uuid,
     full_name: String,
     role_name: Option(String),
     description: Option(String),
   )
 }
 
-/// Runs the `get_brigade_members` query
-/// defined in `./src/app/sql/get_brigade_members.sql`.
+///   Find all members of a brigade
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -68,13 +68,21 @@ pub fn get_brigade_members(
   arg_1: Uuid,
 ) -> Result(pog.Returned(GetBrigadeMembersRow), pog.QueryError) {
   let decoder = {
-    use full_name <- decode.field(0, decode.string)
-    use role_name <- decode.field(1, decode.optional(decode.string))
-    use description <- decode.field(2, decode.optional(decode.string))
-    decode.success(GetBrigadeMembersRow(full_name:, role_name:, description:))
+    use id <- decode.field(0, uuid_decoder())
+    use full_name <- decode.field(1, decode.string)
+    use role_name <- decode.field(2, decode.optional(decode.string))
+    use description <- decode.field(3, decode.optional(decode.string))
+    decode.success(GetBrigadeMembersRow(
+      id:,
+      full_name:,
+      role_name:,
+      description:,
+    ))
   }
 
-  "SELECT
+  "--   Find all members of a brigade
+SELECT
+    u.id,
     u.full_name,
     r.role_name,
     r.description
@@ -92,49 +100,50 @@ INNER JOIN
   |> pog.execute(db)
 }
 
-/// A row you get from running the `get_fellow_brigade_members` query
-/// defined in `./src/app/sql/get_fellow_brigade_members.sql`.
+/// A row you get from running the `get_crew_members` query
+/// defined in `./src/app/sql/get_crew_members.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type GetFellowBrigadeMembersRow {
-  GetFellowBrigadeMembersRow(
+pub type GetCrewMembersRow {
+  GetCrewMembersRow(
+    id: Uuid,
     full_name: String,
     role_name: Option(String),
     description: Option(String),
   )
 }
 
-/// Runs the `get_fellow_brigade_members` query
-/// defined in `./src/app/sql/get_fellow_brigade_members.sql`.
+/// 󰢫  Retrieves detailed information about fellow brigade members
+/// for a given user, including their names and role details.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn get_fellow_brigade_members(
+pub fn get_crew_members(
   db: pog.Connection,
   arg_1: Uuid,
-) -> Result(pog.Returned(GetFellowBrigadeMembersRow), pog.QueryError) {
+) -> Result(pog.Returned(GetCrewMembersRow), pog.QueryError) {
   let decoder = {
-    use full_name <- decode.field(0, decode.string)
-    use role_name <- decode.field(1, decode.optional(decode.string))
-    use description <- decode.field(2, decode.optional(decode.string))
-    decode.success(GetFellowBrigadeMembersRow(
-      full_name:,
-      role_name:,
-      description:,
-    ))
+    use id <- decode.field(0, uuid_decoder())
+    use full_name <- decode.field(1, decode.string)
+    use role_name <- decode.field(2, decode.optional(decode.string))
+    use description <- decode.field(3, decode.optional(decode.string))
+    decode.success(GetCrewMembersRow(id:, full_name:, role_name:, description:))
   }
 
-  "SELECT
+  "-- 󰢫  Retrieves detailed information about fellow brigade members
+-- for a given user, including their names and role details.
+SELECT
+    u.id,
     u.full_name,
     r.role_name,
     r.description
-FROM QUERY_FELLOW_BRIGADE_MEMBERS_ID($1) AS fellow_members (id)
+FROM QUERY_FELLOW_BRIGADE_MEMBERS_ID($1) AS crew_members (id)
 INNER JOIN
     public.user_account AS u
-    ON fellow_members.id = u.id
+    ON crew_members.id = u.id
 LEFT JOIN
     public.user_role AS r
     ON u.role_id = r.id;
@@ -155,8 +164,8 @@ pub type GetLoginTokenRow {
   GetLoginTokenRow(id: Uuid, password_hash: String)
 }
 
-/// Runs the `get_login_token` query
-/// defined in `./src/app/sql/get_login_token.sql`.
+///   Retrieves a user's ID and password hash from their registration
+/// number for authentication purposes.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -171,7 +180,9 @@ pub fn get_login_token(
     decode.success(GetLoginTokenRow(id:, password_hash:))
   }
 
-  "SELECT
+  "--   Retrieves a user's ID and password hash from their registration
+-- number for authentication purposes.
+SELECT
     u.id,
     u.password_hash
 FROM public.user_account AS u
@@ -191,19 +202,19 @@ WHERE u.registration = $1;
 ///
 pub type GetOccurencesByApplicantRow {
   GetOccurencesByApplicantRow(
+    id: Uuid,
     description: Option(String),
     category: Option(String),
     subcategory: Option(String),
     created_at: Option(Timestamp),
     resolved_at: Option(Timestamp),
     location: List(Float),
-    reference_point: String,
-    loss_percentage: Option(Float),
+    reference_point: Option(String),
   )
 }
 
-/// Runs the `get_occurences_by_applicant` query
-/// defined in `./src/app/sql/get_occurences_by_applicant.sql`.
+///   Retrieves all occurrences associated with a user,
+/// including detailed category information and resolution status.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -213,18 +224,16 @@ pub fn get_occurences_by_applicant(
   arg_1: Uuid,
 ) -> Result(pog.Returned(GetOccurencesByApplicantRow), pog.QueryError) {
   let decoder = {
-    use description <- decode.field(0, decode.optional(decode.string))
-    use category <- decode.field(1, decode.optional(decode.string))
-    use subcategory <- decode.field(2, decode.optional(decode.string))
-    use created_at <- decode.field(3, decode.optional(pog.timestamp_decoder()))
-    use resolved_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
-    use location <- decode.field(5, decode.list(decode.float))
-    use reference_point <- decode.field(6, decode.string)
-    use loss_percentage <- decode.field(
-      7,
-      decode.optional(pog.numeric_decoder()),
-    )
+    use id <- decode.field(0, uuid_decoder())
+    use description <- decode.field(1, decode.optional(decode.string))
+    use category <- decode.field(2, decode.optional(decode.string))
+    use subcategory <- decode.field(3, decode.optional(decode.string))
+    use created_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
+    use resolved_at <- decode.field(5, decode.optional(pog.timestamp_decoder()))
+    use location <- decode.field(6, decode.list(decode.float))
+    use reference_point <- decode.field(7, decode.optional(decode.string))
     decode.success(GetOccurencesByApplicantRow(
+      id:,
       description:,
       category:,
       subcategory:,
@@ -232,19 +241,20 @@ pub fn get_occurences_by_applicant(
       resolved_at:,
       location:,
       reference_point:,
-      loss_percentage:,
     ))
   }
 
-  "SELECT
+  "--   Retrieves all occurrences associated with a user,
+-- including detailed category information and resolution status.
+SELECT
+    o.id,
     o.description,
     oc_cat.category_name AS category,
     sub_cat.category_name AS subcategory,
     o.created_at,
     o.resolved_at,
     o.location,
-    o.reference_point,
-    o.loss_percentage
+    o.reference_point
 FROM public.query_all_ocurrences_by_user_id($1) AS oc_list (id)
 INNER JOIN public.occurrence AS o
     ON oc_list.id = o.id
@@ -269,8 +279,7 @@ pub type GetUserIdByRegistrationRow {
   GetUserIdByRegistrationRow(id: Uuid)
 }
 
-/// Runs the `get_user_id_by_registration` query
-/// defined in `./src/app/sql/get_user_id_by_registration.sql`.
+///   Retrieves a user's ID from their registration number.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -284,7 +293,8 @@ pub fn get_user_id_by_registration(
     decode.success(GetUserIdByRegistrationRow(id:))
   }
 
-  "SELECT u.id
+  "--   Retrieves a user's ID from their registration number.
+SELECT u.id
 FROM public.user_account AS u
 WHERE u.registration = $1;
 "
@@ -294,8 +304,87 @@ WHERE u.registration = $1;
   |> pog.execute(db)
 }
 
-/// Runs the `insert_new_user` query
-/// defined in `./src/app/sql/insert_new_user.sql`.
+/// A row you get from running the `get_user_name` query
+/// defined in `./src/app/sql/get_user_name.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetUserNameRow {
+  GetUserNameRow(full_name: String)
+}
+
+///   Retrieves a user's full name by their user ID.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_user_name(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(GetUserNameRow), pog.QueryError) {
+  let decoder = {
+    use full_name <- decode.field(0, decode.string)
+    decode.success(GetUserNameRow(full_name:))
+  }
+
+  "--   Retrieves a user's full name by their user ID.
+SELECT u.full_name
+FROM public.user_account AS u
+WHERE u.id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+///   Inserts a new occurrence into the database
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn insert_new_occurence(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: Uuid,
+  arg_3: Uuid,
+  arg_4: String,
+  arg_5: List(Float),
+  arg_6: String,
+  arg_7: String,
+  arg_8: List(Uuid),
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "--   Inserts a new occurrence into the database
+INSERT INTO public.occurrence (
+    applicant_id,
+    category_id,
+    subcategory_id,
+    description,
+    location,
+    reference_point,
+    vehicle_code,
+    participants_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
+  |> pog.parameter(pog.text(uuid.to_string(arg_3)))
+  |> pog.parameter(pog.text(arg_4))
+  |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_5))
+  |> pog.parameter(pog.text(arg_6))
+  |> pog.parameter(pog.text(arg_7))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_8),
+  )
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+///   Inserts a new user into the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -310,18 +399,15 @@ pub fn insert_new_user(
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
-  "INSERT INTO public.user_account (
+  "--   Inserts a new user into the database
+INSERT INTO public.user_account (
     full_name,
     registration,
     phone,
     email,
     password_hash
 ) VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5
+    $1, $2, $3, $4, $5
 )
 "
   |> pog.query

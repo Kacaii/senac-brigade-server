@@ -1,3 +1,8 @@
+//// Handler for retrieving occurrences reported by a specific applicant.
+////
+//// It returns a list of occurrences (incidents/reports) that were submitted
+//// by the specified user, including detailed information about each occurrence.
+
 import app/sql
 import app/web
 import gleam/float
@@ -11,10 +16,12 @@ import pog
 import wisp
 import youid/uuid
 
+/// Fetches all occurrences/applications associated with a specific user
+/// from the database and returns them as JSON.
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: web.Context,
-  user_id user_id: String,
+  id user_id: String,
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
@@ -59,8 +66,12 @@ pub fn handle_request(
   }
 }
 
+/// Represents possible errors that can occur during the search
+/// including invalid UUID formats for applicant
 type GetOccurrencesByApplicantError {
+  /// The provided applicant ID is not a valid UUID format
   InvalidUUID
+  /// An Error occurred when querying the database
   DatabaseError(pog.QueryError)
 }
 
@@ -68,6 +79,7 @@ fn get_occurences_by_applicant_row_to_json(
   get_occurences_by_applicant_row: sql.GetOccurencesByApplicantRow,
 ) -> json.Json {
   let sql.GetOccurencesByApplicantRow(
+    id:,
     description:,
     category:,
     subcategory:,
@@ -75,9 +87,9 @@ fn get_occurences_by_applicant_row_to_json(
     resolved_at:,
     location:,
     reference_point:,
-    loss_percentage:,
   ) = get_occurences_by_applicant_row
   json.object([
+    #("id", json.string(uuid.to_string(id))),
     #("description", case description {
       option.None -> json.null()
       option.Some(value) -> json.string(value)
@@ -107,10 +119,6 @@ fn get_occurences_by_applicant_row_to_json(
       }
     }),
     #("location", json.array(location, json.float)),
-    #("reference_point", json.string(reference_point)),
-    #("loss_percentage", case loss_percentage {
-      option.None -> json.null()
-      option.Some(value) -> json.float(value)
-    }),
+    #("reference_point", json.string(option.unwrap(reference_point, ""))),
   ])
 }

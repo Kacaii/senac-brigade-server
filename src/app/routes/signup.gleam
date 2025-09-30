@@ -1,3 +1,11 @@
+//// Handler for user registration and account creation.
+////
+//// It creates new user accounts by validating form data and inserting
+//// the user information into the database with proper password hashing.
+////
+//// Passwords are hashed using Argon2 before storage and all sensitive
+//// operations are logged for audit purposes.
+
 import app/sql
 import app/web.{type Context}
 import argus
@@ -44,10 +52,7 @@ fn signup_form() -> form.Form(SignUp) {
 }
 
 ///   Inserts a new `user_account` into the database
-pub fn handle_form_submission(
-  request req: wisp.Request,
-  ctx ctx: Context,
-) -> wisp.Response {
+pub fn handle_form(request req: wisp.Request, ctx ctx: Context) -> wisp.Response {
   use form_data <- wisp.require_form(req)
   let form_result =
     signup_form()

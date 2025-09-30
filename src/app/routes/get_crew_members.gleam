@@ -1,3 +1,5 @@
+//// Handler for retrieving members from the same brigade as a given user.
+
 import app/sql
 import app/web.{type Context}
 import gleam/http
@@ -8,10 +10,12 @@ import gleam/result
 import wisp
 import youid/uuid
 
+/// Retrieves all crew members or brigade members associated with a specific user
+/// from the database and returns them as formatted JSON data.
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,
-  user_id user_id: String,
+  id user_id: String,
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
@@ -21,12 +25,12 @@ pub fn handle_request(
       |> result.replace_error(InvalidUUID),
     )
     use returned <- result.try(
-      sql.get_fellow_brigade_members(ctx.conn, user_uuid)
+      sql.get_crew_members(ctx.conn, user_uuid)
       |> result.replace_error(DataBaseError),
     )
     let fellow_members_list = {
       use fellow_brigade_member <- list.map(returned.rows)
-      get_fellow_brigade_members_row_to_json(fellow_brigade_member)
+      get_crew_members_row_to_json(fellow_brigade_member)
     }
 
     Ok(json.preprocessed_array(fellow_members_list))
@@ -53,12 +57,13 @@ type GetFellowBrigadeMembersError {
   InvalidUUID
 }
 
-fn get_fellow_brigade_members_row_to_json(
-  get_fellow_brigade_members_row: sql.GetFellowBrigadeMembersRow,
+fn get_crew_members_row_to_json(
+  get_crew_members_row: sql.GetCrewMembersRow,
 ) -> json.Json {
-  let sql.GetFellowBrigadeMembersRow(full_name:, role_name:, description:) =
-    get_fellow_brigade_members_row
+  let sql.GetCrewMembersRow(id:, full_name:, role_name:, description:) =
+    get_crew_members_row
   json.object([
+    #("id", json.string(uuid.to_string(id))),
     #("full_name", json.string(full_name)),
     #("role_name", json.string(option.unwrap(role_name, ""))),
     #("description", json.string(option.unwrap(description, ""))),
