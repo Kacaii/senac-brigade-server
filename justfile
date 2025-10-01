@@ -27,13 +27,6 @@ build:
 prod:
     ./build/erlang-shipment/entrypoint.sh run
 
-#   Insert basic values into the category table
-[group('  postgres')]
-[group('  insert')]
-[group('  dev')]
-@insert_categories:
-    psql  senac_brigade -f priv/sql/insert/dev_insert_occurrence_categories.sql
-
 # 󰜉  Rebuild an empty database
 [group('  postgres')]
 [group('  ship')]
@@ -50,7 +43,8 @@ prod:
 [group('  dev')]
 @rebuild_full:
     just rebuild_empty
-    just insert_categories
+    psql senac_brigade -f priv/sql/insert/dev_insert_occurrence_categories.sql
+    psql senac_brigade -f ./priv/sql/insert/dev_insert_user_roles.sql
 
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]

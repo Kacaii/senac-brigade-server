@@ -1,4 +1,6 @@
 import app/routes/dashboard/sql
+import app/routes/role
+import app/routes/user
 import app/web.{type Context}
 import gleam/http
 import gleam/json
@@ -7,44 +9,114 @@ import gleam/result
 import pog
 import wisp
 
-// TODO: Docs
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
-  let query_result = {
-    use returned <- result.try(
-      sql.get_dashboard_stats(ctx.conn)
-      |> result.map_error(DatabaseError),
-    )
-    use row <- result.try(
-      list.first(returned.rows)
-      |> result.replace_error(DatabaseReturnedEmptyRow),
-    )
-
-    Ok(get_dashboard_stats_row_to_json(row))
-  }
-
-  case query_result {
+  case get_dashboard_data(request:, ctx:) {
     Ok(value) -> wisp.json_response(json.to_string(value), 200)
-    Error(err) -> {
+    Error(err) -> handle_error(err)
+  }
+}
+
+fn get_dashboard_data(
+  request request: wisp.Request,
+  ctx ctx: Context,
+) -> Result(json.Json, GetDashboardStatsError) {
+  //   AUTHORIZATION CHECK --------------------------------------------------
+  use _ <- result.try(
+    user.check_role_authorization(
+      request:,
+      ctx:,
+      cookie_name: "USER_ID",
+      authorized_roles: [role.Admin, role.Analist],
+    )
+    |> result.map_error(RoleError),
+  )
+
+  //  QUERY -----------------------------------------------------------------
+  use returned <- result.try(
+    sql.get_dashboard_stats(ctx.conn)
+    |> result.map_error(DataBaseError),
+  )
+  use row <- result.try(
+    list.first(returned.rows)
+    |> result.replace_error(DataBaseReturnedEmptyRow),
+  )
+
+  Ok(get_dashboard_stats_row_to_json(row))
+}
+
+fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
+  case err {
+    // 󱋬  DataBase couldn't find the required information for the dashboard
+    DataBaseReturnedEmptyRow -> {
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "O Banco de dados não encontrou os dados solicitados",
+      ))
+    }
+
+    // 󱘺  DATABASE ERRORS --------------------------------------------------
+    DataBaseError(err) -> {
+      let err_message = case err {
+        //
+        //   Connection failed
+        pog.ConnectionUnavailable ->
+          "Conexão com o Banco de Dados não disponível"
+
+        //   Took too long
+        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
+
+        // Fallback
+        _ -> "Ocorreu um erro ao acessar o Banco de Dados"
+      }
+
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(err_message))
+    }
+
+    //   PERMISSION DENIED ------------------------------------------------
+    RoleError(err) -> {
       case err {
-        DatabaseReturnedEmptyRow -> {
-          wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text("O Banco de dados não retornou resultados"))
-        }
-        DatabaseError(err) -> {
-          let err_message = case err {
+        //   User didn't have a valid UUID
+        user.InvalidUUID(user_id) ->
+          wisp.bad_request("O usuário não possui UUID válido: " <> user_id)
+
+        //   USER_ID cookie is required to access this endpoint
+        user.MissingCookie ->
+          wisp.bad_request("Cookie de indentificação ausente")
+
+        // 󱏊  Database couldn't find a user role with that UUDI
+        user.DataBaseReturnedEmptyRow ->
+          wisp.bad_request("Não foi encontrado um cargo com o ID solicitado")
+
+        //   User is not authorized to access that endpoint
+        user.Unauthorized(user_role) ->
+          //   403 FORBIDDEN response
+          wisp.response(403)
+          |> wisp.set_body(wisp.Text(
+            "Usuário não autorizado: " <> role.to_string(user_role),
+          ))
+
+        //   DATABASE ERRORS ----------------------------------------------
+        user.DataBaseError(db_err) -> {
+          let db_err_msg = case db_err {
+            //   Connection failed
             pog.ConnectionUnavailable ->
               "Conexão com o Banco de Dados não disponível"
+
+            //   Took too long
             pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-            _ -> "Ocorreu um erro ao acessar o Banco de Dados"
+
+            // Fallback
+            _ -> "Ocorreu um erro ao verificar o cargo do usuário"
           }
 
           wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text(err_message))
+          |> wisp.set_body(wisp.Text(db_err_msg))
         }
       }
     }
@@ -69,6 +141,7 @@ fn get_dashboard_stats_row_to_json(
 }
 
 pub type GetDashboardStatsError {
-  DatabaseReturnedEmptyRow
-  DatabaseError(pog.QueryError)
+  DataBaseReturnedEmptyRow
+  DataBaseError(pog.QueryError)
+  RoleError(user.UserAccountError)
 }
