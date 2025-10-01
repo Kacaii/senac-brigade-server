@@ -173,6 +173,43 @@ WHERE u.id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `get_user_role_name` query
+/// defined in `./src/app/routes/user/sql/get_user_role_name.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetUserRoleNameRow {
+  GetUserRoleNameRow(role_name: String)
+}
+
+/// Runs the `get_user_role_name` query
+/// defined in `./src/app/routes/user/sql/get_user_role_name.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_user_role_name(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(GetUserRoleNameRow), pog.QueryError) {
+  let decoder = {
+    use role_name <- decode.field(0, decode.string)
+    decode.success(GetUserRoleNameRow(role_name:))
+  }
+
+  "SELECT ur.role_name FROM
+    public.user_account AS u
+INNER JOIN public.user_role AS ur
+    ON u.role_id = ur.id
+WHERE u.id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 ///   Inserts a new user into the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
