@@ -6,8 +6,10 @@ import gleam/http
 import gleam/json
 import gleam/list
 import gleam/result
+import glight
 import pog
 import wisp
+import youid/uuid
 
 pub fn handle_request(
   request request: wisp.Request,
@@ -36,7 +38,7 @@ fn get_dashboard_data(
     |> result.map_error(RoleError),
   )
 
-  //  QUERY -----------------------------------------------------------------
+  //  QUERY THE DATABASE ----------------------------------------------------
   use returned <- result.try(
     sql.get_dashboard_stats(ctx.conn)
     |> result.map_error(DataBaseError),
@@ -52,6 +54,7 @@ fn get_dashboard_data(
 fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
   case err {
     // 󱋬  DataBase couldn't find the required information for the dashboard
+    //
     DataBaseReturnedEmptyRow -> {
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
@@ -79,39 +82,50 @@ fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
     }
 
     //   PERMISSION DENIED ------------------------------------------------
-    RoleError(err) -> {
-      case err {
+    RoleError(role_err) -> {
+      case role_err {
         //   User didn't have a valid UUID
+        //
         user.InvalidUUID(user_id) ->
           wisp.bad_request("O usuário não possui UUID válido: " <> user_id)
 
         //   USER_ID cookie is required to access this endpoint
+        //
         user.MissingCookie ->
           wisp.bad_request("Cookie de indentificação ausente")
 
         // 󱏊  Database couldn't find a user role with that UUDI
+        //
         user.DataBaseReturnedEmptyRow ->
           wisp.bad_request("Não foi encontrado um cargo com o ID solicitado")
 
-        //   User is not authorized to access that endpoint
-        user.Unauthorized(user_role) ->
+        //   User is not authorized to access this endpoint -------------------
+        //
+        user.Unauthorized(user_uuid, user_role) -> {
+          //   Log who tried to access and whats their role
+          log_unauthorized_access_attempt(user_uuid:, user_role:)
           //   403 FORBIDDEN response
           wisp.response(403)
           |> wisp.set_body(wisp.Text(
             "Usuário não autorizado: " <> role.to_string(user_role),
           ))
+        }
 
         //   DATABASE ERRORS ----------------------------------------------
+        //
         user.DataBaseError(db_err) -> {
           let db_err_msg = case db_err {
             //   Connection failed
+            //
             pog.ConnectionUnavailable ->
               "Conexão com o Banco de Dados não disponível"
 
             //   Took too long
+            //
             pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
 
-            // Fallback
+            // Fallback response
+            //
             _ -> "Ocorreu um erro ao verificar o cargo do usuário"
           }
 
@@ -121,6 +135,18 @@ fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
       }
     }
   }
+}
+
+fn log_unauthorized_access_attempt(
+  user_uuid user_uuid: uuid.Uuid,
+  user_role user_role: role.Role,
+) -> Nil {
+  glight.logger()
+  |> glight.with("user", uuid.to_string(user_uuid))
+  |> glight.with("role", role.to_string(user_role))
+  |> glight.notice("unauthorized_access_attempt")
+
+  glight.set_log_level(glight.Debug)
 }
 
 fn get_dashboard_stats_row_to_json(
@@ -140,8 +166,12 @@ fn get_dashboard_stats_row_to_json(
   ])
 }
 
+/// Querying the endpoint can fail
 pub type GetDashboardStatsError {
+  /// DataBase could not find the data
   DataBaseReturnedEmptyRow
+  /// DataBase query went wrong
   DataBaseError(pog.QueryError)
+  /// User/Role related errors
   RoleError(user.UserAccountError)
 }

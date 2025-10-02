@@ -23,6 +23,9 @@ pub fn get_role_name(
   Ok(row.role_name)
 }
 
+/// 󰡦  Extracts the user UUID from the request and query the DataBase
+/// to verify if the user has authorization to access determined endpoint
+///
 pub fn check_role_authorization(
   request request: wisp.Request,
   ctx ctx: Context,
@@ -48,17 +51,23 @@ pub fn check_role_authorization(
   // 󰈞  Check if that role has authorization -----------------------------------
   use found <- result.try(
     list.find(authorized_roles, fn(x) { x == role })
-    |> result.replace_error(Unauthorized(role)),
+    |> result.replace_error(Unauthorized(user_uuid, role)),
   )
 
   Ok(found)
 }
 
+///   Errors related to an User account or role
 pub type UserAccountError {
-  Unauthorized(role.Role)
+  ///   User is not authorized to access data
+  Unauthorized(uuid.Uuid, role.Role)
 
+  /// 󰘨  User has an invalid UUID
   InvalidUUID(String)
+  ///   Authetication Cookie is missing
   MissingCookie
+  /// 󰆼  DataBase query failed
   DataBaseError(pog.QueryError)
+  /// 󰡦  DataBase found no results
   DataBaseReturnedEmptyRow
 }
