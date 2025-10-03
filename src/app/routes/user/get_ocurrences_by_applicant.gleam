@@ -54,7 +54,7 @@ pub fn handle_request(
             pog.ConnectionUnavailable ->
               "Conexão com o Banco de Dados não disponível"
             pog.QueryTimeout ->
-              "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
+              "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
             _ -> "Ocorreu um erro ao realizar a consulta no Banco de Dados"
           }
 

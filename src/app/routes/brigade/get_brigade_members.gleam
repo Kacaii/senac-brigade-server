@@ -43,7 +43,7 @@ pub fn handle_request(
     Ok(members_list) -> wisp.json_response(json.to_string(members_list), 200)
     Error(err) -> {
       let error_message = case err {
-        DataBaseError -> "Ocorreu um erro ao acessar o banco de dados"
+        DataBaseError -> "Ocorreu um erro ao acessar o Banco de Dados"
         InvalidUUID -> "ID de brigada de incêndio inválido"
       }
 

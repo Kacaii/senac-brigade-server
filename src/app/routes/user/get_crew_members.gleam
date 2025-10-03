@@ -42,7 +42,7 @@ pub fn handle_request(
 
     Error(err) -> {
       let error_message = case err {
-        DataBaseError -> "Ocorreu um erro ao acessar o banco de dados"
+        DataBaseError -> "Ocorreu um erro ao acessar o Banco de Dados"
         InvalidUUID -> "ID de usuário inválido"
       }
 

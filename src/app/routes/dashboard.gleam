@@ -107,7 +107,10 @@ fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
           //   403 FORBIDDEN response
           wisp.response(403)
           |> wisp.set_body(wisp.Text(
-            "Usuário não autorizado: " <> role.to_string(user_role),
+            "Usuário não autorizado: "
+            <> role.to_string(user_role)
+            <> " "
+            <> uuid.to_string(user_uuid),
           ))
         }
 

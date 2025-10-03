@@ -186,7 +186,7 @@ pub fn handle_form(
                 pog.ConstraintViolated(message:, constraint:, detail:) -> {
                   let body =
                     "
-                      🐘  O banco de dados apresentou um erro
+                      🐘  O Banco de Dados apresentou um erro
 
                       Constraint: {{constraint}}
                       Mensagem:   {{message}}

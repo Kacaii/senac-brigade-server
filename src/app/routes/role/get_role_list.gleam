@@ -31,8 +31,8 @@ pub fn handle_request(request: wisp.Request, context: Context) -> wisp.Response 
         DataBaseError(db_err) -> {
           let err_msg = case db_err {
             pog.ConnectionUnavailable ->
-              "Conexão com o banco de dados não disponível"
-            pog.QueryTimeout -> "O banco de dados demorou muito para responder"
+              "Conexão com o Banco de Dados não disponível"
+            pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
             _ -> "Ocorreu um erro ao acessar o Banco de Dados"
           }
 

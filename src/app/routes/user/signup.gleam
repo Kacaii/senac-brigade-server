@@ -91,7 +91,7 @@ pub fn handle_form(request req: wisp.Request, ctx ctx: Context) -> wisp.Response
               case err {
                 pog.ConnectionUnavailable -> {
                   let body =
-                    "Conexão com o banco de dados não disponível"
+                    "Conexão com o Banco de Dados não disponível"
                     |> wisp.Text
 
                   wisp.internal_server_error()
@@ -99,7 +99,7 @@ pub fn handle_form(request req: wisp.Request, ctx ctx: Context) -> wisp.Response
                 }
                 pog.QueryTimeout -> {
                   let body =
-                    "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
+                    "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
                     |> wisp.Text
 
                   wisp.internal_server_error()
@@ -130,7 +130,7 @@ pub fn handle_form(request req: wisp.Request, ctx ctx: Context) -> wisp.Response
                     _ -> {
                       let body =
                         "
-                      🐘  O banco de dados apresentou um erro
+                      🐘  O Banco de Dados apresentou um erro
 
                       Constraint: {{constraint}}
                       Mensagem:   {{message}}
@@ -149,7 +149,7 @@ pub fn handle_form(request req: wisp.Request, ctx ctx: Context) -> wisp.Response
                 pog.PostgresqlError(code:, name:, message:) -> {
                   let body =
                     "
-                  🐘  O banco de dados apresentou um erro
+                  🐘  O Banco de Dados apresentou um erro
 
                   Código:     {{code}}
                   Nome:       {{name}}
@@ -165,7 +165,7 @@ pub fn handle_form(request req: wisp.Request, ctx ctx: Context) -> wisp.Response
                 }
                 _ -> {
                   let body =
-                    "Ocorreu um erro ao inserir o usuário no banco de dados"
+                    "Ocorreu um erro ao inserir o usuário no Banco de Dados"
                     |> wisp.Text
 
                   wisp.internal_server_error()
