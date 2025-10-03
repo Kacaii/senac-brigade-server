@@ -132,6 +132,7 @@ fn occurence_form() -> form.Form(OccurrenceFormData) {
   })
 }
 
+/// 󱐀  A Form that decodes the `OccurrenceFormData` type
 fn handle_form(
   request request: wisp.Request,
   ctx ctx: Context,
