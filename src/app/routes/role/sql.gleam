@@ -7,30 +7,30 @@
 import gleam/dynamic/decode
 import pog
 
-/// A row you get from running the `query_role_list` query
-/// defined in `./src/app/routes/role/sql/query_role_list.sql`.
+/// A row you get from running the `query_available_user_roles` query
+/// defined in `./src/app/routes/role/sql/query_available_user_roles.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type QueryRoleListRow {
-  QueryRoleListRow(role_name: String)
+pub type QueryAvailableUserRolesRow {
+  QueryAvailableUserRolesRow(role_name: String)
 }
 
-///   Find all available roles
+///   Find all available user roles
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn query_role_list(
+pub fn query_available_user_roles(
   db: pog.Connection,
-) -> Result(pog.Returned(QueryRoleListRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryAvailableUserRolesRow), pog.QueryError) {
   let decoder = {
     use role_name <- decode.field(0, decode.string)
-    decode.success(QueryRoleListRow(role_name:))
+    decode.success(QueryAvailableUserRolesRow(role_name:))
   }
 
-  "--   Find all available roles
+  "--   Find all available user roles
 SELECT r.role_name
 FROM public.user_role AS r;
 "
