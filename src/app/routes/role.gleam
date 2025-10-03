@@ -8,7 +8,8 @@ pub fn from_string(role_name role_name: String) -> Role {
     "capitão" -> Captain
     "desenvolvedor" -> Developer
     "sargento" -> Sargeant
-    _ -> None
+
+    role -> Other(role)
   }
 }
 
@@ -20,7 +21,8 @@ pub fn to_string(role role: Role) -> String {
     Captain -> "capitão"
     Developer -> "desenvolvedor"
     Sargeant -> "sargento"
-    _ -> ""
+
+    Other(name) -> name
   }
 
   string.capitalise(role_string)
@@ -34,5 +36,5 @@ pub type Role {
   Firefighter
   Sargeant
 
-  None
+  Other(String)
 }
