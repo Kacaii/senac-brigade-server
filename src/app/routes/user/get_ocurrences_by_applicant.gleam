@@ -28,7 +28,7 @@ pub fn handle_request(
   let query_result = {
     use user_uuid <- result.try(
       uuid.from_string(user_id)
-      |> result.replace_error(InvalidUUID),
+      |> result.replace_error(InvalidUUID(user_id)),
     )
 
     use returned <- result.try(
@@ -48,7 +48,8 @@ pub fn handle_request(
     Ok(data) -> wisp.json_response(json.to_string(data), 200)
     Error(err) -> {
       case err {
-        InvalidUUID -> wisp.bad_request("ID de usuário inválido")
+        InvalidUUID(user_id) ->
+          wisp.bad_request("ID de usuário inválido: " <> user_id)
         DatabaseError(err) -> {
           let internal_err_message = case err {
             pog.ConnectionUnavailable ->
@@ -69,7 +70,7 @@ pub fn handle_request(
 /// including invalid UUID formats for applicant
 type GetOccurrencesByApplicantError {
   /// The provided applicant ID is not a valid UUID format
-  InvalidUUID
+  InvalidUUID(String)
   /// An Error occurred when querying the database
   DatabaseError(pog.QueryError)
 }

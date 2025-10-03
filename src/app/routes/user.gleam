@@ -33,15 +33,15 @@ pub fn check_role_authorization(
   authorized_roles authorized_roles: List(role.Role),
 ) -> Result(role.Role, UserAccountError) {
   //   Indentify who is sending the request -----------------------------------
-  use user_uuid_string <- result.try(
+  use user_id <- result.try(
     wisp.get_cookie(request:, name: cookie_name, security: wisp.Signed)
     |> result.replace_error(MissingCookie),
   )
 
   // 󰘨  Check if its a valid UUID ----------------------------------------------
   use user_uuid <- result.try(
-    uuid.from_string(user_uuid_string)
-    |> result.replace_error(InvalidUUID(user_uuid_string)),
+    uuid.from_string(user_id)
+    |> result.replace_error(InvalidUUID(user_id)),
   )
 
   // 󰯦  Query the User's role name ---------------------------------------------
