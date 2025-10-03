@@ -7,10 +7,10 @@
 //// All requests are processed through the web middleware pipeline before routing.
 //// Unmatched routes return a 404 Not Found response.
 
-import app/routes/roles/get_role_list
 import app/routes/brigade/get_brigade_members
 import app/routes/dashboard
 import app/routes/occurrence/register_new_occurrence
+import app/routes/role/get_role_list
 import app/routes/user/get_crew_members
 import app/routes/user/get_ocurrences_by_applicant
 import app/routes/user/login
@@ -46,9 +46,9 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     http.Get, ["api", "brigade", id, "members"] ->
       get_brigade_members.handle_request(request:, ctx:, id:)
 
-    // 󰢫  Roles routes
-    http.Get, ["api","user","roles"] ->
-     get_role_list.handle_request(request, ctx)
+    //   Role routes
+    http.Get, ["api", "user", "roles"] ->
+      get_role_list.handle_request(request, ctx)
 
     // Fallback routes
     _, [] -> wisp.ok()

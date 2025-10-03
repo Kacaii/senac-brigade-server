@@ -1,45 +1,39 @@
 //// This module contains the code to run the sql queries defined in
-//// `./src/app/routes/roles/sql`.
+//// `./src/app/routes/role/sql`.
 //// > 🐿️ This module was generated automatically using v4.4.1 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
-import gleam/json
 import gleam/dynamic/decode
 import pog
 
-/// A row you get from running the `roles` query
-/// defined in `./src/app/routes/roles/sql/roles.sql`.
+/// A row you get from running the `query_role_list` query
+/// defined in `./src/app/routes/role/sql/query_role_list.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type RolesRow {
-  RolesRow(role_name: String)
+pub type QueryRoleListRow {
+  QueryRoleListRow(role_name: String)
 }
 
-fn roles_row_to_json(roles_row: RolesRow) -> json.Json {
-  let RolesRow(role_name:) = roles_row
-  json.object([
-    #("role_name", json.string(role_name)),
-  ])
-}
-
-/// Runs the `roles` query
-/// defined in `./src/app/routes/roles/sql/roles.sql`.
+///   Find all available roles
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn roles(
+pub fn query_role_list(
   db: pog.Connection,
-) -> Result(pog.Returned(RolesRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryRoleListRow), pog.QueryError) {
   let decoder = {
     use role_name <- decode.field(0, decode.string)
-    decode.success(RolesRow(role_name:))
+    decode.success(QueryRoleListRow(role_name:))
   }
 
-  "select role_name from public.user_role;"
+  "--   Find all available roles
+SELECT r.role_name
+FROM public.user_role AS r;
+"
   |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)

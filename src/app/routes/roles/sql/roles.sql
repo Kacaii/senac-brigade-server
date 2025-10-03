@@ -1,1 +1,0 @@
-select role_name from public.user_role;

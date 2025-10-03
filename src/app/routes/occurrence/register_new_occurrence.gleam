@@ -169,7 +169,7 @@ pub fn handle_form(
               case err {
                 pog.ConnectionUnavailable -> {
                   let body =
-                    "Conexão com o banco de dados não disponível"
+                    "Conexão com o Banco de Dados não disponível"
                     |> wisp.Text
 
                   wisp.internal_server_error()
@@ -177,7 +177,7 @@ pub fn handle_form(
                 }
                 pog.QueryTimeout -> {
                   let body =
-                    "O banco de dados demorou muito para responder, talvez tenha perdido a conexão?"
+                    "O Banco de Dados demorou muito para responder"
                     |> wisp.Text
 
                   wisp.internal_server_error()
@@ -201,14 +201,11 @@ pub fn handle_form(
                   |> wisp.set_body(body)
                 }
 
-                _ -> {
-                  let body =
-                    "Ocorreu um erro ao inserir o usuário no banco de dados"
-                    |> wisp.Text
-
+                _ ->
                   wisp.internal_server_error()
-                  |> wisp.set_body(body)
-                }
+                  |> wisp.set_body(wisp.Text(
+                    "Ocorreu um erro ao registrar a ocorrência no Banco de Dados",
+                  ))
               }
             }
           }
