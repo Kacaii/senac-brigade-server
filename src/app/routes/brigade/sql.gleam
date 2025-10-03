@@ -9,14 +9,14 @@ import gleam/option.{type Option}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `get_brigade_members` query
-/// defined in `./src/app/routes/brigade/sql/get_brigade_members.sql`.
+/// A row you get from running the `query_brigade_members` query
+/// defined in `./src/app/routes/brigade/sql/query_brigade_members.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type GetBrigadeMembersRow {
-  GetBrigadeMembersRow(
+pub type QueryBrigadeMembersRow {
+  QueryBrigadeMembersRow(
     id: Uuid,
     full_name: String,
     role_name: Option(String),
@@ -29,16 +29,16 @@ pub type GetBrigadeMembersRow {
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn get_brigade_members(
+pub fn query_brigade_members(
   db: pog.Connection,
   arg_1: Uuid,
-) -> Result(pog.Returned(GetBrigadeMembersRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryBrigadeMembersRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use role_name <- decode.field(2, decode.optional(decode.string))
     use description <- decode.field(3, decode.optional(decode.string))
-    decode.success(GetBrigadeMembersRow(
+    decode.success(QueryBrigadeMembersRow(
       id:,
       full_name:,
       role_name:,

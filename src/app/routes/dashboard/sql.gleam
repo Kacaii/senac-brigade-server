@@ -7,14 +7,14 @@
 import gleam/dynamic/decode
 import pog
 
-/// A row you get from running the `get_dashboard_stats` query
-/// defined in `./src/app/routes/dashboard/sql/get_dashboard_stats.sql`.
+/// A row you get from running the `query_dashboard_stats` query
+/// defined in `./src/app/routes/dashboard/sql/query_dashboard_stats.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.1 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type GetDashboardStatsRow {
-  GetDashboardStatsRow(
+pub type QueryDashboardStatsRow {
+  QueryDashboardStatsRow(
     active_brigades_count: Int,
     total_occurrences_count: Int,
     active_occurrences_count: Int,
@@ -27,15 +27,15 @@ pub type GetDashboardStatsRow {
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn get_dashboard_stats(
+pub fn query_dashboard_stats(
   db: pog.Connection,
-) -> Result(pog.Returned(GetDashboardStatsRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryDashboardStatsRow), pog.QueryError) {
   let decoder = {
     use active_brigades_count <- decode.field(0, decode.int)
     use total_occurrences_count <- decode.field(1, decode.int)
     use active_occurrences_count <- decode.field(2, decode.int)
     use recent_occurrences_count <- decode.field(3, decode.int)
-    decode.success(GetDashboardStatsRow(
+    decode.success(QueryDashboardStatsRow(
       active_brigades_count:,
       total_occurrences_count:,
       active_occurrences_count:,

@@ -40,7 +40,7 @@ fn get_dashboard_data(
 
   //  QUERY THE DATABASE ----------------------------------------------------
   use returned <- result.try(
-    sql.get_dashboard_stats(ctx.conn)
+    sql.query_dashboard_stats(ctx.conn)
     |> result.map_error(DataBaseError),
   )
   use row <- result.try(
@@ -153,9 +153,9 @@ fn log_unauthorized_access_attempt(
 }
 
 fn get_dashboard_stats_row_to_json(
-  get_dashboard_stats_row: sql.GetDashboardStatsRow,
+  get_dashboard_stats_row: sql.QueryDashboardStatsRow,
 ) -> json.Json {
-  let sql.GetDashboardStatsRow(
+  let sql.QueryDashboardStatsRow(
     active_brigades_count:,
     total_occurrences_count:,
     active_occurrences_count:,

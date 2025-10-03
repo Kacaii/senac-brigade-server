@@ -12,7 +12,7 @@ pub fn get_role_name(
   user_uuid id: uuid.Uuid,
 ) -> Result(String, UserAccountError) {
   use returned <- result.try(
-    sql.get_user_role_name(ctx.conn, id)
+    sql.query_user_role_name(ctx.conn, id)
     |> result.map_error(DataBaseError),
   )
   use row <- result.try(

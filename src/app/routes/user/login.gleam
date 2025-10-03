@@ -128,7 +128,7 @@ fn get_uuid_token(
   ctx ctx: Context,
 ) -> Result(uuid.Uuid, LoginError) {
   use returned <- result.try(
-    sql.get_login_token(ctx.conn, data.registration)
+    sql.query_login_token(ctx.conn, data.registration)
     |> result.map_error(DataBaseError),
   )
 

@@ -32,7 +32,7 @@ pub fn handle_request(
     )
 
     use returned <- result.try(
-      sql.get_occurences_by_applicant(ctx.conn, user_uuid)
+      sql.query_occurences_by_applicant(ctx.conn, user_uuid)
       |> result.map_error(DatabaseError),
     )
 
@@ -53,8 +53,7 @@ pub fn handle_request(
           let internal_err_message = case err {
             pog.ConnectionUnavailable ->
               "Conexão com o Banco de Dados não disponível"
-            pog.QueryTimeout ->
-              "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
+            pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
             _ -> "Ocorreu um erro ao realizar a consulta no Banco de Dados"
           }
 
@@ -76,9 +75,9 @@ type GetOccurrencesByApplicantError {
 }
 
 fn get_occurences_by_applicant_row_to_json(
-  get_occurences_by_applicant_row: sql.GetOccurencesByApplicantRow,
+  get_occurences_by_applicant_row: sql.QueryOccurencesByApplicantRow,
 ) -> json.Json {
-  let sql.GetOccurencesByApplicantRow(
+  let sql.QueryOccurencesByApplicantRow(
     id:,
     description:,
     category:,
