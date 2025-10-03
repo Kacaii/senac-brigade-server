@@ -24,33 +24,35 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
   use request <- web.middleware(request: request, context: ctx)
 
   case request.method, wisp.path_segments(request) {
-    //   Authorization routes
-    http.Post, ["api", "user", "signup"] -> signup.handle_form(request:, ctx:)
-    http.Post, ["api", "user", "login"] -> login.handle_form(request:, ctx:)
+    //   Authorization routes -------------------------------------------------
+    http.Post, ["api", "user", "signup"] ->
+      signup.handle_request(request:, ctx:)
+    http.Post, ["api", "user", "login"] -> login.handle_request(request:, ctx:)
 
-    // 󰨇  Dashboard stats
+    // 󰨇  Dashboard stats ------------------------------------------------------
     http.Get, ["api", "dashboard", "stats"] ->
       dashboard.handle_request(request:, ctx:)
 
-    //   User data routes
+    //   User data routes -----------------------------------------------------
     http.Get, ["api", "user", id, "occurrences"] ->
       get_ocurrences_by_applicant.handle_request(request:, ctx:, id:)
+
     http.Get, ["api", "user", id, "crew_members"] ->
       get_crew_members.handle_request(request:, ctx:, id:)
 
-    // 󰞏  Occurrence routes
+    // 󰞏  Occurrence routes ----------------------------------------------------
     http.Post, ["api", "occurence", "new"] ->
-      register_new_occurrence.handle_form(request:, ctx:)
+      register_new_occurrence.handle_request(request:, ctx:)
 
-    // 󰢫  Brigade routes
+    // 󰢫  Brigade routes -------------------------------------------------------
     http.Get, ["api", "brigade", id, "members"] ->
       get_brigade_members.handle_request(request:, ctx:, id:)
 
-    //   Role routes
+    //   Role routes ----------------------------------------------------------
     http.Get, ["api", "user", "roles"] ->
       get_role_list.handle_request(request, ctx)
 
-    // Fallback routes
+    // Fallback routes ---------------------------------------------------------
     _, [] -> wisp.ok()
     _, _ -> wisp.not_found()
   }

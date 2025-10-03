@@ -13,7 +13,7 @@ import pog
 import wisp
 import youid/uuid
 
-const cookie_name = "USER_ID"
+const user_id_cookie_name = "USER_ID"
 
 type LogIn {
   LogIn(registration: String, password: String)
@@ -33,8 +33,8 @@ fn login_form() -> form.Form(LogIn) {
 }
 
 ///   Handles user login authentication and session management
-pub fn handle_form(request cookie_user_uuid: wisp.Request, ctx ctx: Context) {
-  use form_data <- wisp.require_form(cookie_user_uuid)
+pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
+  use form_data <- wisp.require_form(request)
   let form_result =
     login_form()
     |> form.add_values(form_data.values)
@@ -42,28 +42,44 @@ pub fn handle_form(request cookie_user_uuid: wisp.Request, ctx ctx: Context) {
 
   case form_result {
     Error(_) -> wisp.bad_request("Dados inválidos")
-    Ok(login_data) -> {
-      let login_result = get_uuid_token(login: login_data, ctx:)
-      case login_result {
-        Ok(user_uuid) -> {
-          //   Logs user registration
-          log_login(login_data)
+    Ok(login_data) ->
+      handle_login(
+        request:,
+        ctx:,
+        login_data:,
+        cookie_name: user_id_cookie_name,
+      )
+  }
+}
 
-          //   Store UUID cookie
-          wisp.set_cookie(
-            response: wisp.ok(),
-            request: cookie_user_uuid,
-            name: cookie_name,
-            value: uuid.to_string(user_uuid),
-            security: wisp.Signed,
-            //   Cookie lasts 1 hour in total
-            max_age: 60 * 60,
-          )
-        }
+fn handle_login(
+  request request: wisp.Request,
+  ctx ctx: Context,
+  login_data login_data: LogIn,
+  cookie_name cookie_name: String,
+) {
+  let login_result = get_uuid_token(login: login_data, ctx:)
+  case login_result {
+    Ok(user_uuid) -> {
+      //   Logs user registration
+      //
+      log_login(login_data)
 
-        Error(err) -> handle_error(err)
-      }
+      //   Store UUID cookie
+      //
+      wisp.set_cookie(
+        response: wisp.ok(),
+        request: request,
+        name: cookie_name,
+        value: uuid.to_string(user_uuid),
+        security: wisp.Signed,
+        //   Cookie lasts 1 hour in total
+        max_age: 60 * 60,
+      )
     }
+
+    //   Handle possible errors
+    Error(err) -> handle_error(err)
   }
 }
 
