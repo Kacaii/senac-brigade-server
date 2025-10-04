@@ -26,6 +26,7 @@
 ---
 title: SENAC Brigade
 ---
+
 erDiagram
 
     user_role {
@@ -48,6 +49,16 @@ erDiagram
         TIMESTAMP updated_at
     }
 
+    notification_preference ||--|{ user_account : belongs
+    notification_preference {
+        UUID id PK
+        UUID user_id FK
+        NOTIFICATION_TYPE_ENUM notification_type
+        BOOLEAN enabled
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
     brigade {
         UUID id PK
         TEXT name
@@ -63,10 +74,10 @@ erDiagram
         UUID group_id FK
     }
 
-    occurrence_type |o--o{ occurrence_type : subtype_of
-    occurrence_type {
+    occurrence_category |o--o{ occurrence_category : subcategory_of
+    occurrence_category {
         UUID id PK
-        UUID parent_type FK
+        UUID parent_category FK
         TEXT name UK
         TEXT description
         TIMESTAMP created_at
@@ -74,11 +85,11 @@ erDiagram
     }
 
     occurrence }|--|| user_account : submit
-    occurrence }|--|| occurrence_type : is
+    occurrence }|--|| occurrence_category : is
     occurrence {
         UUID id PK
         UUID applicant_id FK
-        UUID type_id FK
+        UUID category FK
         TEXT description
         POINT location
         TEXT reference_point
