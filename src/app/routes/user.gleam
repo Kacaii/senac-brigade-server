@@ -7,10 +7,11 @@ import pog
 import wisp
 import youid/uuid
 
+///   Query the database to find the user's role name
 pub fn get_role_name(
   ctx ctx: Context,
   user_uuid id: uuid.Uuid,
-) -> Result(String, UserAccountError) {
+) -> Result(String, AuthorizationError) {
   use returned <- result.try(
     sql.query_user_role_name(ctx.conn, id)
     |> result.map_error(DataBaseError),
@@ -23,6 +24,7 @@ pub fn get_role_name(
   Ok(row.role_name)
 }
 
+///   Extracts the user UUID from the request's Cookie
 pub fn auth_user_from_cookie(
   request request: wisp.Request,
   cookie_name cookie_name: String,
@@ -40,12 +42,15 @@ pub fn auth_user_from_cookie(
   Ok(user_uuid)
 }
 
+///   Authentication can fail
 pub type AuthenticationError {
+  ///   Request is missing the authetication Cookie
   MissingCookie
+  /// 󰘨  User doesnt have a valid UUID
   InvalidUUID(String)
 }
 
-pub fn handle_authetication_error(err: AuthenticationError) {
+pub fn handle_authentication_error(err: AuthenticationError) {
   case err {
     InvalidUUID(id) ->
       wisp.response(401)
@@ -58,13 +63,12 @@ pub fn handle_authetication_error(err: AuthenticationError) {
 
 /// 󰡦  Extracts the user UUID from the request and query the DataBase
 /// to verify if the user has authorization to access determined endpoint
-///
 pub fn check_role_authorization(
   request request: wisp.Request,
   ctx ctx: Context,
   cookie_name cookie_name: String,
   authorized_roles authorized_roles: List(role.Role),
-) -> Result(role.Role, UserAccountError) {
+) -> Result(role.Role, AuthorizationError) {
   //   Indentify who is sending the request -----------------------------------
   use user_uuid <- result.try(
     auth_user_from_cookie(request:, cookie_name:)
@@ -84,7 +88,7 @@ pub fn check_role_authorization(
 }
 
 ///   Errors related to an User account or role
-pub type UserAccountError {
+pub type AuthorizationError {
   ///   User is not authorized to access data
   Unauthorized(uuid.Uuid, role.Role)
   /// 󰗹  Failed to authenticate user

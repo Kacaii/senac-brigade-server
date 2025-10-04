@@ -66,85 +66,74 @@ fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
     }
 
     // 󱘺  DATABASE ERRORS --------------------------------------------------
-    DataBaseError(err) -> {
-      let err_message = case err {
-        //
-        //   Connection failed
-        pog.ConnectionUnavailable ->
-          "Conexão com o Banco de Dados não disponível"
-
-        //   Took too long
-        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-
-        // Fallback
-        _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-      }
-
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_message))
-    }
+    DataBaseError(err) -> handle_db_error(err)
 
     //   PERMISSION DENIED ------------------------------------------------
-    RoleError(role_err) -> {
-      case role_err {
-        user.AuthenticationFailed(auth_err) -> {
-          case auth_err {
-            //   User didn't have a valid UUID
-            //
-            user.InvalidUUID(user_id) ->
-              wisp.response(401)
-              |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> user_id))
-            //   USER_ID cookie is required to access this endpoint
-            //
-            user.MissingCookie ->
-              wisp.response(401)
-              |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
-          }
-        }
-        // 󱏊  Database couldn't find a user role with that UUDI
+    RoleError(role_err) -> handle_authorization_error(role_err)
+  }
+}
+
+/// Handle Authorization related errors
+fn handle_authorization_error(role_err: user.AuthorizationError) {
+  case role_err {
+    user.AuthenticationFailed(auth_err) -> {
+      case auth_err {
+        //   User didn't have a valid UUID
         //
-        user.DataBaseReturnedEmptyRow ->
-          wisp.bad_request("Não foi encontrado um cargo com o ID solicitado")
-
-        //   User is not authorized to access this endpoint -------------------
+        user.InvalidUUID(user_id) ->
+          wisp.response(401)
+          |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> user_id))
+        //   USER_ID cookie is required to access this endpoint
         //
-        user.Unauthorized(user_uuid, user_role) -> {
-          //   Log who tried to access and whats their role
-          log_unauthorized_access_attempt(user_uuid:, user_role:)
-          //   403 FORBIDDEN response
-          wisp.response(403)
-          |> wisp.set_body(wisp.Text(
-            "Usuário não autorizado: "
-            <> role.to_string(user_role)
-            <> " "
-            <> uuid.to_string(user_uuid),
-          ))
-        }
-
-        //   DATABASE ERRORS ----------------------------------------------
-        //
-        user.DataBaseError(db_err) -> {
-          let db_err_msg = case db_err {
-            //   Connection failed
-            //
-            pog.ConnectionUnavailable ->
-              "Conexão com o Banco de Dados não disponível"
-
-            //   Took too long
-            //
-            pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-
-            // Fallback response
-            //
-            _ -> "Ocorreu um erro ao verificar o cargo do usuário"
-          }
-
-          wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text(db_err_msg))
-        }
+        user.MissingCookie ->
+          wisp.response(401)
+          |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
       }
     }
+    // 󱏊  Database couldn't find a user role with that UUDI
+    //
+    user.DataBaseReturnedEmptyRow ->
+      wisp.bad_request("Não foi encontrado um cargo com o ID solicitado")
+
+    //   User is not authorized to access this endpoint -------------------
+    //
+    user.Unauthorized(user_uuid, user_role) -> {
+      //   Log who tried to access and whats their role
+      log_unauthorized_access_attempt(user_uuid:, user_role:)
+      //   403 FORBIDDEN response
+      wisp.response(403)
+      |> wisp.set_body(wisp.Text(
+        "Usuário não autorizado: "
+        <> role.to_string(user_role)
+        <> " "
+        <> uuid.to_string(user_uuid),
+      ))
+    }
+
+    //   DATABASE ERRORS ----------------------------------------------
+    //
+    user.DataBaseError(db_err) -> handle_db_error(db_err)
   }
+}
+
+/// Handle DataBase related errors
+fn handle_db_error(err: pog.QueryError) {
+  let db_err_msg = case err {
+    //   Connection failed
+    //
+    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
+
+    //   Took too long
+    //
+    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
+
+    // Fallback response
+    //
+    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
+  }
+
+  wisp.internal_server_error()
+  |> wisp.set_body(wisp.Text(db_err_msg))
 }
 
 fn log_unauthorized_access_attempt(
@@ -183,5 +172,5 @@ pub type GetDashboardStatsError {
   /// DataBase query went wrong
   DataBaseError(pog.QueryError)
   /// User/Role related errors
-  RoleError(user.UserAccountError)
+  RoleError(user.AuthorizationError)
 }

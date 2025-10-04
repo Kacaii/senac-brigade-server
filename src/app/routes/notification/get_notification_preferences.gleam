@@ -21,7 +21,7 @@ pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
 
 fn handle_error(err: GetNotificationPreferencesError) -> wisp.Response {
   case err {
-    AuthenticationFailed(err) -> user.handle_authetication_error(err)
+    AuthenticationFailed(err) -> user.handle_authentication_error(err)
     DataBaseReturnedEmptyRow ->
       wisp.bad_request("O Banco de Dados não retornou resultados")
     DatabaseError(err) -> {

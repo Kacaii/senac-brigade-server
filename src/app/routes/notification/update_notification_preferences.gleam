@@ -60,7 +60,7 @@ fn notification_preferences_decoder(
 
 fn handle_err(err: UpdateNotificationPreferencesError) -> wisp.Response {
   case err {
-    AuthenticationFailed(err) -> user.handle_authetication_error(err)
+    AuthenticationFailed(err) -> user.handle_authentication_error(err)
     DataBaseError(err) -> {
       let err_message = case err {
         //
