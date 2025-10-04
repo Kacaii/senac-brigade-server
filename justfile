@@ -1,3 +1,5 @@
+log_file_path := 'priv/log/server.log'
+
 alias s := squirrel
 alias u := update
 
@@ -67,10 +69,15 @@ list_occurrence_categories:
 list_brigades:
     psql senac_brigade -f priv/sql/query/dev_list_brigades.sql
 
+#   Run to generate the log directory
+@generate_log_directory:
+    mkdir -p 'priv/log'
+
 #   Clears the server's log file
 [group('  dev')]
 @clear_log_file:
-    echo "" > priv/log/server.log
+    just generate_log_directory
+    echo "" > {{ log_file_path }}
 
 @peek_log_file:
     bat priv/log/server.log
