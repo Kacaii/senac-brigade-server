@@ -67,7 +67,8 @@ pub type QueryOccurencesByApplicantRow {
     description: Option(String),
     category: Option(String),
     subcategory: Option(String),
-    created_at: Option(Timestamp),
+    created_at: Timestamp,
+    updated_at: Timestamp,
     resolved_at: Option(Timestamp),
     location: List(Float),
     reference_point: Option(String),
@@ -89,16 +90,18 @@ pub fn query_occurences_by_applicant(
     use description <- decode.field(1, decode.optional(decode.string))
     use category <- decode.field(2, decode.optional(decode.string))
     use subcategory <- decode.field(3, decode.optional(decode.string))
-    use created_at <- decode.field(4, decode.optional(pog.timestamp_decoder()))
-    use resolved_at <- decode.field(5, decode.optional(pog.timestamp_decoder()))
-    use location <- decode.field(6, decode.list(decode.float))
-    use reference_point <- decode.field(7, decode.optional(decode.string))
+    use created_at <- decode.field(4, pog.timestamp_decoder())
+    use updated_at <- decode.field(5, pog.timestamp_decoder())
+    use resolved_at <- decode.field(6, decode.optional(pog.timestamp_decoder()))
+    use location <- decode.field(7, decode.list(decode.float))
+    use reference_point <- decode.field(8, decode.optional(decode.string))
     decode.success(QueryOccurencesByApplicantRow(
       id:,
       description:,
       category:,
       subcategory:,
       created_at:,
+      updated_at:,
       resolved_at:,
       location:,
       reference_point:,
@@ -113,6 +116,7 @@ SELECT
     oc_cat.category_name AS category,
     sub_cat.category_name AS subcategory,
     o.created_at,
+    o.updated_at,
     o.resolved_at,
     o.location,
     o.reference_point
@@ -139,7 +143,7 @@ LEFT JOIN public.occurrence_category AS sub_cat
 pub type QueryRecentOccurrencesRow {
   QueryRecentOccurrencesRow(
     id: Uuid,
-    created_at: Option(Timestamp),
+    created_at: Timestamp,
     description: Option(String),
     category: Option(String),
     subcategory: Option(String),
@@ -158,7 +162,7 @@ pub fn query_recent_occurrences(
 ) -> Result(pog.Returned(QueryRecentOccurrencesRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use created_at <- decode.field(1, decode.optional(pog.timestamp_decoder()))
+    use created_at <- decode.field(1, pog.timestamp_decoder())
     use description <- decode.field(2, decode.optional(decode.string))
     use category <- decode.field(3, decode.optional(decode.string))
     use subcategory <- decode.field(4, decode.optional(decode.string))

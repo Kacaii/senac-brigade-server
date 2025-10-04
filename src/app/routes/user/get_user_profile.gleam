@@ -85,7 +85,7 @@ fn query_user_profile_row_to_json(
     #("id", json.string(uuid.to_string(id))),
     #("nome", json.string(full_name)),
     #("matricula", json.string(registration)),
-    #("cargo", json.string(role_name)),
+    #("cargo", json.nullable(role_name, json.string)),
     #("email", json.nullable(email, json.string)),
     #("telefone", json.nullable(phone, json.string)),
   ])

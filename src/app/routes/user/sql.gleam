@@ -225,7 +225,7 @@ pub type QueryUserProfileRow {
     id: Uuid,
     full_name: String,
     registration: String,
-    role_name: String,
+    role_name: Option(String),
     email: Option(String),
     phone: Option(String),
   )
@@ -245,7 +245,7 @@ pub fn query_user_profile(
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use registration <- decode.field(2, decode.string)
-    use role_name <- decode.field(3, decode.string)
+    use role_name <- decode.field(3, decode.optional(decode.string))
     use email <- decode.field(4, decode.optional(decode.string))
     use phone <- decode.field(5, decode.optional(decode.string))
     decode.success(QueryUserProfileRow(
@@ -258,18 +258,18 @@ pub fn query_user_profile(
     ))
   }
 
-  "select
-    conta_usuario.id,
-    conta_usuario.full_name,
-    conta_usuario.registration,
-    cargo.role_name,
-    conta_usuario.email,
-    conta_usuario.phone
-from
-    public.user_account as conta_usuario
-    join public.user_role as cargo on conta_usuario.role_id = cargo.id
-    where conta_usuario.id = $1;
-
+  "SELECT
+    u.id,
+    u.full_name,
+    u.registration,
+    r.role_name,
+    u.email,
+    u.phone
+FROM
+    public.user_account AS u
+LEFT JOIN public.user_role AS r
+    ON u.role_id = r.id
+WHERE u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

@@ -5,7 +5,6 @@
 
 import app/routes/occurrence/sql
 import app/web.{type Context}
-import gleam/float
 import gleam/http
 import gleam/json
 import gleam/list
@@ -87,41 +86,27 @@ fn get_occurences_by_applicant_row_to_json(
     category:,
     subcategory:,
     created_at:,
+    updated_at:,
     resolved_at:,
     location:,
     reference_point:,
   ) = get_occurences_by_applicant_row
   json.object([
     #("id", json.string(uuid.to_string(id))),
-    #("description", case description {
-      option.None -> json.null()
-      option.Some(value) -> json.string(value)
-    }),
-    #("category", case category {
-      option.None -> json.null()
-      option.Some(value) -> json.string(value)
-    }),
-    #("subcategory", case subcategory {
-      option.None -> json.null()
-      option.Some(value) -> json.string(value)
-    }),
-    #("created_at", case created_at {
-      option.None -> json.null()
-      option.Some(value) -> {
-        timestamp.to_unix_seconds(value)
-        |> float.to_string
-        |> json.string
-      }
-    }),
-    #("resolved_at", case resolved_at {
-      option.None -> json.null()
-      option.Some(value) -> {
-        timestamp.to_unix_seconds(value)
-        |> float.to_string
-        |> json.string
-      }
-    }),
+    #("description", json.nullable(description, json.string)),
+    #("category", json.nullable(category, json.string)),
+    #("subcategory", json.nullable(subcategory, json.string)),
+    #("created_at", json.float(timestamp.to_unix_seconds(created_at))),
+    #("updated_at", json.float(timestamp.to_unix_seconds(updated_at))),
+    #("resolved_at", json.nullable(maybe_timestamp(resolved_at), json.float)),
     #("location", json.array(location, json.float)),
     #("reference_point", json.string(option.unwrap(reference_point, ""))),
   ])
+}
+
+fn maybe_timestamp(
+  timestamp: option.Option(timestamp.Timestamp),
+) -> option.Option(Float) {
+  use time_stamp <- option.map(timestamp)
+  timestamp.to_unix_seconds(time_stamp)
 }

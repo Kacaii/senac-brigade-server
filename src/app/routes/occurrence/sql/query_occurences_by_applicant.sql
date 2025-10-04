@@ -6,6 +6,7 @@ SELECT
     oc_cat.category_name AS category,
     sub_cat.category_name AS subcategory,
     o.created_at,
+    o.updated_at,
     o.resolved_at,
     o.location,
     o.reference_point
