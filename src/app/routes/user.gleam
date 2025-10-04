@@ -45,6 +45,17 @@ pub type AuthenticationError {
   InvalidUUID(String)
 }
 
+pub fn handle_authetication_error(err: AuthenticationError) {
+  case err {
+    InvalidUUID(id) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> id))
+    MissingCookie ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
+  }
+}
+
 /// 󰡦  Extracts the user UUID from the request and query the DataBase
 /// to verify if the user has authorization to access determined endpoint
 ///

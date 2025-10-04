@@ -9,6 +9,8 @@
 
 import app/routes/brigade/get_brigade_members
 import app/routes/dashboard
+import app/routes/notification/get_notification_preferences
+import app/routes/notification/update_notification_preferences
 import app/routes/occurrence/register_new_occurrence
 import app/routes/role/get_role_list
 import app/routes/user/get_crew_members
@@ -43,6 +45,13 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
     http.Get, ["api", "user", id, "crew_members"] ->
       get_crew_members.handle_request(request:, ctx:, id:)
+
+    //   Notification routes --------------------------------------------------
+    http.Get, ["api", "user", "notification_preferences"] ->
+      get_notification_preferences.handle_request(request, ctx)
+
+    http.Put, ["api", "user", "notification_preferences"] ->
+      update_notification_preferences.handle_request(request, ctx)
 
     // 󰞏  Occurrence routes ----------------------------------------------------
     http.Post, ["api", "occurence", "new"] ->
