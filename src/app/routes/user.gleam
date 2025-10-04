@@ -23,6 +23,28 @@ pub fn get_role_name(
   Ok(row.role_name)
 }
 
+pub fn auth_user_from_cookie(
+  request request: wisp.Request,
+  cookie_name cookie_name: String,
+) -> Result(uuid.Uuid, AuthenticationError) {
+  use user_id <- result.try(
+    wisp.get_cookie(request:, name: cookie_name, security: wisp.Signed)
+    |> result.replace_error(MissingCookie),
+  )
+
+  use user_uuid <- result.try(
+    uuid.from_string(user_id)
+    |> result.replace_error(InvalidUUID(user_id)),
+  )
+
+  Ok(user_uuid)
+}
+
+pub type AuthenticationError {
+  MissingCookie
+  InvalidUUID(String)
+}
+
 /// 󰡦  Extracts the user UUID from the request and query the DataBase
 /// to verify if the user has authorization to access determined endpoint
 ///
@@ -33,17 +55,10 @@ pub fn check_role_authorization(
   authorized_roles authorized_roles: List(role.Role),
 ) -> Result(role.Role, UserAccountError) {
   //   Indentify who is sending the request -----------------------------------
-  use user_id <- result.try(
-    wisp.get_cookie(request:, name: cookie_name, security: wisp.Signed)
-    |> result.replace_error(MissingCookie),
-  )
-
-  // 󰘨  Check if its a valid UUID ----------------------------------------------
   use user_uuid <- result.try(
-    uuid.from_string(user_id)
-    |> result.replace_error(InvalidUUID(user_id)),
+    auth_user_from_cookie(request:, cookie_name:)
+    |> result.map_error(AuthenticationFailed),
   )
-
   // 󰯦  Query the User's role name ---------------------------------------------
   use role_name <- result.try(get_role_name(ctx, user_uuid))
   let role = role.from_string(role_name:)
@@ -61,11 +76,8 @@ pub fn check_role_authorization(
 pub type UserAccountError {
   ///   User is not authorized to access data
   Unauthorized(uuid.Uuid, role.Role)
-
-  /// 󰘨  User has an invalid UUID
-  InvalidUUID(String)
-  ///   Authetication Cookie is missing
-  MissingCookie
+  /// 󰗹  Failed to authenticate user
+  AuthenticationFailed(AuthenticationError)
   /// 󰆼  DataBase query failed
   DataBaseError(pog.QueryError)
   /// 󰡦  DataBase found no results

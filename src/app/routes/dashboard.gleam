@@ -33,7 +33,10 @@ fn get_dashboard_data(
       request:,
       ctx:,
       cookie_name: "USER_ID",
-      authorized_roles: [role.Admin, role.Analist],
+      authorized_roles: [
+        role.Admin,
+        role.Analist,
+      ],
     )
     |> result.map_error(RoleError),
   )
@@ -84,16 +87,20 @@ fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
     //   PERMISSION DENIED ------------------------------------------------
     RoleError(role_err) -> {
       case role_err {
-        //   User didn't have a valid UUID
-        //
-        user.InvalidUUID(user_id) ->
-          wisp.bad_request("O usuário não possui UUID válido: " <> user_id)
-
-        //   USER_ID cookie is required to access this endpoint
-        //
-        user.MissingCookie ->
-          wisp.bad_request("Cookie de indentificação ausente")
-
+        user.AuthenticationFailed(auth_err) -> {
+          case auth_err {
+            //   User didn't have a valid UUID
+            //
+            user.InvalidUUID(user_id) ->
+              wisp.response(401)
+              |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> user_id))
+            //   USER_ID cookie is required to access this endpoint
+            //
+            user.MissingCookie ->
+              wisp.response(401)
+              |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
+          }
+        }
         // 󱏊  Database couldn't find a user role with that UUDI
         //
         user.DataBaseReturnedEmptyRow ->

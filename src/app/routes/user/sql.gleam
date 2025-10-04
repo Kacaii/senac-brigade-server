@@ -214,6 +214,69 @@ WHERE u.id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `query_user_profile` query
+/// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryUserProfileRow {
+  QueryUserProfileRow(
+    id: Uuid,
+    full_name: String,
+    registration: String,
+    role_name: String,
+    email: Option(String),
+    phone: Option(String),
+  )
+}
+
+/// Runs the `query_user_profile` query
+/// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_user_profile(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(QueryUserProfileRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use full_name <- decode.field(1, decode.string)
+    use registration <- decode.field(2, decode.string)
+    use role_name <- decode.field(3, decode.string)
+    use email <- decode.field(4, decode.optional(decode.string))
+    use phone <- decode.field(5, decode.optional(decode.string))
+    decode.success(QueryUserProfileRow(
+      id:,
+      full_name:,
+      registration:,
+      role_name:,
+      email:,
+      phone:,
+    ))
+  }
+
+  "select
+    conta_usuario.id,
+    conta_usuario.full_name,
+    conta_usuario.registration,
+    cargo.role_name,
+    conta_usuario.email,
+    conta_usuario.phone
+from
+    public.user_account as conta_usuario
+    join public.user_role as cargo on conta_usuario.role_id = cargo.id
+    where conta_usuario.id = $1;
+
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `query_user_role_name` query
 /// defined in `./src/app/routes/user/sql/query_user_role_name.sql`.
 ///

@@ -13,6 +13,7 @@ import app/routes/occurrence/register_new_occurrence
 import app/routes/role/get_role_list
 import app/routes/user/get_crew_members
 import app/routes/user/get_ocurrences_by_applicant
+import app/routes/user/get_user_profile
 import app/routes/user/login
 import app/routes/user/signup
 import app/web.{type Context}
@@ -36,6 +37,9 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     //   User data routes -----------------------------------------------------
     http.Get, ["api", "user", id, "occurrences"] ->
       get_ocurrences_by_applicant.handle_request(request:, ctx:, id:)
+
+    http.Get, ["api", "user", "profile"] ->
+      get_user_profile.handle_request(request:, ctx:)
 
     http.Get, ["api", "user", id, "crew_members"] ->
       get_crew_members.handle_request(request:, ctx:, id:)

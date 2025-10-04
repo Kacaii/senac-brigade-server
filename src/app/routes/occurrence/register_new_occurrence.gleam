@@ -3,6 +3,7 @@
 
 import app/routes/occurrence.{type Occurrence, Occurrence}
 import app/routes/occurrence/sql
+import app/routes/user
 import app/web.{type Context}
 import formal/form
 import gleam/list
@@ -11,8 +12,6 @@ import gleam/string
 import pog
 import wisp
 import youid/uuid
-
-const cookie_user_id = "USER_ID"
 
 /// 󰞏  Handles occurrence registration form submission by validating form data,
 /// creating an occurrence record, and inserting it into the database with
@@ -51,10 +50,13 @@ fn insert_occurrence(
   use participants_id <- result.try({
     use id_string <- list.try_map(data.participants_id)
     uuid.from_string(id_string)
-    |> result.replace_error(InvalidApplicantUUID(id_string))
+    |> result.replace_error(InvalidParticipantUUID(id_string))
   })
 
-  use applicant_id <- result.try(query_user_by_id(request))
+  use applicant_id <- result.try(
+    user.auth_user_from_cookie(request:, cookie_name: "USER_ID")
+    |> result.map_error(AuthenticationFailed),
+  )
 
   Ok(Occurrence(
     applicant_id:,
@@ -79,24 +81,6 @@ pub opaque type OccurrenceFormData {
     vehicle_code: String,
     participants_id: List(String),
   )
-}
-
-/// Extracts and validates the user ID from a signed cookie in the request,
-/// returning it as a UUID.
-fn query_user_by_id(
-  request: wisp.Request,
-) -> Result(uuid.Uuid, RegisterNewOccurrenceError) {
-  use user_id_string <- result.try(
-    wisp.get_cookie(request:, name: cookie_user_id, security: wisp.Signed)
-    |> result.replace_error(MissingCookie),
-  )
-
-  use user_uuid <- result.try(
-    uuid.from_string(user_id_string)
-    |> result.replace_error(InvalidApplicantUUID(user_id_string)),
-  )
-
-  Ok(user_uuid)
 }
 
 /// 󱐀  A form that decodes the `Occurrence` type
@@ -211,13 +195,23 @@ fn handle_database_error(err: pog.QueryError) -> wisp.Response {
 
 fn handle_occurrence_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   case err {
-    InvalidApplicantUUID(id) ->
-      wisp.bad_request("ID de usuário inválido: " <> id)
     InvalidCategoryUUID(id) ->
       wisp.bad_request("ID de categoria inválido: " <> id)
     InvalidSubCategoryUUID(id) ->
       wisp.bad_request("ID de subcategoria inválido: " <> id)
-    MissingCookie -> wisp.bad_request("Cookie Ausente")
+    InvalidParticipantUUID(id) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text("ID de participante inválido: " <> id))
+    AuthenticationFailed(auth_err) -> {
+      case auth_err {
+        user.InvalidUUID(id) ->
+          wisp.response(401)
+          |> wisp.set_body(wisp.Text("ID de aplicante inválido: " <> id))
+        user.MissingCookie ->
+          wisp.response(401)
+          |> wisp.set_body(wisp.Text("Cookie de atenticação ausente"))
+      }
+    }
   }
 }
 
@@ -225,12 +219,11 @@ fn handle_occurrence_error(err: RegisterNewOccurrenceError) -> wisp.Response {
 /// including invalid UUID formats for applicant, category, or subcategory,
 /// and missing authentication cookie.
 type RegisterNewOccurrenceError {
-  /// The provided applicant ID is not a valid UUID format
-  InvalidApplicantUUID(String)
   /// The provided category ID is not a valid UUID format
   InvalidCategoryUUID(String)
   /// The provided subcategory ID is not a valid UUID format
   InvalidSubCategoryUUID(String)
   /// The required user authentication cookie is missing from the request
-  MissingCookie
+  AuthenticationFailed(user.AuthenticationError)
+  InvalidParticipantUUID(String)
 }
