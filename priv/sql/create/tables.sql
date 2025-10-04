@@ -23,6 +23,23 @@ CREATE TABLE IF NOT EXISTS public.user_account (
 CREATE INDEX IF NOT EXISTS idx_user_registration
 ON public.user_account (registration);
 
+CREATE TYPE public.notification_type_enum AS ENUM (
+    'fire',
+    'emergency',
+    'traffic',
+    'other'
+);
+
+CREATE TABLE IF NOT EXISTS public.notification_preference (
+    id UUID PRIMARY KEY DEFAULT UUIDV7(),
+    user_id UUID REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    notification_type NOTIFICATION_TYPE_ENUM UNIQUE NOT NULL,
+    enabled BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS public.brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     brigade_name TEXT DEFAULT NULL,
