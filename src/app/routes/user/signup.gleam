@@ -51,7 +51,7 @@ fn signup_form() -> form.Form(SignUp) {
   })
 }
 
-///   Inserts a new `user_account` into the database
+///   Insert a new `user_account` into the database
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,

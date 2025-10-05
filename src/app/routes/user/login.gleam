@@ -33,6 +33,16 @@ fn login_form() -> form.Form(LogIn) {
 }
 
 ///   Handles user login authentication and session management
+/// On success, sets a cookie on the client containing the User UUID,
+/// It will then be used on later requests for authetication.
+///
+/// The actual Cookie is **encrypted**.
+///
+/// ## Example
+///
+/// ```sh
+/// set-cookie: USER_ID=0199b58a-acb0-70a8-9de7-0b65a03b8743
+/// ```
 pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
   use form_data <- wisp.require_form(request)
   let form_result =

@@ -13,8 +13,32 @@ import pog
 import wisp
 import youid/uuid
 
-/// Retrieves all members of a specific fire brigade from the database
+/// 󰀖  Find all members of a specific brigade from the DataBase
 /// and returns them as formatted JSON data.
+///
+/// ## Response
+///
+/// ```json
+/// [
+///    {
+///      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+///      "full_name": "Ana Carolina Silva Santos",
+///      "role_name": "Bombeiro Militar",
+///      "description": "Especialista em combate a incêndios urbanos e resgate em altura"
+///    },
+///    {
+///      "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
+///      "full_name": "Carlos Eduardo Oliveira Pereira",
+///      "role_name": "Salva-vidas",
+///      "description": "Comandante de equipe de primeiros socorros e atendimento pré-hospitalar"
+///    },
+///    {
+///      "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
+///      "full_name": "Mariana Costa Rodrigues",
+///      "role_name": null,
+///      "description": "Bombeiro voluntário em treinamento para operações florestais"
+///    }
+/// ]
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,

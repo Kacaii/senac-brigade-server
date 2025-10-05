@@ -15,8 +15,24 @@ import pog
 import wisp
 import youid/uuid
 
-/// Fetches all occurrences/applications associated with a specific user
-/// from the database and returns them as JSON.
+/// 󰡦  Find all occurrences/applications associated with a specific user
+/// returns them as formatted JSON data
+///
+/// ## Response
+///
+/// ```json
+/// {
+///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+///   "description": "Buraco na Avenida Paulista causando engarrafamento",
+///   "category": "Infraestrutura",
+///   "subcategory": "Danos na Via",
+///   "created_at": 1704067200.0,
+///   "updated_at": 1704153600.0,
+///   "resolved_at": 1704240000.0,
+///   "location": [-46.656543, -23.561742],
+///   "reference_point": "Próximo ao Shopping Paulista"
+/// }
+/// ```
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,

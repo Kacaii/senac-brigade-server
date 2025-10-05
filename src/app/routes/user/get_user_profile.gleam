@@ -9,6 +9,21 @@ import pog
 import wisp
 import youid/uuid
 
+/// 󰡦  Find information about the current authenticated user
+/// and returs them as formatted JSON data
+///
+/// User UUID is extracted from the request `Cookies`
+///
+/// ```json
+/// {
+///    "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
+///    "nome": "Maria Oliveira Costa",
+///    "matricula": "000000",
+///    "cargo": "Desenvolvedor",
+///    "email": "maria.oliveira@empresa.com.br",
+///    "telefone": "+55 (81) 9 8888-8888"
+/// }
+/// ```
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,

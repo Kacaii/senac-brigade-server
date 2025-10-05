@@ -10,6 +10,19 @@ import gleam/result
 import pog
 import wisp
 
+/// 󰀖  Find the notification preferences from an user
+/// and send them as formatted JSON data
+///
+/// ## Response
+///
+/// ```json
+/// {
+///    "incendio": false,
+///    "emergencia": false,
+///    "transito": false,
+///    "outros": false
+/// }
+/// ```
 pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 

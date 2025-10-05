@@ -11,6 +11,19 @@ import pog
 import wisp
 import youid/uuid
 
+/// 󰡦  Retrieve dashboard stats from the DataBase and returns them
+/// as formatted JSON data
+///
+/// ## Response
+///
+/// ```json
+/// {
+///   "totalOcorrencias": 0,
+///   "ocorrenciasHoje": 0,
+///   "emAndamento": 0,
+///   "equipesAtivas": 0
+/// }
+/// ```
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,

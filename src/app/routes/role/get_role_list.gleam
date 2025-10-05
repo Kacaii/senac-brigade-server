@@ -7,6 +7,14 @@ import gleam/result
 import pog
 import wisp
 
+///   Find all available user roles and returns them as formatted JSON data
+///
+/// ## Response
+///
+/// ```json
+/// {["role_1", "role_2", "role_3", "role_3"]}
+/// ```
+///
 pub fn handle_request(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
@@ -36,6 +44,10 @@ fn query_user_roles(context: Context) -> Result(json.Json, GetRoleListError) {
   Ok(json.preprocessed_array(available_roles))
 }
 
+type GetRoleListError {
+  DataBaseError(pog.QueryError)
+}
+
 fn handle_error(err: GetRoleListError) -> wisp.Response {
   let err_msg = case err {
     DataBaseError(pog.ConnectionUnavailable) ->
@@ -47,8 +59,4 @@ fn handle_error(err: GetRoleListError) -> wisp.Response {
 
   wisp.internal_server_error()
   |> wisp.set_body(wisp.Text(err_msg))
-}
-
-type GetRoleListError {
-  DataBaseError(pog.QueryError)
 }

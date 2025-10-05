@@ -42,25 +42,6 @@ pub fn auth_user_from_cookie(
   Ok(user_uuid)
 }
 
-///   Authentication can fail
-pub type AuthenticationError {
-  ///   Request is missing the authetication Cookie
-  MissingCookie
-  /// 󰘨  User doesnt have a valid UUID
-  InvalidUUID(String)
-}
-
-pub fn handle_authentication_error(err: AuthenticationError) {
-  case err {
-    InvalidUUID(id) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> id))
-    MissingCookie ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
-  }
-}
-
 /// 󰡦  Extracts the user UUID from the request and query the DataBase
 /// to verify if the user has authorization to access determined endpoint
 pub fn check_role_authorization(
@@ -97,4 +78,23 @@ pub type AuthorizationError {
   DataBaseError(pog.QueryError)
   /// 󰡦  DataBase found no results
   DataBaseReturnedEmptyRow
+}
+
+///   Authentication can fail
+pub type AuthenticationError {
+  ///   Request is missing the authetication Cookie
+  MissingCookie
+  /// 󰘨  User doesnt have a valid UUID
+  InvalidUUID(String)
+}
+
+pub fn handle_authentication_error(err: AuthenticationError) {
+  case err {
+    InvalidUUID(id) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> id))
+    MissingCookie ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
+  }
 }

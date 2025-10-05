@@ -1,7 +1,6 @@
 //// Processes occurrence registration form data, validates inputs, and creates
 //// a new occurrence record in the database.
 
-import app/routes/occurrence.{type Occurrence, Occurrence}
 import app/routes/occurrence/sql
 import app/routes/user
 import app/web.{type Context}
@@ -32,7 +31,35 @@ pub fn handle_request(
   }
 }
 
-/// Validates and constructs an Occurrence from form data by converting string
+/// Raw form data submitted for creating an occurrence, with all IDs as strings
+pub opaque type OccurrenceFormData {
+  OccurrenceFormData(
+    category_id: String,
+    subcategory_id: String,
+    description: String,
+    location: List(Float),
+    reference_point: String,
+    vehicle_code: String,
+    participants_id: List(String),
+  )
+}
+
+/// 󰘨  Validated occurrence data with all `Strings` converted to `UUIDs`,
+/// ready for DataBase insertion
+pub type Occurrence {
+  Occurrence(
+    applicant_id: uuid.Uuid,
+    category_id: uuid.Uuid,
+    subcategory_id: uuid.Uuid,
+    description: String,
+    location: List(Float),
+    reference_point: String,
+    vehicle_code: String,
+    participants_id: List(uuid.Uuid),
+  )
+}
+
+/// 󰆺  Validates and constructs an Occurrence from form data by converting string
 /// IDs to UUIDs and extracting the applicant ID from request cookies.
 fn insert_occurrence(
   request request: wisp.Request,
@@ -68,19 +95,6 @@ fn insert_occurrence(
     vehicle_code: data.vehicle_code,
     participants_id:,
   ))
-}
-
-/// Raw form data submitted for creating an occurrence, with all IDs as strings
-pub opaque type OccurrenceFormData {
-  OccurrenceFormData(
-    category_id: String,
-    subcategory_id: String,
-    description: String,
-    location: List(Float),
-    reference_point: String,
-    vehicle_code: String,
-    participants_id: List(String),
-  )
 }
 
 /// 󱐀  A form that decodes the `Occurrence` type
@@ -149,6 +163,19 @@ fn handle_form(
   }
 }
 
+/// Represents possible errors that can occur during occurrence registration,
+/// including invalid UUID formats for applicant, category, or subcategory,
+/// and missing authentication cookie.
+type RegisterNewOccurrenceError {
+  /// The provided category ID is not a valid UUID format
+  InvalidCategoryUUID(String)
+  /// The provided subcategory ID is not a valid UUID format
+  InvalidSubCategoryUUID(String)
+  /// The required user authentication cookie is missing from the request
+  AuthenticationFailed(user.AuthenticationError)
+  InvalidParticipantUUID(String)
+}
+
 fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   case err {
     pog.ConnectionUnavailable -> {
@@ -213,17 +240,4 @@ fn handle_occurrence_error(err: RegisterNewOccurrenceError) -> wisp.Response {
       }
     }
   }
-}
-
-/// Represents possible errors that can occur during occurrence registration,
-/// including invalid UUID formats for applicant, category, or subcategory,
-/// and missing authentication cookie.
-type RegisterNewOccurrenceError {
-  /// The provided category ID is not a valid UUID format
-  InvalidCategoryUUID(String)
-  /// The provided subcategory ID is not a valid UUID format
-  InvalidSubCategoryUUID(String)
-  /// The required user authentication cookie is missing from the request
-  AuthenticationFailed(user.AuthenticationError)
-  InvalidParticipantUUID(String)
 }

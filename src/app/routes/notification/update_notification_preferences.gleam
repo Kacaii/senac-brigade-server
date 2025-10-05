@@ -11,6 +11,22 @@ import gleam/result
 import pog
 import wisp
 
+/// 󰚰  Updates the notification preferences from an user
+/// and returs them as formatted JSON data
+///
+/// ## Response
+///
+/// ```json
+/// {
+///    "message": "Preferências de notificação atualizadas com sucesso",
+///    "data": {
+///      "incendio": true,
+///      "emergencia": false,
+///      "transito": true,
+///      "outros": false
+///    }
+/// }
+/// ```
 pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
   use <- wisp.require_method(req, http.Put)
   use json_data <- wisp.require_json(req)
