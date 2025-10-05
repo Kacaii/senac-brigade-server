@@ -22,7 +22,8 @@ pub type QueryDashboardStatsRow {
   )
 }
 
-/// 
+/// Runs the `query_dashboard_stats` query
+/// defined in `./src/app/routes/dashboard/sql/query_dashboard_stats.sql`.
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -43,8 +44,7 @@ pub fn query_dashboard_stats(
     ))
   }
 
-  "-- 
-SELECT
+  "SELECT
     (
         SELECT count
         FROM public.vw_count_active_brigades

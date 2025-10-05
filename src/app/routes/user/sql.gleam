@@ -231,8 +231,7 @@ pub type QueryUserProfileRow {
   )
 }
 
-/// Runs the `query_user_profile` query
-/// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
+/// 󰀖  Find basic information about an user account
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -258,7 +257,8 @@ pub fn query_user_profile(
     ))
   }
 
-  "SELECT
+  "-- 󰀖  Find basic information about an user account
+SELECT
     u.id,
     u.full_name,
     u.registration,
@@ -287,8 +287,7 @@ pub type QueryUserRoleNameRow {
   QueryUserRoleNameRow(role_name: String)
 }
 
-/// Runs the `query_user_role_name` query
-/// defined in `./src/app/routes/user/sql/query_user_role_name.sql`.
+/// 󰀖  Find user access level
 ///
 /// > 🐿️ This function was generated automatically using v4.4.1 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -302,7 +301,8 @@ pub fn query_user_role_name(
     decode.success(QueryUserRoleNameRow(role_name:))
   }
 
-  "SELECT ur.role_name FROM
+  "-- 󰀖  Find user access level
+SELECT ur.role_name FROM
     public.user_account AS u
 INNER JOIN public.user_role AS ur
     ON u.role_id = ur.id

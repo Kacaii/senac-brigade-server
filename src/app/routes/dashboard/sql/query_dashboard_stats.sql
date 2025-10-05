@@ -1,4 +1,3 @@
--- 
 SELECT
     (
         SELECT count

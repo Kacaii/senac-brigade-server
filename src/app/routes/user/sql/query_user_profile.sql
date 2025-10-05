@@ -1,3 +1,4 @@
+-- 󰀖  Find basic information about an user account
 SELECT
     u.id,
     u.full_name,
