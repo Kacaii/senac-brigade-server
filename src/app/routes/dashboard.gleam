@@ -93,7 +93,10 @@ fn handle_authorization_error(role_err: user.AuthorizationError) {
     // 󱏊  Database couldn't find a user role with that UUDI
     //
     user.DataBaseReturnedEmptyRow ->
-      wisp.bad_request("Não foi encontrado um cargo com o ID solicitado")
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível identificar o cargo do usuário",
+      ))
 
     //   User is not authorized to access this endpoint -------------------
     //

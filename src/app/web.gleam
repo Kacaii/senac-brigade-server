@@ -75,5 +75,6 @@ fn cors_config() -> cors.Cors {
   |> cors.allow_method(http.Put)
   |> cors.allow_header("authorization")
   |> cors.allow_header("content-type")
+  |> cors.allow_header("origin")
   |> cors.allow_credentials()
 }

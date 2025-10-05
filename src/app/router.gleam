@@ -28,42 +28,39 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
   case request.method, wisp.path_segments(request) {
     //   Authorization routes -------------------------------------------------
-    http.Post, ["api", "user", "signup"] ->
-      signup.handle_request(request:, ctx:)
-    http.Post, ["api", "user", "login"] -> login.handle_request(request:, ctx:)
+    http.Post, ["user", "signup"] -> signup.handle_request(request:, ctx:)
+    http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
 
     // 󰨇  Dashboard stats ------------------------------------------------------
-    http.Get, ["api", "dashboard", "stats"] ->
-      dashboard.handle_request(request:, ctx:)
+    http.Get, ["dashboard", "stats"] -> dashboard.handle_request(request:, ctx:)
 
     //   User data routes -----------------------------------------------------
-    http.Get, ["api", "user", id, "occurrences"] ->
+    http.Get, ["user", id, "occurrences"] ->
       get_ocurrences_by_applicant.handle_request(request:, ctx:, id:)
 
-    http.Get, ["api", "user", "profile"] ->
+    http.Get, ["user", "profile"] ->
       get_user_profile.handle_request(request:, ctx:)
 
-    http.Get, ["api", "user", id, "crew_members"] ->
+    http.Get, ["user", id, "crew_members"] ->
       get_crew_members.handle_request(request:, ctx:, id:)
 
     //   Notification routes --------------------------------------------------
-    http.Get, ["api", "user", "notification_preferences"] ->
+    http.Get, ["user", "notification_preferences"] ->
       get_notification_preferences.handle_request(request, ctx)
 
-    http.Put, ["api", "user", "notification_preferences"] ->
+    http.Put, ["user", "notification_preferences"] ->
       update_notification_preferences.handle_request(request, ctx)
 
     // 󰞏  Occurrence routes ----------------------------------------------------
-    http.Post, ["api", "occurence", "new"] ->
+    http.Post, ["occurence", "new"] ->
       register_new_occurrence.handle_request(request:, ctx:)
 
     // 󰢫  Brigade routes -------------------------------------------------------
-    http.Get, ["api", "brigade", id, "members"] ->
+    http.Get, ["brigade", id, "members"] ->
       get_brigade_members.handle_request(request:, ctx:, id:)
 
     //   Role routes ----------------------------------------------------------
-    http.Get, ["api", "user", "roles"] ->
-      get_role_list.handle_request(request, ctx)
+    http.Get, ["user", "roles"] -> get_role_list.handle_request(request, ctx)
 
     // Fallback routes ---------------------------------------------------------
     _, [] -> wisp.ok()
