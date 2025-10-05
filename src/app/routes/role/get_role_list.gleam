@@ -12,7 +12,7 @@ import wisp
 /// ## Response
 ///
 /// ```json
-/// {["role_1", "role_2", "role_3", "role_3"]}
+/// {["desenvolvedor", "bombeiro", "capitão", "analista"]}
 /// ```
 ///
 pub fn handle_request(request: wisp.Request, context: Context) -> wisp.Response {
