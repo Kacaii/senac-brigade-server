@@ -10,6 +10,16 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
+/// A row you get from running the `insert_new_occurence` query
+/// defined in `./src/app/routes/occurrence/sql/insert_new_occurence.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type InsertNewOccurenceRow {
+  InsertNewOccurenceRow(id: Uuid, created_at: Timestamp)
+}
+
 ///   Inserts a new occurrence into the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
@@ -25,8 +35,12 @@ pub fn insert_new_occurence(
   arg_6: String,
   arg_7: String,
   arg_8: List(Uuid),
-) -> Result(pog.Returned(Nil), pog.QueryError) {
-  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+) -> Result(pog.Returned(InsertNewOccurenceRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use created_at <- decode.field(1, pog.timestamp_decoder())
+    decode.success(InsertNewOccurenceRow(id:, created_at:))
+  }
 
   "--   Inserts a new occurrence into the database
 INSERT INTO public.occurrence (
@@ -38,7 +52,8 @@ INSERT INTO public.occurrence (
     reference_point,
     vehicle_code,
     participants_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, created_at;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -48,10 +63,9 @@ INSERT INTO public.occurrence (
   |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_5))
   |> pog.parameter(pog.text(arg_6))
   |> pog.parameter(pog.text(arg_7))
-  |> pog.parameter(pog.array(
-    fn(value) { pog.text(uuid.to_string(value)) },
-    arg_8,
-  ))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_8),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -238,9 +252,7 @@ fn occurrence_category_enum_encoder(occurrence_category_enum) -> pog.Value {
     MedicEmergency -> "medic_emergency"
   }
   |> pog.text
-}
-
-/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
+}/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -260,12 +272,11 @@ pub type OccurrenceSubcategoryEnum {
   Intoxication
   SeriousInjury
   Seizure
+  PreHospitalCare
   HeartStop
 }
 
-fn occurrence_subcategory_enum_decoder() -> decode.Decoder(
-  OccurrenceSubcategoryEnum,
-) {
+fn occurrence_subcategory_enum_decoder() -> decode.Decoder(OccurrenceSubcategoryEnum) {
   use occurrence_subcategory_enum <- decode.then(decode.string)
   case occurrence_subcategory_enum {
     "injured_animal" -> decode.success(InjuredAnimal)
@@ -282,12 +293,15 @@ fn occurrence_subcategory_enum_decoder() -> decode.Decoder(
     "intoxication" -> decode.success(Intoxication)
     "serious_injury" -> decode.success(SeriousInjury)
     "seizure" -> decode.success(Seizure)
+    "pre_hospital_care" -> decode.success(PreHospitalCare)
     "heart_stop" -> decode.success(HeartStop)
     _ -> decode.failure(InjuredAnimal, "OccurrenceSubcategoryEnum")
   }
 }
 
-fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> pog.Value {
+fn occurrence_subcategory_enum_encoder(
+  occurrence_subcategory_enum,
+) -> pog.Value {
   case occurrence_subcategory_enum {
     InjuredAnimal -> "injured_animal"
     Flood -> "flood"
@@ -303,6 +317,7 @@ fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> pog.Value
     Intoxication -> "intoxication"
     SeriousInjury -> "serious_injury"
     Seizure -> "seizure"
+    PreHospitalCare -> "pre_hospital_care"
     HeartStop -> "heart_stop"
   }
   |> pog.text

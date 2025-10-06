@@ -8,4 +8,5 @@ INSERT INTO public.occurrence (
     reference_point,
     vehicle_code,
     participants_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, created_at;
