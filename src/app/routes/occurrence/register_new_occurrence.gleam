@@ -18,6 +18,16 @@ import youid/uuid
 /// 󰞏  Handles occurrence registration form submission by validating form data,
 /// creating an occurrence record, and inserting it into the database with
 /// appropriate error responses.
+///
+/// ## Response
+///
+/// ```json
+/// {
+///   "message": "Ocorrência registrada com sucesso",
+///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+///   "date": 1759790156.0
+/// }
+/// ```
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,
@@ -45,7 +55,7 @@ fn handle_form_data(
         json.object([
           #("message", json.string("Ocorrência registrada com sucesso")),
           #("id", json.string(uuid.to_string(returned.id))),
-          #("data", json.float(timestamp.to_unix_seconds(returned.created_at))),
+          #("date", json.float(timestamp.to_unix_seconds(returned.created_at))),
         ])
       }
 
