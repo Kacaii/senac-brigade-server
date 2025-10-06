@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/user/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.1 of
+//// > 🐿️ This module was generated automatically using v4.4.2 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -11,7 +11,7 @@ import youid/uuid.{type Uuid}
 
 ///   Inserts a new user into the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn insert_new_user(
@@ -48,7 +48,7 @@ INSERT INTO public.user_account (
 /// A row you get from running the `query_crew_members` query
 /// defined in `./src/app/routes/user/sql/query_crew_members.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryCrewMembersRow {
@@ -63,7 +63,7 @@ pub type QueryCrewMembersRow {
 /// 󰢫  Retrieves detailed information about fellow brigade members
 /// for a given user, including their names and role details.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_crew_members(
@@ -107,7 +107,7 @@ LEFT JOIN
 /// A row you get from running the `query_login_token` query
 /// defined in `./src/app/routes/user/sql/query_login_token.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryLoginTokenRow {
@@ -117,7 +117,7 @@ pub type QueryLoginTokenRow {
 ///   Retrieves a user's ID and password hash from their registration
 /// number for authentication purposes.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_login_token(
@@ -147,7 +147,7 @@ WHERE u.registration = $1;
 /// A row you get from running the `query_user_id_by_registration` query
 /// defined in `./src/app/routes/user/sql/query_user_id_by_registration.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserIdByRegistrationRow {
@@ -156,7 +156,7 @@ pub type QueryUserIdByRegistrationRow {
 
 ///   Retrieves a user's ID from their registration number.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_id_by_registration(
@@ -182,7 +182,7 @@ WHERE u.registration = $1;
 /// A row you get from running the `query_user_name` query
 /// defined in `./src/app/routes/user/sql/query_user_name.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserNameRow {
@@ -191,7 +191,7 @@ pub type QueryUserNameRow {
 
 ///   Retrieves a user's full name by their user ID.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_name(
@@ -217,7 +217,7 @@ WHERE u.id = $1;
 /// A row you get from running the `query_user_profile` query
 /// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserProfileRow {
@@ -233,7 +233,7 @@ pub type QueryUserProfileRow {
 
 /// 󰀖  Find basic information about an user account
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_profile(
@@ -280,7 +280,7 @@ WHERE u.id = $1;
 /// A row you get from running the `query_user_role_name` query
 /// defined in `./src/app/routes/user/sql/query_user_role_name.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserRoleNameRow {
@@ -289,7 +289,7 @@ pub type QueryUserRoleNameRow {
 
 /// 󰀖  Find user access level
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_role_name(

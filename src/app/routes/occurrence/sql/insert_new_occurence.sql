@@ -1,8 +1,8 @@
 --   Inserts a new occurrence into the database
 INSERT INTO public.occurrence (
     applicant_id,
-    category_id,
-    subcategory_id,
+    occurrence_category,
+    occurrence_subcategory,
     description,
     location,
     reference_point,

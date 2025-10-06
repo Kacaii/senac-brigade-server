@@ -61,23 +61,45 @@ ON public.brigade_membership (user_id);
 CREATE INDEX IF NOT EXISTS idx_brigade_membership_brigade_id
 ON public.brigade_membership (brigade_id);
 
-CREATE TABLE IF NOT EXISTS public.occurrence_category (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    parent_category_id UUID REFERENCES public.occurrence_category (id)
-    ON UPDATE CASCADE ON DELETE CASCADE DEFAULT NULL,
-    category_name TEXT UNIQUE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TYPE public.occurrence_category_enum AS ENUM (
+    'medic_emergency',
+    'fire',
+    'traffic_accident',
+    'other'
+);
+
+CREATE TYPE public.occurrence_subcategory_enum AS ENUM (
+    -- 󰋠  Medic Emergency,
+    'heart_stop',
+    'pre_hospital_care',
+    'seizure',
+    'serious_injury',
+    'intoxication',
+
+    --   Fire
+    'residential',
+    'comercial',
+    'vegetation',
+    'vehicle',
+
+    --   Traffic Accident
+    'collision',
+    'run_over',
+    'rollover',
+    'motorcycle_crash',
+
+    --   Other
+    'tree_crash',
+    'flood',
+    'injured_animal'
 );
 
 CREATE TABLE IF NOT EXISTS public.occurrence (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     applicant_id UUID REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-    category_id UUID REFERENCES public.occurrence_category (id)
-    ON UPDATE CASCADE ON DELETE SET NULL,
-    subcategory_id UUID REFERENCES public.occurrence_category (id)
-    ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
+    occurrence_category OCCURRENCE_CATEGORY_ENUM NOT NULL,
+    occurrence_subcategory OCCURRENCE_SUBCATEGORY_ENUM,
     description TEXT,
     location POINT NOT NULL,
     reference_point TEXT,

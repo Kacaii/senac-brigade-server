@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/dashboard/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.1 of
+//// > 🐿️ This module was generated automatically using v4.4.2 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -10,7 +10,7 @@ import pog
 /// A row you get from running the `query_dashboard_stats` query
 /// defined in `./src/app/routes/dashboard/sql/query_dashboard_stats.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryDashboardStatsRow {
@@ -24,7 +24,7 @@ pub type QueryDashboardStatsRow {
 
 /// 󱘟  Retrieve stats for the Dashboard page
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_dashboard_stats(

@@ -99,8 +99,8 @@ fn get_occurences_by_applicant_row_to_json(
   let sql.QueryOccurencesByApplicantRow(
     id:,
     description:,
-    category:,
-    subcategory:,
+    occurrence_category:,
+    occurrence_subcategory:,
     created_at:,
     updated_at:,
     resolved_at:,
@@ -110,8 +110,17 @@ fn get_occurences_by_applicant_row_to_json(
   json.object([
     #("id", json.string(uuid.to_string(id))),
     #("description", json.nullable(description, json.string)),
-    #("category", json.nullable(category, json.string)),
-    #("subcategory", json.nullable(subcategory, json.string)),
+    #(
+      "category",
+      json.string(occurrence_category_enum_encoder(occurrence_category)),
+    ),
+    #(
+      "subcategory",
+      json.nullable(
+        option.map(occurrence_subcategory, occurrence_subcategory_enum_encoder),
+        json.string,
+      ),
+    ),
     #("created_at", json.float(timestamp.to_unix_seconds(created_at))),
     #("updated_at", json.float(timestamp.to_unix_seconds(updated_at))),
     #("resolved_at", json.nullable(maybe_timestamp(resolved_at), json.float)),
@@ -125,4 +134,33 @@ fn maybe_timestamp(
 ) -> option.Option(Float) {
   use time_stamp <- option.map(timestamp)
   timestamp.to_unix_seconds(time_stamp)
+}
+
+fn occurrence_category_enum_encoder(occurrence_category_enum) -> String {
+  case occurrence_category_enum {
+    sql.Other -> "other"
+    sql.TrafficAccident -> "traffic_accident"
+    sql.Fire -> "fire"
+    sql.MedicEmergency -> "medic_emergency"
+  }
+}
+
+fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> String {
+  case occurrence_subcategory_enum {
+    sql.InjuredAnimal -> "injured_animal"
+    sql.Flood -> "flood"
+    sql.TreeCrash -> "tree_crash"
+    sql.MotorcycleCrash -> "motorcycle_crash"
+    sql.Rollover -> "rollover"
+    sql.RunOver -> "run_over"
+    sql.Collision -> "collision"
+    sql.Vehicle -> "vehicle"
+    sql.Vegetation -> "vegetation"
+    sql.Comercial -> "comercial"
+    sql.Residential -> "residential"
+    sql.Intoxication -> "intoxication"
+    sql.SeriousInjury -> "serious_injury"
+    sql.Seizure -> "seizure"
+    sql.HeartStop -> "heart_stop"
+  }
 }

@@ -2,10 +2,9 @@
 BEGIN;
 
 DROP FUNCTION IF EXISTS public.query_user_id_by_registration;
-DROP FUNCTION IF EXISTS public.query_category_id_by_name;
 DROP FUNCTION IF EXISTS public.query_brigade_members_id;
 DROP FUNCTION IF EXISTS public.query_fellow_brigade_members_id;
-DROP FUNCTION IF EXISTS public.query_all_ocurrences_by_user_id;
+DROP FUNCTION IF EXISTS public.query_all_occurrences_by_user_id;
 
 --   CREATE -------------------------------------------------------------------
 
@@ -22,23 +21,6 @@ SELECT u.id INTO user_id
 WHERE u.registration = $1;
 
 RETURN user_id;
-
-END;
-$$ LANGUAGE plpgsql;
-
---   Returns the user_account UUID by using their registration ----------------
-CREATE OR REPLACE FUNCTION public.query_category_id_by_name(input_name TEXT)
-RETURNS UUID AS $$
-
-DECLARE category_id UUID;
-
-BEGIN
-
-SELECT oc.id INTO category_id
-FROM public.occurrence_category AS oc
-WHERE oc.category_name = $1;
-
-RETURN category_id;
 
 END;
 $$ LANGUAGE plpgsql;
@@ -82,7 +64,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --   Returns all occurrences applied by an user -------------------------------
-CREATE OR REPLACE FUNCTION public.query_all_ocurrences_by_user_id(user_id UUID)
+CREATE OR REPLACE FUNCTION public.query_all_occurrences_by_user_id(user_id UUID)
 RETURNS SETOF UUID AS $$
 BEGIN
 

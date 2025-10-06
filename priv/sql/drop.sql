@@ -23,7 +23,6 @@ DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_occurrence_id;
 
 -- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
 DROP TABLE IF EXISTS public.occurrence;
-DROP TABLE IF EXISTS public.occurrence_category;
 DROP TABLE IF EXISTS public.occurrence_brigade_member;
 DROP TABLE IF EXISTS public.brigade_membership;
 DROP TABLE IF EXISTS public.brigade;
@@ -34,3 +33,5 @@ DROP TABLE IF EXISTS public.user_role;
 
 --------------------------------------------------------------------------------
 DROP TYPE IF EXISTS public.NOTIFICATION_TYPE_ENUM;
+DROP TYPE IF EXISTS public.OCCURRENCE_CATEGORY_ENUM;
+DROP TYPE IF EXISTS public.OCCURRENCE_SUBCATEGORY_ENUM;

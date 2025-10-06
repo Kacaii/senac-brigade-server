@@ -1,9 +1,7 @@
 SELECT
-    c.category_name,
-    c.description,
-    parent.category_name AS parent_category_name
-FROM public.occurrence_category AS c
-LEFT JOIN
-    public.occurrence_category AS parent
-    ON c.parent_category_id = parent.id
+    o.category_name,
+    o.description,
+    o.occurrence_category,
+    o.occurrence_subcategory
+FROM public.occurrence AS o
 LIMIT 20;

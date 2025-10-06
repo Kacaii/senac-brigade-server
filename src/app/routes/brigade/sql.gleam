@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/brigade/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.1 of
+//// > 🐿️ This module was generated automatically using v4.4.2 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -12,7 +12,7 @@ import youid/uuid.{type Uuid}
 /// A row you get from running the `query_brigade_members` query
 /// defined in `./src/app/routes/brigade/sql/query_brigade_members.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.1 of the
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryBrigadeMembersRow {
@@ -26,7 +26,7 @@ pub type QueryBrigadeMembersRow {
 
 ///   Find all members of a brigade
 ///
-/// > 🐿️ This function was generated automatically using v4.4.1 of
+/// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_brigade_members(
