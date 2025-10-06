@@ -19,7 +19,7 @@ BEGIN
 
 SELECT u.id INTO user_id
   FROM public.user_account AS u
-WHERE u.registration = rg;
+WHERE u.registration = $1;
 
 RETURN user_id;
 
@@ -36,7 +36,7 @@ BEGIN
 
 SELECT oc.id INTO category_id
 FROM public.occurrence_category AS oc
-WHERE oc.category_name = input_name;
+WHERE oc.category_name = $1;
 
 RETURN category_id;
 
