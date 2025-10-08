@@ -23,7 +23,6 @@ import youid/uuid
 ///
 /// ```json
 /// {
-///   "message": "Ocorrência registrada com sucesso",
 ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 ///   "date": 1759790156.0
 /// }
@@ -53,7 +52,6 @@ fn handle_form_data(
     Ok(returned) -> {
       let resp = {
         json.object([
-          #("message", json.string("Ocorrência registrada com sucesso")),
           #("id", json.string(uuid.to_string(returned.id))),
           #("date", json.float(timestamp.to_unix_seconds(returned.created_at))),
         ])
@@ -96,6 +94,7 @@ fn handle_form_data(
                 |> string.replace("{{detail}}", detail),
               )
             }
+
             pog.QueryTimeout ->
               wisp.internal_server_error()
               |> wisp.set_body(wisp.Text(
