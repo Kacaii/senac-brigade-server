@@ -85,14 +85,6 @@ fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   |> wisp.set_body(wisp.Text(db_err_msg))
 }
 
-fn log_password_update(user_uuid: uuid.Uuid) -> Nil {
-  glight.logger()
-  |> glight.with("user_uuid", uuid.to_string(user_uuid))
-  |> glight.info("password_update")
-
-  Nil
-}
-
 fn update_user_password(
   request request: wisp.Request,
   ctx ctx: Context,
@@ -102,6 +94,8 @@ fn update_user_password(
     user.auth_user_from_cookie(request:, cookie_name: "USER_ID")
     |> result.map_error(AuthenticationError),
   )
+
+  // Fetch the password hash from the DataBase
   use current_password_hash <- result.try(query_user_password(ctx:, user_uuid:))
 
   // Compare the current password with the hash
@@ -125,9 +119,14 @@ fn update_user_password(
         |> argus.hash(form_data.new_password, argus.gen_salt())
         |> result.replace_error(HashError),
       )
+
       // 󰚰  Update their password
       use returned <- result.try(
-        sql.update_password(ctx.conn, user_uuid, hashed_password.encoded_hash)
+        sql.update_user_password(
+          ctx.conn,
+          user_uuid,
+          hashed_password.encoded_hash,
+        )
         |> result.map_error(DataBaseError),
       )
 
@@ -152,6 +151,7 @@ fn query_user_password(
     sql.query_user_password(ctx.conn, user_uuid)
     |> result.map_error(DataBaseError),
   )
+
   use row <- result.map(
     list.first(returned.rows)
     |> result.replace_error(FailedToQueryCurrentPassword),
@@ -197,4 +197,12 @@ type UpdatePasswordError {
   WrongPassword
   HashError
   MustBeDifferent
+}
+
+fn log_password_update(user_uuid: uuid.Uuid) -> Nil {
+  glight.logger()
+  |> glight.with("user_uuid", uuid.to_string(user_uuid))
+  |> glight.info("password_update")
+
+  Nil
 }

@@ -354,7 +354,7 @@ WHERE u.id = $1;
 /// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn update_password(
+pub fn update_user_password(
   db: pog.Connection,
   arg_1: Uuid,
   arg_2: String,
