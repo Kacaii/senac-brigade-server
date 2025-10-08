@@ -214,6 +214,41 @@ WHERE u.id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `query_user_password` query
+/// defined in `./src/app/routes/user/sql/query_user_password.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryUserPasswordRow {
+  QueryUserPasswordRow(password_hash: String)
+}
+
+///   Find the password hash from an user
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_user_password(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(QueryUserPasswordRow), pog.QueryError) {
+  let decoder = {
+    use password_hash <- decode.field(0, decode.string)
+    decode.success(QueryUserPasswordRow(password_hash:))
+  }
+
+  "--   Find the password hash from an user
+SELECT u.password_hash
+FROM public.user_account AS u
+WHERE u.id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `query_user_profile` query
 /// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
 ///
@@ -310,6 +345,30 @@ WHERE u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+///   Set an new value to the password of an user
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_password(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: String,
+) -> Result(pog.Returned(Nil), pog.QueryError) {
+  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+
+  "--   Set an new value to the password of an user
+UPDATE public.user_account
+SET password_hash = $2
+WHERE id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(arg_2))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

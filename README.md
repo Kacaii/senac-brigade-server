@@ -8,19 +8,20 @@
 
 ## Routes
 
-| Route                              | Description                                  | Method      |
-| ---------------------------------- | -------------------------------------------- | ----------- |
-| /api/user/signup                   | Register a new user account                  | POST (Form) |
-| /api/user/login                    | Login with your user account                 | POST (Form) |
-| /api/user/profile                  | Retrieve data about the authenticated user   | GET         |
-| /api/user/roles                    | Get a list of all available roles            | GET         |
-| /api/user/{{id}}/occurrences       | Find all occurrences applied by this user    | GET         |
-| /api/user/{{id}}/crew_members      | List fellow brigade members of this user     | GET         |
-| /api/user/notification_preferences | Fetch user notification preferences          | GET         |
-| /api/user/notification_preferences | Update user notification preferences         | PUT         |
-| /api/brigade/{{id}}/members        | List brigade members                         | GET         |
-| /api/occurrence/new                | Register new occurrence                      | POST (Form) |
-| /api/dashboard/stats               | Retrieves useful information from the server | GET         |
+| Route                              | Description                                        | Method      |
+| ---------------------------------- | -------------------------------------------------- | ----------- |
+| /api/user/signup                   | Register a new user account                        | POST (Form) |
+| /api/user/login                    | Login with your user account                       | POST (Form) |
+| /api/user/profile                  | Retrieve data about the authenticated user         | GET         |
+| /api/user/roles                    | Get a list of all available roles                  | GET         |
+| /api/user/{{id}}/occurrences       | Find all occurrences applied by this user          | GET         |
+| /api/user/{{id}}/crew_members      | List fellow brigade members of this user           | GET         |
+| /api/user/notification_preferences | Fetch authenticated user notification preferences  | GET         |
+| /api/user/notification_preferences | Update authenticated user notification preferences | PUT         |
+| /api/user/password                 | Update authenticated user password                 | PUT         |
+| /api/brigade/{{id}}/members        | List brigade members                               | GET         |
+| /api/occurrence/new                | Register new occurrence                            | POST (Form) |
+| /api/dashboard/stats               | Fetch stats for the dashboard page                 | GET         |
 
 ## Entity RelationShip Diagram
 

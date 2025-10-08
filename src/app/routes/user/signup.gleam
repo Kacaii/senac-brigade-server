@@ -93,8 +93,7 @@ fn log_signup(signup: SignUp) -> Nil {
   |> glight.with("email", signup.email)
   |> glight.info("signup")
 
-  // Set back to debug after logging
-  glight.set_log_level(glight.Debug)
+  Nil
 }
 
 fn handle_error(signup: SignUp, err: SignupError) {

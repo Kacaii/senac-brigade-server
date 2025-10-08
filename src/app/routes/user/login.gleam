@@ -132,7 +132,7 @@ fn log_login(login: LogIn) -> Nil {
   |> glight.with("registration", login.registration)
   |> glight.info("login")
 
-  glight.set_log_level(glight.Debug)
+  Nil
 }
 
 /// Login can fail

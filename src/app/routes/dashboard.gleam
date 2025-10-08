@@ -161,7 +161,7 @@ fn log_unauthorized_access_attempt(
   |> glight.with("role", role.to_string(user_role))
   |> glight.notice("unauthorized_access_attempt")
 
-  glight.set_log_level(glight.Debug)
+  Nil
 }
 
 fn get_dashboard_stats_row_to_json(

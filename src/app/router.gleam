@@ -18,6 +18,7 @@ import app/routes/user/get_ocurrences_by_applicant
 import app/routes/user/get_user_profile
 import app/routes/user/login
 import app/routes/user/signup
+import app/routes/user/update_user_password
 import app/web.{type Context}
 import gleam/http
 import wisp
@@ -30,6 +31,8 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     //   Authorization routes -------------------------------------------------
     http.Post, ["user", "signup"] -> signup.handle_request(request:, ctx:)
     http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
+    http.Put, ["user", "password"] ->
+      update_user_password.handle_request(request:, ctx:)
 
     // 󰨇  Dashboard stats ------------------------------------------------------
     http.Get, ["dashboard", "stats"] -> dashboard.handle_request(request:, ctx:)
