@@ -162,5 +162,6 @@ fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> String {
     sql.SeriousInjury -> "serious_injury"
     sql.Seizure -> "seizure"
     sql.HeartStop -> "heart_stop"
+    sql.PreHospitalCare -> "pre_hospital_care"
   }
 }
