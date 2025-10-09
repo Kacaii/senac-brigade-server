@@ -18,13 +18,10 @@ import wisp
 ///
 /// ```json
 /// {
-///    "message": "Preferências de notificação atualizadas com sucesso",
-///    "data": {
-///      "incendio": true,
-///      "emergencia": false,
-///      "transito": true,
-///      "outros": false
-///    }
+///   "incendio": true,
+///   "emergencia": false,
+///   "transito": true,
+///   "outros": false
 /// }
 /// ```
 pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
@@ -37,15 +34,9 @@ pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
       case update_preferences(req, ctx, form_data) {
         Error(err) -> handle_err(err)
         Ok(_) -> {
-          let resp = {
-            let data = json.dict(form_data, notification.to_string, json.bool)
-            let message =
-              json.string("Preferências de notificação atualizadas com sucesso")
-
-            json.object([#("message", message), #("data", data)])
-          }
-
-          wisp.json_response(json.to_string(resp), 200)
+          let data =
+            json.dict(form_data, notification.to_string_pt_br, json.bool)
+          wisp.json_response(json.to_string(data), 200)
         }
       }
     }

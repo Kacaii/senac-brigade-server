@@ -76,7 +76,7 @@ fn query_database(
     dict.insert(acc, row.notification_type, row.enabled)
   }
 
-  Ok(json.dict(preferences, notification.to_string, json.bool))
+  Ok(json.dict(preferences, notification.to_string_pt_br, json.bool))
 }
 
 type GetNotificationPreferencesError {

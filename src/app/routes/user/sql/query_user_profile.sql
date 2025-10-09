@@ -3,11 +3,8 @@ SELECT
     u.id,
     u.full_name,
     u.registration,
-    r.role_name,
+    u.user_role,
     u.email,
     u.phone
-FROM
-    public.user_account AS u
-LEFT JOIN public.user_role AS r
-    ON u.role_id = r.id
+FROM public.user_account AS u
 WHERE u.id = $1;

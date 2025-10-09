@@ -136,7 +136,9 @@ fn maybe_timestamp(
   timestamp.to_unix_seconds(time_stamp)
 }
 
-fn occurrence_category_enum_encoder(occurrence_category_enum) -> String {
+fn occurrence_category_enum_encoder(
+  occurrence_category_enum: sql.OccurrenceCategoryEnum,
+) -> String {
   case occurrence_category_enum {
     sql.Other -> "other"
     sql.TrafficAccident -> "traffic_accident"
@@ -145,7 +147,9 @@ fn occurrence_category_enum_encoder(occurrence_category_enum) -> String {
   }
 }
 
-fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> String {
+fn occurrence_subcategory_enum_encoder(
+  occurrence_subcategory_enum: sql.OccurrenceSubcategoryEnum,
+) -> String {
   case occurrence_subcategory_enum {
     sql.InjuredAnimal -> "injured_animal"
     sql.Flood -> "flood"

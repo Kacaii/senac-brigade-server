@@ -52,12 +52,7 @@ INSERT INTO public.user_account (
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryCrewMembersRow {
-  QueryCrewMembersRow(
-    id: Uuid,
-    full_name: String,
-    role_name: Option(String),
-    description: Option(String),
-  )
+  QueryCrewMembersRow(id: Uuid, full_name: String, user_role: UserRoleEnum)
 }
 
 /// 󰢫  Retrieves detailed information about fellow brigade members
@@ -73,14 +68,8 @@ pub fn query_crew_members(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
-    use role_name <- decode.field(2, decode.optional(decode.string))
-    use description <- decode.field(3, decode.optional(decode.string))
-    decode.success(QueryCrewMembersRow(
-      id:,
-      full_name:,
-      role_name:,
-      description:,
-    ))
+    use user_role <- decode.field(2, user_role_enum_decoder())
+    decode.success(QueryCrewMembersRow(id:, full_name:, user_role:))
   }
 
   "-- 󰢫  Retrieves detailed information about fellow brigade members
@@ -88,15 +77,11 @@ pub fn query_crew_members(
 SELECT
     u.id,
     u.full_name,
-    r.role_name,
-    r.description
-FROM QUERY_FELLOW_BRIGADE_MEMBERS_ID($1) AS crew_members (id)
+    u.user_role
+FROM QUERY_CREW_MEMBERS_ID($1) AS crew_members (id)
 INNER JOIN
     public.user_account AS u
     ON crew_members.id = u.id
-LEFT JOIN
-    public.user_role AS r
-    ON u.role_id = r.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -260,7 +245,7 @@ pub type QueryUserProfileRow {
     id: Uuid,
     full_name: String,
     registration: String,
-    role_name: Option(String),
+    user_role: UserRoleEnum,
     email: Option(String),
     phone: Option(String),
   )
@@ -279,14 +264,14 @@ pub fn query_user_profile(
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use registration <- decode.field(2, decode.string)
-    use role_name <- decode.field(3, decode.optional(decode.string))
+    use user_role <- decode.field(3, user_role_enum_decoder())
     use email <- decode.field(4, decode.optional(decode.string))
     use phone <- decode.field(5, decode.optional(decode.string))
     decode.success(QueryUserProfileRow(
       id:,
       full_name:,
       registration:,
-      role_name:,
+      user_role:,
       email:,
       phone:,
     ))
@@ -297,13 +282,10 @@ SELECT
     u.id,
     u.full_name,
     u.registration,
-    r.role_name,
+    u.user_role,
     u.email,
     u.phone
-FROM
-    public.user_account AS u
-LEFT JOIN public.user_role AS r
-    ON u.role_id = r.id
+FROM public.user_account AS u
 WHERE u.id = $1;
 "
   |> pog.query
@@ -312,14 +294,14 @@ WHERE u.id = $1;
   |> pog.execute(db)
 }
 
-/// A row you get from running the `query_user_role_name` query
-/// defined in `./src/app/routes/user/sql/query_user_role_name.sql`.
+/// A row you get from running the `query_user_role` query
+/// defined in `./src/app/routes/user/sql/query_user_role.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type QueryUserRoleNameRow {
-  QueryUserRoleNameRow(role_name: String)
+pub type QueryUserRoleRow {
+  QueryUserRoleRow(user_role: UserRoleEnum)
 }
 
 /// 󰀖  Find user access level
@@ -327,20 +309,19 @@ pub type QueryUserRoleNameRow {
 /// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn query_user_role_name(
+pub fn query_user_role(
   db: pog.Connection,
   arg_1: Uuid,
-) -> Result(pog.Returned(QueryUserRoleNameRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryUserRoleRow), pog.QueryError) {
   let decoder = {
-    use role_name <- decode.field(0, decode.string)
-    decode.success(QueryUserRoleNameRow(role_name:))
+    use user_role <- decode.field(0, user_role_enum_decoder())
+    decode.success(QueryUserRoleRow(user_role:))
   }
 
   "-- 󰀖  Find user access level
-SELECT ur.role_name FROM
+SELECT u.user_role
+FROM
     public.user_account AS u
-INNER JOIN public.user_role AS ur
-    ON u.role_id = ur.id
 WHERE u.id = $1;
 "
   |> pog.query
@@ -371,6 +352,35 @@ WHERE id = $1;
   |> pog.parameter(pog.text(arg_2))
   |> pog.returning(decoder)
   |> pog.execute(db)
+}
+
+// --- Enums -------------------------------------------------------------------
+
+/// Corresponds to the Postgres `user_role_enum` enum.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UserRoleEnum {
+  Sargeant
+  Developer
+  Captain
+  Firefighter
+  Analist
+  Admin
+}
+
+fn user_role_enum_decoder() -> decode.Decoder(UserRoleEnum) {
+  use user_role_enum <- decode.then(decode.string)
+  case user_role_enum {
+    "sargeant" -> decode.success(Sargeant)
+    "developer" -> decode.success(Developer)
+    "captain" -> decode.success(Captain)
+    "firefighter" -> decode.success(Firefighter)
+    "analist" -> decode.success(Analist)
+    "admin" -> decode.success(Admin)
+    _ -> decode.failure(Sargeant, "UserRoleEnum")
+  }
 }
 
 // --- Encoding/decoding utils -------------------------------------------------

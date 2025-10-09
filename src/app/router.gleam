@@ -55,7 +55,7 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
       update_notification_preferences.handle_request(request, ctx)
 
     // 󰞏  Occurrence routes ----------------------------------------------------
-    http.Post, ["occurence", "new"] ->
+    http.Post, ["occurrence", "new"] ->
       register_new_occurrence.handle_request(request:, ctx:)
 
     // 󰢫  Brigade routes -------------------------------------------------------

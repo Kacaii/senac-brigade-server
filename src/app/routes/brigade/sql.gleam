@@ -5,7 +5,6 @@
 ////
 
 import gleam/dynamic/decode
-import gleam/option.{type Option}
 import pog
 import youid/uuid.{type Uuid}
 
@@ -16,12 +15,7 @@ import youid/uuid.{type Uuid}
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryBrigadeMembersRow {
-  QueryBrigadeMembersRow(
-    id: Uuid,
-    full_name: String,
-    role_name: Option(String),
-    description: Option(String),
-  )
+  QueryBrigadeMembersRow(id: Uuid, full_name: String, user_role: UserRoleEnum)
 }
 
 ///   Find all members of a brigade
@@ -36,26 +30,16 @@ pub fn query_brigade_members(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
-    use role_name <- decode.field(2, decode.optional(decode.string))
-    use description <- decode.field(3, decode.optional(decode.string))
-    decode.success(QueryBrigadeMembersRow(
-      id:,
-      full_name:,
-      role_name:,
-      description:,
-    ))
+    use user_role <- decode.field(2, user_role_enum_decoder())
+    decode.success(QueryBrigadeMembersRow(id:, full_name:, user_role:))
   }
 
   "--   Find all members of a brigade
 SELECT
     u.id,
     u.full_name,
-    r.role_name,
-    r.description
+    u.user_role
 FROM public.user_account AS u
-LEFT JOIN
-    public.user_role AS r
-    ON u.role_id = r.id
 INNER JOIN
     public.query_brigade_members_id($1) AS brigade_members (id)
     ON u.id = brigade_members.id;
@@ -64,6 +48,35 @@ INNER JOIN
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.returning(decoder)
   |> pog.execute(db)
+}
+
+// --- Enums -------------------------------------------------------------------
+
+/// Corresponds to the Postgres `user_role_enum` enum.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UserRoleEnum {
+  Sargeant
+  Developer
+  Captain
+  Firefighter
+  Analist
+  Admin
+}
+
+fn user_role_enum_decoder() -> decode.Decoder(UserRoleEnum) {
+  use user_role_enum <- decode.then(decode.string)
+  case user_role_enum {
+    "sargeant" -> decode.success(Sargeant)
+    "developer" -> decode.success(Developer)
+    "captain" -> decode.success(Captain)
+    "firefighter" -> decode.success(Firefighter)
+    "analist" -> decode.success(Analist)
+    "admin" -> decode.success(Admin)
+    _ -> decode.failure(Sargeant, "UserRoleEnum")
+  }
 }
 
 // --- Encoding/decoding utils -------------------------------------------------

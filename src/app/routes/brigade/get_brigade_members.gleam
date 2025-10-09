@@ -4,6 +4,7 @@
 //// their id, full name, role, and description.
 
 import app/routes/brigade/sql
+import app/routes/role
 import app/web.{type Context}
 import gleam/http
 import gleam/json
@@ -23,20 +24,17 @@ import youid/uuid
 ///    {
 ///      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 ///      "full_name": "Ana Carolina Silva Santos",
-///      "role_name": "Bombeiro Militar",
-///      "description": "Especialista em combate a incêndios urbanos e resgate em altura"
+///      "user_role": "bombeiro militar",
 ///    },
 ///    {
 ///      "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
 ///      "full_name": "Carlos Eduardo Oliveira Pereira",
-///      "role_name": "Salva-vidas",
-///      "description": "Comandante de equipe de primeiros socorros e atendimento pré-hospitalar"
+///      "user_role": "salva vidas",
 ///    },
 ///    {
 ///      "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
 ///      "full_name": "Mariana Costa Rodrigues",
-///      "role_name": null,
-///      "description": "Bombeiro voluntário em treinamento para operações florestais"
+///      "user_role": "bombeiro",
 ///    }
 /// ]
 pub fn handle_request(
@@ -77,14 +75,30 @@ fn query_brigade_members(
 fn get_brigade_members_row_to_json(
   get_brigade_members_row: sql.QueryBrigadeMembersRow,
 ) -> json.Json {
-  let sql.QueryBrigadeMembersRow(id:, full_name:, description:, role_name:) =
+  let sql.QueryBrigadeMembersRow(id:, full_name:, user_role:) =
     get_brigade_members_row
+
+  let user_role =
+    user_role
+    |> enum_to_role()
+    |> role.to_string_pt_br()
+
   json.object([
     #("id", json.string(uuid.to_string(id))),
     #("full_name", json.string(full_name)),
-    #("role_name", json.nullable(role_name, json.string)),
-    #("description", json.nullable(description, json.string)),
+    #("user_role", json.string(user_role)),
   ])
+}
+
+fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
+  case user_role {
+    sql.Admin -> role.Admin
+    sql.Analist -> role.Analist
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
+  }
 }
 
 fn handle_err(err: GetBrigadeMembersError) -> wisp.Response {

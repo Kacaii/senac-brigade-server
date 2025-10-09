@@ -13,7 +13,7 @@ pub fn get_role_name(
   user_uuid id: uuid.Uuid,
 ) -> Result(String, AuthorizationError) {
   use returned <- result.try(
-    sql.query_user_role_name(ctx.conn, id)
+    sql.query_user_role(ctx.conn, id)
     |> result.map_error(DataBaseError),
   )
   use row <- result.try(
@@ -21,7 +21,23 @@ pub fn get_role_name(
     |> result.replace_error(DataBaseReturnedEmptyRow),
   )
 
-  Ok(row.role_name)
+  let role_name =
+    row.user_role
+    |> enum_to_role()
+    |> role.to_string()
+
+  Ok(role_name)
+}
+
+fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
+  case user_role {
+    sql.Admin -> role.Admin
+    sql.Analist -> role.Analist
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
+  }
 }
 
 ///   Extracts the user UUID from the request's Cookie
@@ -57,7 +73,10 @@ pub fn check_role_authorization(
   )
   // 󰯦  Query the User's role name ---------------------------------------------
   use role_name <- result.try(get_role_name(ctx, user_uuid))
-  let role = role.from_string(role_name:)
+  use role <- result.try(
+    role.from_string_pt_br(role_name:)
+    |> result.map_error(InvalidRole),
+  )
 
   // 󰈞  Check if that role has authorization -----------------------------------
   use found <- result.try(
@@ -78,6 +97,7 @@ pub type AuthorizationError {
   DataBaseError(pog.QueryError)
   /// 󰡦  DataBase found no results
   DataBaseReturnedEmptyRow
+  InvalidRole(String)
 }
 
 ///   Authentication can fail

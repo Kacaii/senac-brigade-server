@@ -1,3 +1,4 @@
+import app/routes/role
 import app/routes/role/sql
 import app/web.{type Context}
 import gleam/http
@@ -34,14 +35,29 @@ fn query_user_roles(context: Context) -> Result(json.Json, GetRoleListError) {
     |> result.map_error(DataBaseError),
   )
 
-  //   json: ["role_1", "role_2", "role_3", "role_3"]
   let available_roles = {
     use row <- list.map(returned.rows)
-    json.string(row.role_name)
+    let available_role =
+      row.available_role
+      |> enum_to_role()
+      |> role.to_string_pt_br()
+
+    json.string(available_role)
   }
 
   // 
   Ok(json.preprocessed_array(available_roles))
+}
+
+fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
+  case user_role {
+    sql.Admin -> role.Admin
+    sql.Analist -> role.Analist
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
+  }
 }
 
 type GetRoleListError {

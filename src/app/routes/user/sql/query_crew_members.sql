@@ -3,12 +3,8 @@
 SELECT
     u.id,
     u.full_name,
-    r.role_name,
-    r.description
-FROM QUERY_FELLOW_BRIGADE_MEMBERS_ID($1) AS crew_members (id)
+    u.user_role
+FROM QUERY_CREW_MEMBERS_ID($1) AS crew_members (id)
 INNER JOIN
     public.user_account AS u
     ON crew_members.id = u.id
-LEFT JOIN
-    public.user_role AS r
-    ON u.role_id = r.id;

@@ -14,7 +14,7 @@ import pog
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryAvailableUserRolesRow {
-  QueryAvailableUserRolesRow(role_name: String)
+  QueryAvailableUserRolesRow(available_role: UserRoleEnum)
 }
 
 ///   Find all available user roles
@@ -26,15 +26,43 @@ pub fn query_available_user_roles(
   db: pog.Connection,
 ) -> Result(pog.Returned(QueryAvailableUserRolesRow), pog.QueryError) {
   let decoder = {
-    use role_name <- decode.field(0, decode.string)
-    decode.success(QueryAvailableUserRolesRow(role_name:))
+    use available_role <- decode.field(0, user_role_enum_decoder())
+    decode.success(QueryAvailableUserRolesRow(available_role:))
   }
 
   "--   Find all available user roles
-SELECT r.role_name
-FROM public.user_role AS r;
+SELECT UNNEST(ENUM_RANGE(NULL::public.USER_ROLE_ENUM)) AS available_role;
 "
   |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)
+}
+
+// --- Enums -------------------------------------------------------------------
+
+/// Corresponds to the Postgres `user_role_enum` enum.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UserRoleEnum {
+  Sargeant
+  Developer
+  Captain
+  Firefighter
+  Analist
+  Admin
+}
+
+fn user_role_enum_decoder() -> decode.Decoder(UserRoleEnum) {
+  use user_role_enum <- decode.then(decode.string)
+  case user_role_enum {
+    "sargeant" -> decode.success(Sargeant)
+    "developer" -> decode.success(Developer)
+    "captain" -> decode.success(Captain)
+    "firefighter" -> decode.success(Firefighter)
+    "analist" -> decode.success(Analist)
+    "admin" -> decode.success(Admin)
+    _ -> decode.failure(Sargeant, "UserRoleEnum")
+  }
 }

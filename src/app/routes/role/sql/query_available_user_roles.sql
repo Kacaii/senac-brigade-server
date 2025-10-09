@@ -1,3 +1,2 @@
 --   Find all available user roles
-SELECT r.role_name
-FROM public.user_role AS r;
+SELECT UNNEST(ENUM_RANGE(NULL::public.USER_ROLE_ENUM)) AS available_role;

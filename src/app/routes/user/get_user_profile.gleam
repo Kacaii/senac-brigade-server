@@ -1,3 +1,4 @@
+import app/routes/role
 import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
@@ -17,11 +18,11 @@ import youid/uuid
 /// ```json
 /// {
 ///    "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
-///    "nome": "Maria Oliveira Costa",
-///    "matricula": "000000",
-///    "cargo": "Desenvolvedor",
+///    "full_name": "Maria Oliveira Costa",
+///    "registration": "000000",
+///    "user_role": "Desenvolvedor",
 ///    "email": "maria.oliveira@empresa.com.br",
-///    "telefone": "+55 (81) 9 8888-8888"
+///    "phone": "+55 (81) 9 8888-8888"
 /// }
 /// ```
 pub fn handle_request(
@@ -92,18 +93,35 @@ fn query_user_profile_row_to_json(
     id:,
     full_name:,
     registration:,
-    role_name:,
+    user_role:,
     email:,
     phone:,
   ) = query_user_data_row
+
+  let user_role =
+    user_role
+    |> enum_to_role()
+    |> role.to_string_pt_br()
+
   json.object([
     #("id", json.string(uuid.to_string(id))),
-    #("nome", json.string(full_name)),
-    #("matricula", json.string(registration)),
-    #("cargo", json.nullable(role_name, json.string)),
+    #("full_name", json.string(full_name)),
+    #("registration", json.string(registration)),
+    #("user_role", json.string(user_role)),
     #("email", json.nullable(email, json.string)),
-    #("telefone", json.nullable(phone, json.string)),
+    #("phone", json.nullable(phone, json.string)),
   ])
+}
+
+fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
+  case user_role {
+    sql.Admin -> role.Admin
+    sql.Analist -> role.Analist
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
+  }
 }
 
 pub type GetUserProfileError {

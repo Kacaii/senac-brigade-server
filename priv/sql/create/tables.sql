@@ -1,15 +1,17 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS public.user_role (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    role_name TEXT NOT NULL,
-    description TEXT
+CREATE TYPE public.user_role_enum AS ENUM (
+    'admin',
+    'analist',
+    'firefighter',
+    'captain',
+    'developer',
+    'sargeant'
 );
 
 CREATE TABLE IF NOT EXISTS public.user_account (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    role_id UUID REFERENCES public.user_role (id)
-    ON UPDATE CASCADE ON DELETE SET NULL DEFAULT NULL,
+    user_role USER_ROLE_ENUM NOT NULL,
     full_name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
     registration TEXT UNIQUE NOT NULL,

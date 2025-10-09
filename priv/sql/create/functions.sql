@@ -3,7 +3,7 @@ BEGIN;
 
 DROP FUNCTION IF EXISTS public.query_user_id_by_registration;
 DROP FUNCTION IF EXISTS public.query_brigade_members_id;
-DROP FUNCTION IF EXISTS public.query_fellow_brigade_members_id;
+DROP FUNCTION IF EXISTS public.query_crew_members_id;
 DROP FUNCTION IF EXISTS public.query_all_occurrences_by_user_id;
 
 --   CREATE -------------------------------------------------------------------
@@ -42,7 +42,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 --   Returns all users that are in the same brigades as the target user -------
-CREATE OR REPLACE FUNCTION public.query_fellow_brigade_members_id(user_id UUID)
+CREATE OR REPLACE FUNCTION public.query_crew_members_id(user_id UUID)
 RETURNS SETOF UUID AS $$
 BEGIN
 

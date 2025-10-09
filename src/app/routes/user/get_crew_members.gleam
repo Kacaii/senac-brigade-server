@@ -1,5 +1,6 @@
 //// Handler for retrieving members from the same brigade as a given user.
 
+import app/routes/role
 import app/routes/user/sql
 import app/web.{type Context}
 import gleam/http
@@ -20,20 +21,17 @@ import youid/uuid
 ///    {
 ///      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 ///      "full_name": "Ana Carolina Silva Santos",
-///      "role_name": "Bombeiro Militar",
-///      "description": "Especialista em combate a incêndios urbanos e resgate em altura"
+///      "user_role": "bombeiro militar",
 ///    },
 ///    {
 ///      "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
 ///      "full_name": "Carlos Eduardo Oliveira Pereira",
-///      "role_name": "Salva-vidas",
-///      "description": "Comandante de equipe de primeiros socorros e atendimento pré-hospitalar"
+///      "user_role": "salva vidas",
 ///    },
 ///    {
 ///      "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
 ///      "full_name": "Mariana Costa Rodrigues",
-///      "role_name": null,
-///      "description": "Bombeiro voluntário em treinamento para operações florestais"
+///      "user_role": "bombeiro",
 ///    }
 /// ]
 /// ```
@@ -74,14 +72,30 @@ fn query_crew_members(ctx ctx: Context, user_id user_id: String) {
 fn get_crew_members_row_to_json(
   get_crew_members_row: sql.QueryCrewMembersRow,
 ) -> json.Json {
-  let sql.QueryCrewMembersRow(id:, full_name:, role_name:, description:) =
+  let sql.QueryCrewMembersRow(id:, full_name:, user_role:) =
     get_crew_members_row
+
+  let role_name =
+    user_role
+    |> enum_to_role()
+    |> role.to_string_pt_br()
+
   json.object([
     #("id", json.string(uuid.to_string(id))),
     #("full_name", json.string(full_name)),
-    #("role_name", json.nullable(role_name, json.string)),
-    #("description", json.nullable(description, json.string)),
+    #("user_role", json.string(role_name)),
   ])
+}
+
+fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
+  case user_role {
+    sql.Admin -> role.Admin
+    sql.Analist -> role.Analist
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
+  }
 }
 
 fn handle_err(err: GetFellowBrigadeMembersError) {

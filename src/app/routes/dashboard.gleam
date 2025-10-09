@@ -129,6 +129,11 @@ fn handle_authorization_error(role_err: user.AuthorizationError) {
     //   DATABASE ERRORS ----------------------------------------------
     //
     user.DataBaseError(db_err) -> handle_db_error(db_err)
+    user.InvalidRole(unkown) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text(
+        "Usuário possui um cargo desconhecido: " <> unkown,
+      ))
   }
 }
 

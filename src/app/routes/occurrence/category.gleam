@@ -1,4 +1,5 @@
 import app/routes/occurrence/sql
+import gleam/string
 
 pub fn category_to_string(category: sql.OccurrenceCategoryEnum) -> String {
   case category {
@@ -33,7 +34,7 @@ pub fn subcategory_to_string(category: sql.OccurrenceSubcategoryEnum) -> String 
 pub fn main_category_from_string(
   category: String,
 ) -> Result(sql.OccurrenceCategoryEnum, String) {
-  case category {
+  case string.lowercase(category) {
     // Main occurrence categories ----------------------------------------------
     "other" -> Ok(sql.Other)
     "traffic_accident" -> Ok(sql.TrafficAccident)
@@ -48,7 +49,7 @@ pub fn main_category_from_string(
 pub fn sub_category_from_string(
   category: String,
 ) -> Result(sql.OccurrenceSubcategoryEnum, String) {
-  case category {
+  case string.lowercase(category) {
     "injured_animal" -> Ok(sql.InjuredAnimal)
     "flood" -> Ok(sql.Flood)
     "tree_crash" -> Ok(sql.TreeCrash)

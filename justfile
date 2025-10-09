@@ -45,7 +45,6 @@ prod:
 [group('  dev')]
 @rebuild_full:
     just rebuild_empty
-    psql senac_brigade -f ./priv/sql/insert/dev_insert_user_roles.sql
 
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]

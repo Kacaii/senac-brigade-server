@@ -32,16 +32,9 @@ title: SENAC Brigade
 
 erDiagram
 
-    user_role {
-        UUID id PK
-        TEXT name
-        TEXT description
-    }
-
-    user_account }|--|| user_role : is
     user_account {
         UUID id PK
-        INTEGER role_id FK
+        USER_ROLE_ENUM user_role
         TEXT full_name
         TEXT password_hash
         TEXT registration

@@ -28,10 +28,10 @@ DROP TABLE IF EXISTS public.brigade_membership;
 DROP TABLE IF EXISTS public.brigade;
 DROP TABLE IF EXISTS public.notification_preference;
 DROP TABLE IF EXISTS public.user_account;
-DROP TABLE IF EXISTS public.user_role;
 -- pgt-ignore-end lint/safety/banDropTable
 
 --------------------------------------------------------------------------------
 DROP TYPE IF EXISTS public.NOTIFICATION_TYPE_ENUM;
 DROP TYPE IF EXISTS public.OCCURRENCE_CATEGORY_ENUM;
 DROP TYPE IF EXISTS public.OCCURRENCE_SUBCATEGORY_ENUM;
+DROP TYPE IF EXISTS public.USER_ROLE_ENUM;
