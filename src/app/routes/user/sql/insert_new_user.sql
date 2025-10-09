@@ -4,7 +4,8 @@ INSERT INTO public.user_account (
     registration,
     phone,
     email,
-    password_hash
+    password_hash,
+    user_role
 ) VALUES (
-    $1, $2, $3, $4, $5
+    $1, $2, $3, $4, $5, $6
 )

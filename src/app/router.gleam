@@ -29,7 +29,7 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
   case request.method, wisp.path_segments(request) {
     //   Authorization routes -------------------------------------------------
-    http.Post, ["user", "signup"] -> signup.handle_request(request:, ctx:)
+    http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
     http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
     http.Put, ["user", "password"] ->
       update_user_password.handle_request(request:, ctx:)

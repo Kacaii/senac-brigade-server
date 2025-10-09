@@ -21,6 +21,7 @@ pub fn insert_new_user(
   arg_3: String,
   arg_4: String,
   arg_5: String,
+  arg_6: UserRoleEnum,
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
@@ -30,9 +31,10 @@ INSERT INTO public.user_account (
     registration,
     phone,
     email,
-    password_hash
+    password_hash,
+    user_role
 ) VALUES (
-    $1, $2, $3, $4, $5
+    $1, $2, $3, $4, $5, $6
 )
 "
   |> pog.query
@@ -41,6 +43,7 @@ INSERT INTO public.user_account (
   |> pog.parameter(pog.text(arg_3))
   |> pog.parameter(pog.text(arg_4))
   |> pog.parameter(pog.text(arg_5))
+  |> pog.parameter(user_role_enum_encoder(arg_6))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -381,6 +384,18 @@ fn user_role_enum_decoder() -> decode.Decoder(UserRoleEnum) {
     "admin" -> decode.success(Admin)
     _ -> decode.failure(Sargeant, "UserRoleEnum")
   }
+}
+
+fn user_role_enum_encoder(user_role_enum) -> pog.Value {
+  case user_role_enum {
+    Sargeant -> "sargeant"
+    Developer -> "developer"
+    Captain -> "captain"
+    Firefighter -> "firefighter"
+    Analist -> "analist"
+    Admin -> "admin"
+  }
+  |> pog.text
 }
 
 // --- Encoding/decoding utils -------------------------------------------------

@@ -6,6 +6,7 @@
 //// Passwords are hashed using Argon2 before storage and all sensitive
 //// operations are logged for audit purposes.
 
+import app/routes/role
 import app/routes/user/sql
 import app/web.{type Context}
 import argus
@@ -23,6 +24,7 @@ type SignUp {
     phone_number: String,
     email: String,
     password: String,
+    user_role: String,
   )
 }
 
@@ -47,7 +49,18 @@ fn signup_form() -> form.Form(SignUp) {
     use _ <- form.field("confirma_senha", {
       form.parse_string |> form.check_confirms(password)
     })
-    form.success(SignUp(name:, registration:, phone_number:, email:, password:))
+    use user_role <- form.field("cargo", {
+      form.parse_string |> form.check_not_empty()
+    })
+
+    form.success(SignUp(
+      name:,
+      registration:,
+      phone_number:,
+      email:,
+      password:,
+      user_role:,
+    ))
   })
 }
 
@@ -194,6 +207,9 @@ fn handle_error(signup: SignUp, err: SignupError) {
         }
       }
     }
+
+    InvalidRole(unknown) ->
+      wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
   }
 }
 
@@ -203,6 +219,8 @@ type SignupError {
   HashError
   ///   Something went wrong on the database
   DataBaseError(pog.QueryError)
+  ///   Unknown user role
+  InvalidRole(String)
 }
 
 /// 󰆼  Inserts the user in the database.
@@ -217,6 +235,11 @@ fn try_insert_into_database(
     |> result.replace_error(HashError),
   )
 
+  use user_role <- result.try(
+    role.from_string_pt_br(data.user_role)
+    |> result.map_error(InvalidRole),
+  )
+
   use _ <- result.try(
     sql.insert_new_user(
       ctx.conn,
@@ -225,10 +248,22 @@ fn try_insert_into_database(
       data.phone_number,
       data.email,
       hashed_password.encoded_hash,
+      role_to_enum(user_role),
     )
     |> result.map_error(DataBaseError),
   )
 
   // No need to return anything from this function
   Ok(Nil)
+}
+
+fn role_to_enum(user_role: role.Role) -> sql.UserRoleEnum {
+  case user_role {
+    role.Admin -> sql.Admin
+    role.Analist -> sql.Analist
+    role.Captain -> sql.Captain
+    role.Developer -> sql.Developer
+    role.Firefighter -> sql.Firefighter
+    role.Sargeant -> sql.Sargeant
+  }
 }
