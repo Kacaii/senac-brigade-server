@@ -7,6 +7,7 @@
 //// operations are logged for audit purposes.
 
 import app/routes/role
+import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
 import argus
@@ -81,7 +82,7 @@ pub fn handle_request(
 
     //   Valid form
     Ok(signup) -> {
-      case try_insert_into_database(signup:, ctx:) {
+      case try_insert_into_database(request: req, ctx:, signup:) {
         Ok(_) -> {
           //   Logs new user account
           log_signup(signup)
@@ -210,6 +211,75 @@ fn handle_error(signup: SignUp, err: SignupError) {
 
     InvalidRole(unknown) ->
       wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
+
+    RoleError(err) -> {
+      case err {
+        user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
+        user.DataBaseError(err) -> {
+          case err {
+            pog.ConnectionUnavailable -> {
+              let body =
+                "Conexão com o Banco de Dados não disponível"
+                |> wisp.Text
+
+              wisp.internal_server_error()
+              |> wisp.set_body(body)
+            }
+
+            pog.QueryTimeout -> {
+              let body =
+                "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
+                |> wisp.Text
+
+              wisp.internal_server_error()
+              |> wisp.set_body(body)
+            }
+
+            pog.PostgresqlError(code:, name:, message:) -> {
+              let body =
+                "
+            🐘  O Banco de Dados apresentou um erro
+
+            Código:     {{code}}
+            Nome:       {{name}}
+            Mensagem:   {{message}}
+            "
+                |> string.replace("{{code}}", code)
+                |> string.replace("{{name}}", name)
+                |> string.replace("{{message}}", message)
+                |> wisp.Text
+
+              wisp.internal_server_error()
+              |> wisp.set_body(body)
+            }
+
+            _ -> {
+              let body =
+                "Ocorreu um erro ao acessar o no Banco de Dados durante a autenticação do usuário"
+                |> wisp.Text
+
+              wisp.internal_server_error()
+              |> wisp.set_body(body)
+            }
+          }
+        }
+        user.DataBaseReturnedEmptyRow ->
+          wisp.internal_server_error()
+          |> wisp.set_body(wisp.Text(
+            "Não foi possível encontrar o cargo do usuário autenticado",
+          ))
+        user.InvalidRole(unknown) ->
+          wisp.response(401)
+          |> wisp.set_body(wisp.Text(
+            "Usuário possui cargo inválido: " <> unknown,
+          ))
+        user.Unauthorized(_, user_role) ->
+          wisp.response(403)
+          |> wisp.set_body(wisp.Text(
+            "Cargo não autorizado: " <> role.to_string_pt_br(user_role),
+          ))
+      }
+    }
   }
 }
 
@@ -221,14 +291,26 @@ type SignupError {
   DataBaseError(pog.QueryError)
   ///   Unknown user role
   InvalidRole(String)
+  RoleError(user.AuthorizationError)
 }
 
 /// 󰆼  Inserts the user in the database.
 /// 󱔼  Hashes the user `password` before inserting.
 fn try_insert_into_database(
+  request request: wisp.Request,
   signup data: SignUp,
   ctx ctx: Context,
 ) -> Result(Nil, SignupError) {
+  use _ <- result.try(
+    user.check_role_authorization(
+      request:,
+      ctx:,
+      cookie_name: "USER_ID",
+      authorized_roles: [role.Admin],
+    )
+    |> result.map_error(RoleError),
+  )
+
   use hashed_password <- result.try(
     argus.hasher()
     |> argus.hash(data.password, argus.gen_salt())
