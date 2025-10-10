@@ -8,10 +8,10 @@ import wisp
 import youid/uuid
 
 ///   Query the database to find the user's role name
-pub fn get_role_name(
+pub fn get_user_role(
   ctx ctx: Context,
   user_uuid id: uuid.Uuid,
-) -> Result(String, AuthorizationError) {
+) -> Result(role.Role, AuthorizationError) {
   use returned <- result.try(
     sql.query_user_role(ctx.conn, id)
     |> result.map_error(DataBaseError),
@@ -21,12 +21,11 @@ pub fn get_role_name(
     |> result.replace_error(DataBaseReturnedEmptyRow),
   )
 
-  let role_name =
+  let user_role =
     row.user_role
     |> enum_to_role()
-    |> role.to_string()
 
-  Ok(role_name)
+  Ok(user_role)
 }
 
 fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
@@ -71,17 +70,13 @@ pub fn check_role_authorization(
     auth_user_from_cookie(request:, cookie_name:)
     |> result.map_error(AuthenticationFailed),
   )
-  // 󰯦  Query the User's role name ---------------------------------------------
-  use role_name <- result.try(get_role_name(ctx, user_uuid))
-  use role <- result.try(
-    role.from_string_pt_br(role_name:)
-    |> result.map_error(InvalidRole),
-  )
+  // 󰯦  Query the User's role --------------------------------------------------
+  use user_role <- result.try(get_user_role(ctx, user_uuid))
 
   // 󰈞  Check if that role has authorization -----------------------------------
   use found <- result.try(
-    list.find(authorized_roles, fn(x) { x == role })
-    |> result.replace_error(Unauthorized(user_uuid, role)),
+    list.find(authorized_roles, fn(authorized) { user_role == authorized })
+    |> result.replace_error(Unauthorized(user_uuid, user_role)),
   )
 
   Ok(found)
@@ -97,6 +92,7 @@ pub type AuthorizationError {
   DataBaseError(pog.QueryError)
   /// 󰡦  DataBase found no results
   DataBaseReturnedEmptyRow
+  ///   User doesnt have a valid role
   InvalidRole(String)
 }
 

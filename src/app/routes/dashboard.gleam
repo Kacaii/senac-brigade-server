@@ -111,7 +111,7 @@ fn handle_authorization_error(role_err: user.AuthorizationError) {
         "Não foi possível identificar o cargo do usuário",
       ))
 
-    //   User is not authorized to access this endpoint -------------------
+    //   User is not authorized to access this endpoint ----------------------
     //
     user.Unauthorized(user_uuid, user_role) -> {
       //   Log who tried to access and whats their role
@@ -126,9 +126,11 @@ fn handle_authorization_error(role_err: user.AuthorizationError) {
       ))
     }
 
-    //   DATABASE ERRORS ----------------------------------------------
+    //   DATABASE ERRORS ------------------------------------------------------
     //
     user.DataBaseError(db_err) -> handle_db_error(db_err)
+
+    //   INVALID ROLES --------------------------------------------------------
     user.InvalidRole(unkown) ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
