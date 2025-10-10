@@ -1,0 +1,194 @@
+import app/routes/brigade/sql
+import app/routes/role
+import app/routes/user
+import app/web.{type Context}
+import formal/form
+import gleam/json
+import gleam/list
+import gleam/result
+import gleam/time/timestamp
+import pog
+import wisp
+import youid/uuid
+
+///   Insert a new brigade into the database.
+/// Performs validation on all the members UUID
+/// and return relevant data as formatted JSON response.
+///
+/// ## Response
+///
+/// ```json
+/// {
+///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+///   "date": 1759790156.0
+/// }
+/// ```
+pub fn handle_request(
+  request request: wisp.Request,
+  ctx ctx: Context,
+) -> wisp.Response {
+  use form_data <- wisp.require_form(request)
+
+  let form_result =
+    register_brigade_form()
+    |> form.add_values(form_data.values)
+    |> form.run()
+  case form_result {
+    Ok(form_data) -> handle_form_data(request:, ctx:, form_data:)
+    Error(_) ->
+      wisp.unprocessable_content()
+      |> wisp.set_body(wisp.Text("Formulário inválido"))
+  }
+}
+
+fn handle_form_data(
+  request request: wisp.Request,
+  ctx ctx: Context,
+  form_data form_data: RegisterBrigadeFormData,
+) -> wisp.Response {
+  case try_register_brigade(request:, ctx:, form_data:) {
+    Ok(resp) -> wisp.json_response(json.to_string(resp), 201)
+    Error(err) -> handle_error(request:, err:)
+  }
+}
+
+fn try_register_brigade(
+  request request: wisp.Request,
+  ctx ctx: Context,
+  form_data form_data: RegisterBrigadeFormData,
+) -> Result(json.Json, RegisterBrigadeError) {
+  use _ <- result.try(
+    user.check_role_authorization(
+      request:,
+      ctx:,
+      cookie_name: "USER_ID",
+      authorized_roles: [role.Admin],
+    )
+    |> result.map_error(RoleError),
+  )
+
+  // Leader of that brigade
+  use leader_id <- result.try(
+    uuid.from_string(form_data.leader_id)
+    |> result.replace_error(InvalidUuid(form_data.leader_id)),
+  )
+
+  // Their members
+  use members_id <- result.try({
+    use maybe_uuid <- list.try_map(form_data.members_id)
+    use user_uuid <- result.try(
+      uuid.from_string(maybe_uuid)
+      |> result.replace_error(InvalidUuid(maybe_uuid)),
+    )
+
+    Ok(user_uuid)
+  })
+
+  use returned <- result.try(
+    sql.insert_new_brigade(
+      ctx.conn,
+      leader_id,
+      form_data.name,
+      members_id,
+      form_data.is_active,
+    )
+    |> result.map_error(DataBaseError),
+  )
+  use row <- result.try(
+    list.first(returned.rows)
+    |> result.replace_error(DataBaseReturnedEmptyRow),
+  )
+
+  Ok(
+    json.object([
+      #("id", json.string(uuid.to_string(row.id))),
+      #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+    ]),
+  )
+}
+
+fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response {
+  case err {
+    DataBaseReturnedEmptyRow ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "O Banco de Dados não retornou informações sobre a nova equipe após a inserção",
+      ))
+    InvalidUuid(user_id) ->
+      wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
+    DataBaseError(err) -> handle_database_error(err)
+    RoleError(err) -> handle_role_error(request:, err:)
+  }
+}
+
+fn handle_role_error(
+  request request: wisp.Request,
+  err err: user.AuthorizationError,
+) -> wisp.Response {
+  case err {
+    user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
+    user.DataBaseError(err) -> handle_database_error(err)
+    user.DataBaseReturnedEmptyRow ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível consultar o cargo do usuário autenticado",
+      ))
+    user.InvalidRole(unknown) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text("Usuário possui cargo inválido: " <> unknown))
+    user.Unauthorized(user_uuid, user_role) -> {
+      role.log_unauthorized_access_attempt(request:, user_uuid:, user_role:)
+      wisp.response(403)
+    }
+  }
+}
+
+fn handle_database_error(err: pog.QueryError) -> wisp.Response {
+  let db_err_msg = case err {
+    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
+    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
+    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
+  }
+
+  wisp.internal_server_error()
+  |> wisp.set_body(wisp.Text(db_err_msg))
+}
+
+/// 󱐁  Form that decodes the `RegisterBrigadeFormData` type
+fn register_brigade_form() -> form.Form(RegisterBrigadeFormData) {
+  form.new({
+    use leader_id <- form.field("lider_id", {
+      form.parse_string |> form.check_not_empty()
+    })
+    use name <- form.field("nome", {
+      form.parse_string |> form.check_not_empty()
+    })
+    use members_id <- form.field("membros", {
+      form.parse_list(form.parse_string)
+    })
+    use is_active <- form.field("ativo", { form.parse_checkbox })
+
+    form.success(RegisterBrigadeFormData(
+      leader_id:,
+      name:,
+      members_id:,
+      is_active:,
+    ))
+  })
+}
+
+type RegisterBrigadeFormData {
+  RegisterBrigadeFormData(
+    leader_id: String,
+    name: String,
+    members_id: List(String),
+    is_active: Bool,
+  )
+}
+
+type RegisterBrigadeError {
+  InvalidUuid(String)
+  DataBaseError(pog.QueryError)
+  DataBaseReturnedEmptyRow
+  RoleError(user.AuthorizationError)
+}

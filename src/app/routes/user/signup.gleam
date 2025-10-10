@@ -18,6 +18,40 @@ import glight
 import pog
 import wisp
 
+///   Insert a new `user_account` into the database
+pub fn handle_request(
+  request req: wisp.Request,
+  ctx ctx: Context,
+) -> wisp.Response {
+  use form_data <- wisp.require_form(req)
+  let form_result =
+    signup_form()
+    |> form.add_values(form_data.values)
+    |> form.run
+
+  case form_result {
+    //   User errors ----------------------------------------------------------
+    Error(_) -> wisp.unprocessable_content()
+
+    //   Valid form
+    Ok(signup) -> {
+      case try_insert_into_database(request: req, ctx:, signup:) {
+        Ok(_) -> {
+          //   Logs new user account
+          log_signup(signup)
+
+          // 󱅡  All good!
+          wisp.created()
+          |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
+        }
+
+        //   Server errors ----------------------------------------------------
+        Error(err) -> handle_error(signup, err)
+      }
+    }
+  }
+}
+
 type SignUp {
   SignUp(
     name: String,
@@ -63,40 +97,6 @@ fn signup_form() -> form.Form(SignUp) {
       user_role:,
     ))
   })
-}
-
-///   Insert a new `user_account` into the database
-pub fn handle_request(
-  request req: wisp.Request,
-  ctx ctx: Context,
-) -> wisp.Response {
-  use form_data <- wisp.require_form(req)
-  let form_result =
-    signup_form()
-    |> form.add_values(form_data.values)
-    |> form.run
-
-  case form_result {
-    //   User errors ----------------------------------------------------------
-    Error(_) -> wisp.unprocessable_content()
-
-    //   Valid form
-    Ok(signup) -> {
-      case try_insert_into_database(request: req, ctx:, signup:) {
-        Ok(_) -> {
-          //   Logs new user account
-          log_signup(signup)
-
-          // 󱅡  All good!
-          wisp.created()
-          |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
-        }
-
-        //   Server errors ----------------------------------------------------
-        Error(err) -> handle_error(signup, err)
-      }
-    }
-  }
 }
 
 fn log_signup(signup: SignUp) -> Nil {

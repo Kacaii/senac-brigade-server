@@ -44,10 +44,18 @@ CREATE TABLE IF NOT EXISTS public.notification_preference (
 
 CREATE TABLE IF NOT EXISTS public.brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
+    leader_id UUID REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
     brigade_name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
-    is_active BOOLEAN DEFAULT FALSE
+    members_id UUID [],
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_brigade_leader_id
+ON public.brigade (leader_id);
 
 CREATE TABLE IF NOT EXISTS public.brigade_membership (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),

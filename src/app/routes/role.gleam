@@ -1,4 +1,7 @@
 import gleam/string
+import glight
+import wisp
+import youid/uuid
 
 pub fn from_string_pt_br(role_name role_name: String) -> Result(Role, String) {
   case string.lowercase(role_name) {
@@ -55,4 +58,19 @@ pub type Role {
   Firefighter
   Analist
   Admin
+}
+
+/// 󰞏  Log when someone tries to access an endpoint that they dont have permission
+pub fn log_unauthorized_access_attempt(
+  request request: wisp.Request,
+  user_uuid user_uuid: uuid.Uuid,
+  user_role user_role: Role,
+) -> Nil {
+  glight.logger()
+  |> glight.with("path", request.path)
+  |> glight.with("user", uuid.to_string(user_uuid))
+  |> glight.with("role", to_string(user_role))
+  |> glight.notice("unauthorized_access_attempt")
+
+  Nil
 }

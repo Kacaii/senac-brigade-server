@@ -8,20 +8,24 @@
 
 ## Routes
 
-| Route                          | Description                                        | Method      |
-| ------------------------------ | -------------------------------------------------- | ----------- |
-| /admin/signup                  | Register a new user account                        | POST (Form) |
-| /user/login                    | Login with your user account                       | POST (Form) |
-| /user/profile                  | Retrieve data about the authenticated user         | GET         |
-| /user/roles                    | Get a list of all available roles                  | GET         |
-| /user/{{id}}/occurrences       | Find all occurrences applied by this user          | GET         |
-| /user/{{id}}/crew_members      | List fellow brigade members of this user           | GET         |
-| /user/notification_preferences | Fetch authenticated user notification preferences  | GET         |
-| /user/notification_preferences | Update authenticated user notification preferences | PUT         |
-| /user/password                 | Update authenticated user password                 | PUT         |
-| /brigade/{{id}}/members        | List brigade members                               | GET         |
-| /occurrence/new                | Register new occurrence                            | POST (Form) |
-| /dashboard/stats               | Fetch stats for the dashboard page                 | GET         |
+| Route                          | Description                                                 | Method      |
+| ------------------------------ | ----------------------------------------------------------- | ----------- |
+| /admin/signup                  | Register a new user account                                 | POST (Form) |
+| /admin/teams                   | Register a new brigade, with a leader and all their members | POST (Form) |
+| /admin/teams                   | Query all registered brigades                               | GET         |
+| /admin/teams/{{id}}/status     | Update the status of a brigade                              | PUT (JSON)  |
+| /admin/teams/{{id}}            | Remove a brigade                                            | DELETE      |
+| /user/login                    | Login with your user account                                | POST (Form) |
+| /user/profile                  | Retrieve data about the authenticated user                  | GET         |
+| /user/roles                    | Get a list of all available roles                           | GET         |
+| /user/{{id}}/occurrences       | Find all occurrences applied by this user                   | GET         |
+| /user/{{id}}/crew_members      | List fellow brigade members of this user                    | GET         |
+| /user/notification_preferences | Fetch authenticated user notification preferences           | GET         |
+| /user/notification_preferences | Update authenticated user notification preferences          | PUT         |
+| /user/password                 | Update authenticated user password                          | PUT         |
+| /brigade/{{id}}/members        | List brigade members                                        | GET         |
+| /occurrence/new                | Register new occurrence                                     | POST (Form) |
+| /dashboard/stats               | Fetch stats for the dashboard page                          | GET         |
 
 ## Entity RelationShip Diagram
 
@@ -55,11 +59,15 @@ erDiagram
         TIMESTAMP updated_at
     }
 
+    brigade |o--o| user_account : leader_of
     brigade {
         UUID id PK
+        UUID leader_id FK
         TEXT name
         TEXT description
         BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
     brigade_membership }o--o{ user_account : is_member_of
@@ -70,22 +78,12 @@ erDiagram
         UUID group_id FK
     }
 
-    occurrence_category |o--o{ occurrence_category : subcategory_of
-    occurrence_category {
-        UUID id PK
-        UUID parent_category FK
-        TEXT name UK
-        TEXT description
-        TIMESTAMP created_at
-        TIMESTAMP updated_at
-    }
-
     occurrence }|--|| user_account : submit
-    occurrence }|--|| occurrence_category : is
     occurrence {
         UUID id PK
         UUID applicant_id FK
-        UUID category FK
+        OCCURRENCE_CATEGORY_ENUM category
+        OCCURRENCE_SUBCATEGORY_ENUM subcategory
         TEXT description
         POINT location
         TEXT reference_point

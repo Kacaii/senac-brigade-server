@@ -6,7 +6,6 @@ import gleam/http
 import gleam/json
 import gleam/list
 import gleam/result
-import glight
 import pog
 import wisp
 import youid/uuid
@@ -32,7 +31,7 @@ pub fn handle_request(
 
   case get_dashboard_data(request:, ctx:) {
     Ok(value) -> wisp.json_response(json.to_string(value), 200)
-    Error(err) -> handle_error(err)
+    Error(err) -> handle_error(request:, err:)
   }
 }
 
@@ -67,7 +66,10 @@ fn get_dashboard_data(
   Ok(get_dashboard_stats_row_to_json(row))
 }
 
-fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
+fn handle_error(
+  request request: wisp.Request,
+  err err: GetDashboardStatsError,
+) -> wisp.Response {
   case err {
     // 󱋬  DataBase couldn't find the required information for the dashboard
     //
@@ -82,12 +84,15 @@ fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
     DataBaseError(err) -> handle_db_error(err)
 
     //   PERMISSION DENIED ------------------------------------------------
-    RoleError(role_err) -> handle_authorization_error(role_err)
+    RoleError(role_err) -> handle_authorization_error(request:, role_err:)
   }
 }
 
 /// Handle Authorization related errors
-fn handle_authorization_error(role_err: user.AuthorizationError) {
+fn handle_authorization_error(
+  request request: wisp.Request,
+  role_err role_err: user.AuthorizationError,
+) {
   case role_err {
     user.AuthenticationFailed(auth_err) -> {
       case auth_err {
@@ -115,7 +120,7 @@ fn handle_authorization_error(role_err: user.AuthorizationError) {
     //
     user.Unauthorized(user_uuid, user_role) -> {
       //   Log who tried to access and whats their role
-      log_unauthorized_access_attempt(user_uuid:, user_role:)
+      role.log_unauthorized_access_attempt(request:, user_uuid:, user_role:)
       //   403 FORBIDDEN response
       wisp.response(403)
       |> wisp.set_body(wisp.Text(
@@ -157,18 +162,6 @@ fn handle_db_error(err: pog.QueryError) {
 
   wisp.internal_server_error()
   |> wisp.set_body(wisp.Text(db_err_msg))
-}
-
-fn log_unauthorized_access_attempt(
-  user_uuid user_uuid: uuid.Uuid,
-  user_role user_role: role.Role,
-) -> Nil {
-  glight.logger()
-  |> glight.with("user", uuid.to_string(user_uuid))
-  |> glight.with("role", role.to_string(user_role))
-  |> glight.notice("unauthorized_access_attempt")
-
-  Nil
 }
 
 fn get_dashboard_stats_row_to_json(

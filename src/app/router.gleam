@@ -7,7 +7,11 @@
 //// All requests are processed through the web middleware pipeline before routing.
 //// Unmatched routes return a 404 Not Found response.
 
+import app/routes/brigade/delete_brigade
+import app/routes/brigade/get_all_brigades
 import app/routes/brigade/get_brigade_members
+import app/routes/brigade/register_new_brigade
+import app/routes/brigade/update_brigade_status
 import app/routes/dashboard
 import app/routes/notification/get_notification_preferences
 import app/routes/notification/update_notification_preferences
@@ -28,11 +32,21 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
   use request <- web.middleware(request: request, context: ctx)
 
   case request.method, wisp.path_segments(request) {
-    //   Authorization routes -------------------------------------------------
-    http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
+    //   Security routes -------------------------------------------------
     http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
     http.Put, ["user", "password"] ->
       update_user_password.handle_request(request:, ctx:)
+
+    //   Admin routes ---------------------------------------------------------
+    http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
+    http.Get, ["admin", "teams"] ->
+      get_all_brigades.handle_request(request:, ctx:)
+    http.Post, ["admin", "teams"] ->
+      register_new_brigade.handle_request(request:, ctx:)
+    http.Put, ["admin", "teams", id, "status"] ->
+      update_brigade_status.handle_request(request:, ctx:, id:)
+    http.Delete, ["admin", "teams", id] ->
+      delete_brigade.handle_request(request:, ctx:, id:)
 
     // 󰨇  Dashboard stats ------------------------------------------------------
     http.Get, ["dashboard", "stats"] -> dashboard.handle_request(request:, ctx:)
