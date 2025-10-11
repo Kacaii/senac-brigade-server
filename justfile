@@ -54,7 +54,7 @@ setup_admin:
 
 #   Login and generate users with different roles
 [group('  admin')]
-setup_roles:
+insert_users:
     bash ./priv/dev_insert_users.sh
 
 #   Runs a SELECT statement to query the user accounts
