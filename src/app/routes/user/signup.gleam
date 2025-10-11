@@ -52,6 +52,51 @@ pub fn handle_request(
   }
 }
 
+/// 󰆼  Inserts the user in the database.
+/// 󱔼  Hashes the user `password` before inserting.
+fn try_insert_into_database(
+  request request: wisp.Request,
+  signup data: SignUp,
+  ctx ctx: Context,
+) -> Result(Nil, SignupError) {
+  use _ <- result.try(
+    user.check_role_authorization(
+      request:,
+      ctx:,
+      cookie_name: "USER_ID",
+      authorized_roles: [role.Admin],
+    )
+    |> result.map_error(RoleError),
+  )
+
+  use hashed_password <- result.try(
+    argus.hasher()
+    |> argus.hash(data.password, argus.gen_salt())
+    |> result.replace_error(HashError),
+  )
+
+  use user_role <- result.try(
+    role.from_string_pt_br(data.user_role)
+    |> result.map_error(InvalidRole),
+  )
+
+  use _ <- result.try(
+    sql.insert_new_user(
+      ctx.conn,
+      data.name,
+      data.registration,
+      data.phone_number,
+      data.email,
+      hashed_password.encoded_hash,
+      role_to_enum(user_role),
+    )
+    |> result.map_error(DataBaseError),
+  )
+
+  // No need to return anything from this function
+  Ok(Nil)
+}
+
 type SignUp {
   SignUp(
     name: String,
@@ -292,51 +337,6 @@ type SignupError {
   ///   Unknown user role
   InvalidRole(String)
   RoleError(user.AuthorizationError)
-}
-
-/// 󰆼  Inserts the user in the database.
-/// 󱔼  Hashes the user `password` before inserting.
-fn try_insert_into_database(
-  request request: wisp.Request,
-  signup data: SignUp,
-  ctx ctx: Context,
-) -> Result(Nil, SignupError) {
-  use _ <- result.try(
-    user.check_role_authorization(
-      request:,
-      ctx:,
-      cookie_name: "USER_ID",
-      authorized_roles: [role.Admin],
-    )
-    |> result.map_error(RoleError),
-  )
-
-  use hashed_password <- result.try(
-    argus.hasher()
-    |> argus.hash(data.password, argus.gen_salt())
-    |> result.replace_error(HashError),
-  )
-
-  use user_role <- result.try(
-    role.from_string_pt_br(data.user_role)
-    |> result.map_error(InvalidRole),
-  )
-
-  use _ <- result.try(
-    sql.insert_new_user(
-      ctx.conn,
-      data.name,
-      data.registration,
-      data.phone_number,
-      data.email,
-      hashed_password.encoded_hash,
-      role_to_enum(user_role),
-    )
-    |> result.map_error(DataBaseError),
-  )
-
-  // No need to return anything from this function
-  Ok(Nil)
 }
 
 fn role_to_enum(user_role: role.Role) -> sql.UserRoleEnum {

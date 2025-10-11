@@ -24,7 +24,10 @@ import wisp
 ///   "outros": false
 /// }
 /// ```
-pub fn handle_request(req: wisp.Request, ctx: Context) -> wisp.Response {
+pub fn handle_request(
+  request req: wisp.Request,
+  ctx ctx: Context,
+) -> wisp.Response {
   use <- wisp.require_method(req, http.Put)
   use json_data <- wisp.require_json(req)
 

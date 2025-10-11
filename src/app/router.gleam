@@ -7,6 +7,7 @@
 //// All requests are processed through the web middleware pipeline before routing.
 //// Unmatched routes return a 404 Not Found response.
 
+import app/routes/admin/setup_first_admin
 import app/routes/brigade/delete_brigade
 import app/routes/brigade/get_all_brigades
 import app/routes/brigade/get_brigade_members
@@ -34,17 +35,25 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
   case request.method, wisp.path_segments(request) {
     //   Security routes -------------------------------------------------
     http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
+
     http.Put, ["user", "password"] ->
       update_user_password.handle_request(request:, ctx:)
 
     //   Admin routes ---------------------------------------------------------
+    http.Post, ["admin", "setup"] ->
+      setup_first_admin.handle_request(request:, ctx:)
+
     http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
+
     http.Get, ["admin", "teams"] ->
       get_all_brigades.handle_request(request:, ctx:)
+
     http.Post, ["admin", "teams"] ->
       register_new_brigade.handle_request(request:, ctx:)
+
     http.Put, ["admin", "teams", id, "status"] ->
       update_brigade_status.handle_request(request:, ctx:, id:)
+
     http.Delete, ["admin", "teams", id] ->
       delete_brigade.handle_request(request:, ctx:, id:)
 
@@ -63,10 +72,10 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
     //   Notification routes --------------------------------------------------
     http.Get, ["user", "notification_preferences"] ->
-      get_notification_preferences.handle_request(request, ctx)
+      get_notification_preferences.handle_request(request:, ctx:)
 
     http.Put, ["user", "notification_preferences"] ->
-      update_notification_preferences.handle_request(request, ctx)
+      update_notification_preferences.handle_request(request:, ctx:)
 
     // 󰞏  Occurrence routes ----------------------------------------------------
     http.Post, ["occurrence", "new"] ->

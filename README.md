@@ -10,6 +10,7 @@
 
 | Route                          | Description                                                 | Method      |
 | ------------------------------ | ----------------------------------------------------------- | ----------- |
+| /admin/setup                   | Create the first admin user                                 | POST (JSON) |
 | /admin/signup                  | Register a new user account                                 | POST (Form) |
 | /admin/teams                   | Register a new brigade, with a leader and all their members | POST (Form) |
 | /admin/teams                   | Query all registered brigades                               | GET         |
