@@ -18,7 +18,7 @@ pub fn get_user_role(
   )
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(DataBaseReturnedEmptyRow),
+    |> result.replace_error(FailedToQueryUserRole),
   )
 
   let user_role =
@@ -91,7 +91,7 @@ pub type AuthorizationError {
   /// 󰆼  DataBase query failed
   DataBaseError(pog.QueryError)
   /// 󰡦  DataBase found no results
-  DataBaseReturnedEmptyRow
+  FailedToQueryUserRole
   ///   User doesnt have a valid role
   InvalidRole(String)
 }

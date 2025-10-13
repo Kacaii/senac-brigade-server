@@ -12,6 +12,9 @@
 | ------------------------------ | ----------------------------------------------------------- | ----------- |
 | /admin/setup                   | Create the first admin user                                 | POST (JSON) |
 | /admin/signup                  | Register a new user account                                 | POST (Form) |
+| /admin/users                   | List all registred users                                    | GET         |
+| /admin/users/{{id}}            | Delete an user from the DataBase                            | DELETE      |
+| /admin/users/{{id}}/status     | Update the status of a user account                         | PUT         |
 | /admin/teams                   | Register a new brigade, with a leader and all their members | POST (Form) |
 | /admin/teams                   | Query all registered brigades                               | GET         |
 | /admin/teams/{{id}}/status     | Update the status of a brigade                              | PUT (JSON)  |

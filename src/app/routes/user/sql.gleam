@@ -9,6 +9,42 @@ import gleam/option.{type Option}
 import pog
 import youid/uuid.{type Uuid}
 
+/// A row you get from running the `delete_user_by_id` query
+/// defined in `./src/app/routes/user/sql/delete_user_by_id.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type DeleteUserByIdRow {
+  DeleteUserByIdRow(id: Uuid, full_name: String)
+}
+
+///   Remove and user from the database
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn delete_user_by_id(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(DeleteUserByIdRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use full_name <- decode.field(1, decode.string)
+    decode.success(DeleteUserByIdRow(id:, full_name:))
+  }
+
+  "--   Remove and user from the database
+DELETE FROM public.user_account AS u
+WHERE u.id = $1
+RETURNING u.id, u.full_name;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 ///   Inserts a new user into the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
@@ -44,6 +80,63 @@ INSERT INTO public.user_account (
   |> pog.parameter(pog.text(arg_4))
   |> pog.parameter(pog.text(arg_5))
   |> pog.parameter(user_role_enum_encoder(arg_6))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `query_all_users` query
+/// defined in `./src/app/routes/user/sql/query_all_users.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryAllUsersRow {
+  QueryAllUsersRow(
+    id: Uuid,
+    full_name: String,
+    registration: String,
+    email: Option(String),
+    user_role: UserRoleEnum,
+    is_active: Bool,
+  )
+}
+
+/// 󰀖  Find all users on the database
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_all_users(
+  db: pog.Connection,
+) -> Result(pog.Returned(QueryAllUsersRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use full_name <- decode.field(1, decode.string)
+    use registration <- decode.field(2, decode.string)
+    use email <- decode.field(3, decode.optional(decode.string))
+    use user_role <- decode.field(4, user_role_enum_decoder())
+    use is_active <- decode.field(5, decode.bool)
+    decode.success(QueryAllUsersRow(
+      id:,
+      full_name:,
+      registration:,
+      email:,
+      user_role:,
+      is_active:,
+    ))
+  }
+
+  "-- 󰀖  Find all users on the database
+SELECT
+    u.id,
+    u.full_name,
+    u.registration,
+    u.email,
+    u.user_role,
+    u.is_active
+FROM public.user_account AS u;
+"
+  |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -347,12 +440,55 @@ pub fn update_user_password(
 
   "--   Set an new value to the password of an user
 UPDATE public.user_account
-SET password_hash = $2
+SET
+    password_hash = $2,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.parameter(pog.text(arg_2))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `update_user_status` query
+/// defined in `./src/app/routes/user/sql/update_user_status.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UpdateUserStatusRow {
+  UpdateUserStatusRow(id: Uuid, is_active: Bool)
+}
+
+/// 󰚰  Update an user `is_active` field
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_user_status(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: Bool,
+) -> Result(pog.Returned(UpdateUserStatusRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use is_active <- decode.field(1, decode.bool)
+    decode.success(UpdateUserStatusRow(id:, is_active:))
+  }
+
+  "-- 󰚰  Update an user `is_active` field
+UPDATE public.user_account AS u
+SET
+    is_active = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE u.id = $1
+RETURNING u.id, u.is_active;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.bool(arg_2))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

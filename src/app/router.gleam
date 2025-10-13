@@ -18,12 +18,15 @@ import app/routes/notification/get_notification_preferences
 import app/routes/notification/update_notification_preferences
 import app/routes/occurrence/register_new_occurrence
 import app/routes/role/get_role_list
+import app/routes/user/delete_user
+import app/routes/user/get_all_users
 import app/routes/user/get_crew_members
 import app/routes/user/get_ocurrences_by_applicant
 import app/routes/user/get_user_profile
 import app/routes/user/login
 import app/routes/user/signup
 import app/routes/user/update_user_password
+import app/routes/user/update_user_status
 import app/web.{type Context}
 import gleam/http
 import wisp
@@ -44,6 +47,14 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
       setup_first_admin.handle_request(request:, ctx:)
 
     http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
+
+    http.Get, ["admin", "users"] -> get_all_users.handle_request(request:, ctx:)
+
+    http.Delete, ["admin", "users", id] ->
+      delete_user.handle_request(request:, ctx:, id:)
+
+    http.Post, ["admin", "user", id, "status"] ->
+      update_user_status.handle_request(request:, ctx:, id:)
 
     http.Get, ["admin", "teams"] ->
       get_all_brigades.handle_request(request:, ctx:)

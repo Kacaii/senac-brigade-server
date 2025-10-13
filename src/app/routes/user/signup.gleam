@@ -308,10 +308,10 @@ fn handle_error(signup: SignUp, err: SignupError) {
             }
           }
         }
-        user.DataBaseReturnedEmptyRow ->
+        user.FailedToQueryUserRole ->
           wisp.internal_server_error()
           |> wisp.set_body(wisp.Text(
-            "Não foi possível encontrar o cargo do usuário autenticado",
+            "Não foi possível identificar o cargo do usuário autenticado",
           ))
         user.InvalidRole(unknown) ->
           wisp.response(401)

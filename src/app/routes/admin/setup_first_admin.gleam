@@ -14,6 +14,7 @@ const admin_registration = "000"
 
 const admin_password = "aluno"
 
+///   Generate the first admin user
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,

@@ -110,7 +110,7 @@ fn handle_authorization_error(
     }
     // 󱏊  Database couldn't find a user role with that UUDI
     //
-    user.DataBaseReturnedEmptyRow ->
+    user.FailedToQueryUserRole ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
         "Não foi possível identificar o cargo do usuário",
