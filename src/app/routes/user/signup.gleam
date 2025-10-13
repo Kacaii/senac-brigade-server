@@ -12,11 +12,14 @@ import app/routes/user/sql
 import app/web.{type Context}
 import argus
 import formal/form
+import gleam/json
+import gleam/list
 import gleam/result
 import gleam/string
 import glight
 import pog
 import wisp
+import youid/uuid
 
 ///   Insert a new `user_account` into the database
 pub fn handle_request(
@@ -36,17 +39,16 @@ pub fn handle_request(
     //   Valid form
     Ok(signup) -> {
       case try_insert_into_database(request: req, ctx:, signup:) {
-        Ok(_) -> {
+        Ok(new_user) -> {
           //   Logs new user account
           log_signup(signup)
 
           // 󱅡  All good!
-          wisp.created()
-          |> wisp.set_body(wisp.Text("Cadastro realizado com sucesso"))
+          wisp.json_response(json.to_string(new_user), 201)
         }
 
         //   Server errors ----------------------------------------------------
-        Error(err) -> handle_error(signup, err)
+        Error(err) -> handle_error(err)
       }
     }
   }
@@ -58,7 +60,7 @@ fn try_insert_into_database(
   request request: wisp.Request,
   signup data: SignUp,
   ctx ctx: Context,
-) -> Result(Nil, SignupError) {
+) -> Result(json.Json, SignupError) {
   use _ <- result.try(
     user.check_role_authorization(
       request:,
@@ -80,7 +82,7 @@ fn try_insert_into_database(
     |> result.map_error(InvalidRole),
   )
 
-  use _ <- result.try(
+  use returned <- result.try(
     sql.insert_new_user(
       ctx.conn,
       data.name,
@@ -93,8 +95,12 @@ fn try_insert_into_database(
     |> result.map_error(DataBaseError),
   )
 
-  // No need to return anything from this function
-  Ok(Nil)
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(MissingSignupConfirmation),
+  )
+
+  json.object([#("id", json.string(uuid.to_string(row.id)))])
 }
 
 type SignUp {
@@ -155,7 +161,86 @@ fn log_signup(signup: SignUp) -> Nil {
   Nil
 }
 
-fn handle_error(signup: SignUp, err: SignupError) {
+fn handle_database_error(err: pog.QueryError) {
+  case err {
+    pog.ConnectionUnavailable -> {
+      let body =
+        "Conexão com o Banco de Dados não disponível"
+        |> wisp.Text
+
+      wisp.internal_server_error()
+      |> wisp.set_body(body)
+    }
+    pog.QueryTimeout -> {
+      let body =
+        "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
+        |> wisp.Text
+
+      wisp.internal_server_error()
+      |> wisp.set_body(body)
+    }
+
+    pog.ConstraintViolated(message:, constraint:, detail:) -> {
+      case constraint {
+        //   Registration must be unique --------------------------
+        "user_account_registration_key" -> {
+          "Matrícula já cadastrada. Experimente fazer login"
+          |> wisp.bad_request()
+        }
+        // 󰇮  Email must be unique ---------------------------------
+        "user_account_email_key" -> {
+          "Email já cadastrado. Por favor, utilize um diferente"
+          |> wisp.bad_request()
+        }
+        //   Some other constrain ---------------------------------
+        _ -> {
+          let body =
+            "
+                🐘  O Banco de Dados apresentou um erro
+
+                Constraint: {{constraint}}
+                Mensagem:   {{message}}
+                Detalhe:    {{detail}}
+                "
+            |> string.replace("{{constraint}}", constraint)
+            |> string.replace("{{message}}", message)
+            |> string.replace("{{detail}}", detail)
+            |> wisp.Text
+
+          wisp.internal_server_error()
+          |> wisp.set_body(body)
+        }
+      }
+    }
+    pog.PostgresqlError(code:, name:, message:) -> {
+      let body =
+        "
+            🐘  O Banco de Dados apresentou um erro
+
+            Código:     {{code}}
+            Nome:       {{name}}
+            Mensagem:   {{message}}
+            "
+        |> string.replace("{{code}}", code)
+        |> string.replace("{{name}}", name)
+        |> string.replace("{{message}}", message)
+        |> wisp.Text
+
+      wisp.internal_server_error()
+      |> wisp.set_body(body)
+    }
+    _ -> {
+      let body =
+        "Ocorreu um erro ao inserir o usuário no Banco de Dados"
+        |> wisp.Text
+
+      wisp.internal_server_error()
+      |> wisp.set_body(body)
+    }
+  }
+}
+
+fn handle_error(err: SignupError) {
   case err {
     // 󱔼  Hashing went wrong
     HashError -> {
@@ -167,92 +252,7 @@ fn handle_error(signup: SignUp, err: SignupError) {
       |> wisp.set_body(body)
     }
     //   Something when wrong inside the database
-    DataBaseError(err) -> {
-      case err {
-        pog.ConnectionUnavailable -> {
-          let body =
-            "Conexão com o Banco de Dados não disponível"
-            |> wisp.Text
-
-          wisp.internal_server_error()
-          |> wisp.set_body(body)
-        }
-        pog.QueryTimeout -> {
-          let body =
-            "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
-            |> wisp.Text
-
-          wisp.internal_server_error()
-          |> wisp.set_body(body)
-        }
-
-        pog.ConstraintViolated(message:, constraint:, detail:) -> {
-          case constraint {
-            //   Registration must be unique --------------------------
-            "user_account_registration_key" -> {
-              "
-              Matrícula {{registration}} já cadastrada
-              Experimente fazer login
-              "
-              |> string.replace("{{registration}}", signup.registration)
-              |> wisp.bad_request()
-            }
-            // 󰇮  Email must be unique ---------------------------------
-            "user_account_email_key" -> {
-              "
-              Email: {{email}} já cadastrado
-              Por favor, utilize um diferente
-              "
-              |> string.replace("{{email}}", signup.email)
-              |> wisp.bad_request()
-            }
-            //   Some other constrain ---------------------------------
-            _ -> {
-              let body =
-                "
-                🐘  O Banco de Dados apresentou um erro
-
-                Constraint: {{constraint}}
-                Mensagem:   {{message}}
-                Detalhe:    {{detail}}
-                "
-                |> string.replace("{{constraint}}", constraint)
-                |> string.replace("{{message}}", message)
-                |> string.replace("{{detail}}", detail)
-                |> wisp.Text
-
-              wisp.internal_server_error()
-              |> wisp.set_body(body)
-            }
-          }
-        }
-        pog.PostgresqlError(code:, name:, message:) -> {
-          let body =
-            "
-            🐘  O Banco de Dados apresentou um erro
-
-            Código:     {{code}}
-            Nome:       {{name}}
-            Mensagem:   {{message}}
-            "
-            |> string.replace("{{code}}", code)
-            |> string.replace("{{name}}", name)
-            |> string.replace("{{message}}", message)
-            |> wisp.Text
-
-          wisp.internal_server_error()
-          |> wisp.set_body(body)
-        }
-        _ -> {
-          let body =
-            "Ocorreu um erro ao inserir o usuário no Banco de Dados"
-            |> wisp.Text
-
-          wisp.internal_server_error()
-          |> wisp.set_body(body)
-        }
-      }
-    }
+    DataBaseError(err) -> handle_database_error(err)
 
     InvalidRole(unknown) ->
       wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
@@ -260,54 +260,7 @@ fn handle_error(signup: SignUp, err: SignupError) {
     RoleError(err) -> {
       case err {
         user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-        user.DataBaseError(err) -> {
-          case err {
-            pog.ConnectionUnavailable -> {
-              let body =
-                "Conexão com o Banco de Dados não disponível"
-                |> wisp.Text
-
-              wisp.internal_server_error()
-              |> wisp.set_body(body)
-            }
-
-            pog.QueryTimeout -> {
-              let body =
-                "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
-                |> wisp.Text
-
-              wisp.internal_server_error()
-              |> wisp.set_body(body)
-            }
-
-            pog.PostgresqlError(code:, name:, message:) -> {
-              let body =
-                "
-            🐘  O Banco de Dados apresentou um erro
-
-            Código:     {{code}}
-            Nome:       {{name}}
-            Mensagem:   {{message}}
-            "
-                |> string.replace("{{code}}", code)
-                |> string.replace("{{name}}", name)
-                |> string.replace("{{message}}", message)
-                |> wisp.Text
-
-              wisp.internal_server_error()
-              |> wisp.set_body(body)
-            }
-
-            _ -> {
-              let body =
-                "Ocorreu um erro ao acessar o no Banco de Dados durante a autenticação do usuário"
-                |> wisp.Text
-
-              wisp.internal_server_error()
-              |> wisp.set_body(body)
-            }
-          }
-        }
+        user.DataBaseError(err) -> handle_database_error(err)
         user.FailedToQueryUserRole ->
           wisp.internal_server_error()
           |> wisp.set_body(wisp.Text(
@@ -325,6 +278,11 @@ fn handle_error(signup: SignUp, err: SignupError) {
           ))
       }
     }
+    MissingSignupConfirmation ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível confirmar a inserção do novo usuário no sistema",
+      ))
   }
 }
 
@@ -336,7 +294,10 @@ type SignupError {
   DataBaseError(pog.QueryError)
   ///   Unknown user role
   InvalidRole(String)
+  ///   User / Role related issues
   RoleError(user.AuthorizationError)
+  /// 󰡦  Database didnt return information about the new user
+  MissingSignupConfirmation
 }
 
 fn role_to_enum(user_role: role.Role) -> sql.UserRoleEnum {

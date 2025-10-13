@@ -45,6 +45,16 @@ RETURNING u.id, u.full_name;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `insert_new_user` query
+/// defined in `./src/app/routes/user/sql/insert_new_user.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type InsertNewUserRow {
+  InsertNewUserRow(id: Uuid)
+}
+
 ///   Inserts a new user into the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
@@ -58,20 +68,24 @@ pub fn insert_new_user(
   arg_4: String,
   arg_5: String,
   arg_6: UserRoleEnum,
-) -> Result(pog.Returned(Nil), pog.QueryError) {
-  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+) -> Result(pog.Returned(InsertNewUserRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(InsertNewUserRow(id:))
+  }
 
   "--   Inserts a new user into the database
-INSERT INTO public.user_account (
+INSERT INTO public.user_account AS u
+(
     full_name,
     registration,
     phone,
     email,
     password_hash,
     user_role
-) VALUES (
-    $1, $2, $3, $4, $5, $6
 )
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING u.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
