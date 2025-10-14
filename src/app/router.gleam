@@ -37,7 +37,9 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
   case request.method, wisp.path_segments(request) {
     //   Security routes -------------------------------------------------
-    http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
+    http.Post, ["user", "login"] -> {
+      login.handle_request(request:, ctx:)
+    }
 
     http.Put, ["user", "password"] ->
       update_user_password.handle_request(request:, ctx:)
