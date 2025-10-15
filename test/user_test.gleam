@@ -2,6 +2,7 @@ import app/routes/user/get_all_users
 import app/routes/user/login
 import app_test.{global_data}
 import gleam/http
+import gleam/http/request
 import gleam/http/response
 import gleam/list
 import gleam/string
@@ -43,7 +44,10 @@ pub fn get_all_user_test() {
   assert string.is_empty(body) == False
 
   // -------------------------------------------------------
-  let with_auth = app_test.with_authorization()
+  let with_auth =
+    app_test.with_authorization()
+    |> request.set_method(req.method)
+    |> request.set_path(req.path)
 
   let resp = get_all_users.handle_request(with_auth, ctx)
 

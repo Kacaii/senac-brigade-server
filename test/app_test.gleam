@@ -36,7 +36,7 @@ pub fn with_authorization() -> wisp.Request {
 
   let login_resp = login.handle_request(login_req, ctx)
 
-  // Return a request containing admin permissions
+  // Continue the session after being logged in
   simulate.session(
     simulate.browser_request(http.Get, "/user/login"),
     login_req,
