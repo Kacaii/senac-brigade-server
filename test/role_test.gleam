@@ -13,7 +13,7 @@ pub fn get_role_list_test() {
   let req = simulate.browser_request(http.Get, "/user/roles")
   let resp = router.handle_request(req, ctx)
 
-  assert resp.status == 200 as "Status code should be 200"
+  assert resp.status == 200 as "Status code should be 200 OK"
   let body = simulate.read_body(resp)
 
   let assert Ok(parsed_body) = json.parse(body, decode.list(decode.string))
