@@ -21,8 +21,22 @@ pub fn login_test() {
     |> simulate.form_body([#("matricula", "000"), #("senha", "aluno")])
 
   let resp = router.handle_request(req, ctx)
-
   assert resp.status == 200 as "Status should be 200"
+
+  let body = simulate.read_body(resp)
+
+  let assert Ok(_) =
+    json.parse(body, {
+      use maybe_uuid <- decode.field("id", decode.string)
+      let assert Ok(_) = uuid.from_string(maybe_uuid) as "Invalid UUID"
+
+      use maybe_role <- decode.field("role", decode.string)
+      let assert Ok(_) = role.from_string_pt_br(maybe_role)
+        as "Invalid user Role"
+
+      decode.success(Nil)
+    })
+    as "Response should contain valid JSON data"
 
   let cookies = response.get_cookies(resp)
   assert cookies != [] as "Server should set a session Cookie on login"

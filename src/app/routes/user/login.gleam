@@ -2,10 +2,12 @@
 ////
 ////   Uses signed cookies to prevent tampering and logs all login attempts.
 
+import app/routes/role
 import app/routes/user/sql
 import app/web.{type Context}
 import argus
 import formal/form
+import gleam/json
 import gleam/list
 import gleam/result
 import glight
@@ -68,17 +70,17 @@ fn handle_login(
   login_data login_data: LogIn,
   cookie_name cookie_name: String,
 ) {
-  let login_result = get_uuid_token(login: login_data, ctx:)
+  let login_result = query_login_token(login: login_data, ctx:)
   case login_result {
-    Ok(user_uuid) -> {
-      //   Logs user registration
-      //
+    Ok(#(json_data, user_uuid)) -> {
+      //   Logs user authentication
       log_login(login_data)
 
+      let resp = wisp.json_response(json.to_string(json_data), 200)
+
       //   Store UUID cookie
-      //
       wisp.set_cookie(
-        response: wisp.ok(),
+        response: resp,
         request: request,
         name: cookie_name,
         value: uuid.to_string(user_uuid),
@@ -149,10 +151,7 @@ type LoginError {
 
 ///   Check if the provided password matches the one inside our database
 /// Returns the user's UUID if successfull.
-fn get_uuid_token(
-  login data: LogIn,
-  ctx ctx: Context,
-) -> Result(uuid.Uuid, LoginError) {
+fn query_login_token(login data: LogIn, ctx ctx: Context) {
   use returned <- result.try(
     sql.query_login_token(ctx.conn, data.registration)
     |> result.map_error(DataBaseError),
@@ -168,9 +167,30 @@ fn get_uuid_token(
     |> result.replace_error(HashError),
   )
 
+  let user_role =
+    row.user_role
+    |> enum_to_role
+
+  let json_data =
+    json.object([
+      #("id", json.string(uuid.to_string(row.id))),
+      #("role", json.string(role.to_string_pt_br(user_role))),
+    ])
+
   case is_correct_password {
     // Return the user's uuid
-    True -> Ok(row.id)
+    True -> Ok(#(json_data, row.id))
     False -> Error(InvalidPassword)
+  }
+}
+
+fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
+  case user_role {
+    sql.Admin -> role.Admin
+    sql.Analist -> role.Analist
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
   }
 }

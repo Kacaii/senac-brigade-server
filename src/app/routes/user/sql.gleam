@@ -206,7 +206,7 @@ INNER JOIN
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryLoginTokenRow {
-  QueryLoginTokenRow(id: Uuid, password_hash: String)
+  QueryLoginTokenRow(id: Uuid, password_hash: String, user_role: UserRoleEnum)
 }
 
 ///   Retrieves a user's ID and password hash from their registration
@@ -222,14 +222,16 @@ pub fn query_login_token(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use password_hash <- decode.field(1, decode.string)
-    decode.success(QueryLoginTokenRow(id:, password_hash:))
+    use user_role <- decode.field(2, user_role_enum_decoder())
+    decode.success(QueryLoginTokenRow(id:, password_hash:, user_role:))
   }
 
   "--   Retrieves a user's ID and password hash from their registration
 -- number for authentication purposes.
 SELECT
     u.id,
-    u.password_hash
+    u.password_hash,
+    u.user_role
 FROM public.user_account AS u
 WHERE u.registration = $1;
 "
