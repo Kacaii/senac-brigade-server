@@ -1,5 +1,5 @@
 import app
-import app/routes/user/login
+import app/router
 import app/web
 import gleam/erlang/process
 import gleam/http
@@ -27,19 +27,15 @@ pub fn global_data() -> web.Context {
 }
 
 ///   Create a request with admin privileges
-pub fn with_authorization() -> wisp.Request {
+pub fn with_authorization(next req: wisp.Request) -> wisp.Request {
   let ctx = global_data()
 
   let login_req =
-    simulate.browser_request(http.Post, "/api/login")
+    simulate.browser_request(http.Post, "/user/login")
     |> simulate.form_body([#("matricula", "000"), #("senha", "aluno")])
 
-  let login_resp = login.handle_request(login_req, ctx)
+  let login_resp = router.handle_request(login_req, ctx)
 
   // Continue the session after being logged in
-  simulate.session(
-    simulate.browser_request(http.Get, "/user/login"),
-    login_req,
-    login_resp,
-  )
+  simulate.session(req, login_req, login_resp)
 }

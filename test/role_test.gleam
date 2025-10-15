@@ -1,6 +1,6 @@
+import app/router
 import app/routes/role
-import app/routes/role/get_role_list
-import app_test.{global_data}
+import app_test
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
@@ -8,10 +8,10 @@ import gleam/list
 import wisp/simulate
 
 pub fn get_role_list_test() {
-  let ctx = global_data()
+  let ctx = app_test.global_data()
 
-  let req = simulate.browser_request(http.Get, "/api/roles")
-  let resp = get_role_list.handle_request(req, ctx)
+  let req = simulate.browser_request(http.Get, "/user/roles")
+  let resp = router.handle_request(req, ctx)
 
   assert resp.status == 200 as "Status code should be 200"
   let body = simulate.read_body(resp)
