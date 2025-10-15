@@ -7,6 +7,8 @@ import gleam/http/response
 import gleam/list
 import gleam/string
 import wisp/simulate
+import gleam/dynamic/decode
+import gleam/json
 
 pub fn login_test() {
   let ctx = global_data()
@@ -52,8 +54,17 @@ pub fn get_all_user_test() {
   let resp = get_all_users.handle_request(with_auth, ctx)
 
   let body = simulate.read_body(resp)
-  assert resp.status == 200
   assert string.is_empty(body) == False
 
-  todo as "Check the payload"
+  assert resp.status == 200 as "Endpoint access should be available for admins"
+  let assert Ok(_) =
+   json.parse(body, decode.list({
+    use _ <- decode.field("id", decode.string)
+    use _ <- decode.field("full_name", decode.string)
+    use _ <- decode.field("registration", decode.string)
+    use _ <- decode.optional_field("email", "n/a", decode.string)
+    use _ <- decode.field("user_role", decode.string)
+    decode.success(Nil)
+  }))
+  as "Response should contain valid (USER)JSON data"
 }
