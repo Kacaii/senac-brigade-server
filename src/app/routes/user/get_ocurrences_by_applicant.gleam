@@ -3,6 +3,7 @@
 //// It returns a list of occurrences (incidents/reports) that were submitted
 //// by the specified user, including detailed information about each occurrence.
 
+import app/routes/occurrence
 import app/routes/occurrence/sql
 import app/web.{type Context}
 import gleam/http
@@ -41,8 +42,7 @@ pub fn handle_request(
   use <- wisp.require_method(request, http.Get)
 
   case query_occurrences(ctx:, user_id:) {
-    Ok(occurrence_list) ->
-      wisp.json_response(json.to_string(occurrence_list), 200)
+    Ok(data) -> wisp.json_response(json.to_string(data), 200)
     Error(err) -> handle_error(err)
   }
 }
@@ -84,18 +84,9 @@ fn handle_error(err: GetOccurrencesByApplicantError) {
   }
 }
 
-/// Represents possible errors that can occur during the search
-/// including invalid UUID formats for applicant
-type GetOccurrencesByApplicantError {
-  /// The provided applicant ID is not a valid UUID format
-  InvalidUUID(String)
-  /// An Error occurred when querying the database
-  DataBaseError(pog.QueryError)
-}
-
 fn get_occurences_by_applicant_row_to_json(
   get_occurences_by_applicant_row: sql.QueryOccurencesByApplicantRow,
-) -> json.Json {
+) {
   let sql.QueryOccurencesByApplicantRow(
     id:,
     description:,
@@ -107,20 +98,20 @@ fn get_occurences_by_applicant_row_to_json(
     location:,
     reference_point:,
   ) = get_occurences_by_applicant_row
+
+  let category_string =
+    enum_to_category(occurrence_category)
+    |> occurrence.category_to_string
+
+  let subcategory_string =
+    option.map(occurrence_subcategory, enum_to_subcategory)
+    |> option.map(occurrence.subcategory_to_string)
+
   json.object([
     #("id", json.string(uuid.to_string(id))),
     #("description", json.nullable(description, json.string)),
-    #(
-      "category",
-      json.string(occurrence_category_enum_encoder(occurrence_category)),
-    ),
-    #(
-      "subcategory",
-      json.nullable(
-        option.map(occurrence_subcategory, occurrence_subcategory_enum_encoder),
-        json.string,
-      ),
-    ),
+    #("category", json.string(category_string)),
+    #("subcategory", json.nullable(subcategory_string, json.string)),
     #("created_at", json.float(timestamp.to_unix_seconds(created_at))),
     #("updated_at", json.float(timestamp.to_unix_seconds(updated_at))),
     #("resolved_at", json.nullable(maybe_timestamp(resolved_at), json.float)),
@@ -136,36 +127,43 @@ fn maybe_timestamp(
   timestamp.to_unix_seconds(time_stamp)
 }
 
-fn occurrence_category_enum_encoder(
-  occurrence_category_enum: sql.OccurrenceCategoryEnum,
-) -> String {
-  case occurrence_category_enum {
-    sql.Other -> "other"
-    sql.TrafficAccident -> "traffic_accident"
-    sql.Fire -> "fire"
-    sql.MedicEmergency -> "medic_emergency"
+fn enum_to_category(enum: sql.OccurrenceCategoryEnum) -> occurrence.Category {
+  case enum {
+    sql.Other -> occurrence.Other
+    sql.TrafficAccident -> occurrence.TrafficAccident
+    sql.Fire -> occurrence.Fire
+    sql.MedicEmergency -> occurrence.MedicEmergency
   }
 }
 
-fn occurrence_subcategory_enum_encoder(
-  occurrence_subcategory_enum: sql.OccurrenceSubcategoryEnum,
-) -> String {
-  case occurrence_subcategory_enum {
-    sql.InjuredAnimal -> "injured_animal"
-    sql.Flood -> "flood"
-    sql.TreeCrash -> "tree_crash"
-    sql.MotorcycleCrash -> "motorcycle_crash"
-    sql.Rollover -> "rollover"
-    sql.RunOver -> "run_over"
-    sql.Collision -> "collision"
-    sql.Vehicle -> "vehicle"
-    sql.Vegetation -> "vegetation"
-    sql.Comercial -> "comercial"
-    sql.Residential -> "residential"
-    sql.Intoxication -> "intoxication"
-    sql.SeriousInjury -> "serious_injury"
-    sql.Seizure -> "seizure"
-    sql.HeartStop -> "heart_stop"
-    sql.PreHospitalCare -> "pre_hospital_care"
+fn enum_to_subcategory(
+  enum: sql.OccurrenceSubcategoryEnum,
+) -> occurrence.Subcategory {
+  case enum {
+    sql.InjuredAnimal -> occurrence.InjuredAnimal
+    sql.Flood -> occurrence.Flood
+    sql.TreeCrash -> occurrence.TreeCrash
+    sql.MotorcycleCrash -> occurrence.MotorcycleCrash
+    sql.Rollover -> occurrence.Rollover
+    sql.RunOver -> occurrence.RunOver
+    sql.Collision -> occurrence.Collision
+    sql.Vehicle -> occurrence.Vehicle
+    sql.Vegetation -> occurrence.Vegetation
+    sql.Comercial -> occurrence.Comercial
+    sql.Residential -> occurrence.Residential
+    sql.Intoxication -> occurrence.Intoxication
+    sql.SeriousInjury -> occurrence.SeriousInjury
+    sql.Seizure -> occurrence.Seizure
+    sql.HeartStop -> occurrence.HeartStop
+    sql.PreHospitalCare -> occurrence.PreHospitalCare
   }
+}
+
+/// Represents possible errors that can occur during the search
+/// including invalid UUID formats for applicant
+type GetOccurrencesByApplicantError {
+  /// The provided applicant ID is not a valid UUID format
+  InvalidUUID(String)
+  /// An Error occurred when querying the database
+  DataBaseError(pog.QueryError)
 }
