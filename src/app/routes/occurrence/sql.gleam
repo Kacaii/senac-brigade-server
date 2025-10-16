@@ -17,7 +17,12 @@ import youid/uuid.{type Uuid}
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type InsertNewOccurenceRow {
-  InsertNewOccurenceRow(id: Uuid, created_at: Timestamp)
+  InsertNewOccurenceRow(
+    id: Uuid,
+    applicant_id: Option(Uuid),
+    participants_id: Option(List(Uuid)),
+    created_at: Timestamp,
+  )
 }
 
 ///   Inserts a new occurrence into the database
@@ -38,12 +43,22 @@ pub fn insert_new_occurence(
 ) -> Result(pog.Returned(InsertNewOccurenceRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use created_at <- decode.field(1, pog.timestamp_decoder())
-    decode.success(InsertNewOccurenceRow(id:, created_at:))
+    use applicant_id <- decode.field(1, decode.optional(uuid_decoder()))
+    use participants_id <- decode.field(
+      2,
+      decode.optional(decode.list(uuid_decoder())),
+    )
+    use created_at <- decode.field(3, pog.timestamp_decoder())
+    decode.success(InsertNewOccurenceRow(
+      id:,
+      applicant_id:,
+      participants_id:,
+      created_at:,
+    ))
   }
 
   "--   Inserts a new occurrence into the database
-INSERT INTO public.occurrence (
+INSERT INTO public.occurrence AS u (
     applicant_id,
     occurrence_category,
     occurrence_subcategory,
@@ -52,8 +67,21 @@ INSERT INTO public.occurrence (
     reference_point,
     vehicle_code,
     participants_id
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, created_at;
+) VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8
+)
+RETURNING
+    u.id,
+    u.applicant_id,
+    u.participants_id,
+    u.created_at;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

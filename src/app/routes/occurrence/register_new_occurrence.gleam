@@ -8,6 +8,7 @@ import app/web.{type Context}
 import formal/form
 import gleam/json
 import gleam/list
+import gleam/option
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
@@ -50,17 +51,7 @@ fn handle_form_data(
 ) -> wisp.Response {
   case insert_occurrence(request:, ctx:, form_data:) {
     Error(err) -> handle_error(err)
-    Ok(returned) -> {
-      let resp = {
-        json.object([
-          #("id", json.string(uuid.to_string(returned.id))),
-          #("date", json.float(timestamp.to_unix_seconds(returned.created_at))),
-        ])
-      }
-
-      //   All done!
-      wisp.json_response(json.to_string(resp), 201)
-    }
+    Ok(data) -> wisp.json_response(json.to_string(data), 201)
   }
 }
 
@@ -121,7 +112,7 @@ fn insert_occurrence(
   request request: wisp.Request,
   ctx ctx: Context,
   form_data data: RegisterOccurrenceForm,
-) -> Result(sql.InsertNewOccurenceRow, RegisterNewOccurrenceError) {
+) -> Result(json.Json, RegisterNewOccurrenceError) {
   //   User
   use applicant_uuid <- result.try(
     user.auth_user_from_cookie(request:, cookie_name: "USER_ID")
@@ -162,9 +153,28 @@ fn insert_occurrence(
     |> result.map_error(DataBaseError),
   )
 
-  // Get the first row
-  list.first(returned.rows)
-  |> result.map_error(DataBaseReturnedEmptyRow)
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.map_error(DataBaseReturnedEmptyRow),
+  )
+
+  // RESPONSE ------------------------------------------------------------------
+  let participants_id =
+    json.nullable(
+      option.map(row.participants_id, fn(id_list) {
+        use user_uuid <- list.map(id_list)
+        let id = uuid.to_string(user_uuid)
+        json.string(id)
+      }),
+      json.preprocessed_array,
+    )
+
+  json.object([
+    #("id", uuid.to_string(row.id) |> json.string),
+    #("applicant_id", uuid.to_string(row.id) |> json.string),
+    #("participants_id", participants_id),
+    #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+  ])
 }
 
 fn occurence_form() -> form.Form(RegisterOccurrenceForm) {
