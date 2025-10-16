@@ -38,7 +38,7 @@ pub fn handle_request(
     |> form.run
 
   case form_result {
-    Error(_) -> wisp.bad_request("Formulário Inválido")
+    Error(_) -> wisp.unprocessable_content()
     Ok(form_data) -> handle_form_data(request:, ctx:, form_data:)
   }
 }

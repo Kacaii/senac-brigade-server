@@ -22,6 +22,11 @@ import wisp
 import youid/uuid
 
 ///   Insert a new `user_account` into the database
+///
+/// - Registration must be unique
+/// - Email must be unique
+///
+/// Only accessible to Admin users
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,

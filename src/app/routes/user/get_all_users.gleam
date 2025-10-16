@@ -10,6 +10,8 @@ import pog
 import wisp
 import youid/uuid
 
+/// 󰀖  Queries the database for a complete list of all registered users and
+/// returns them as a valid JSON reponse.
 ///
 /// ```json
 /// [

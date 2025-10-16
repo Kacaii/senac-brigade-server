@@ -44,11 +44,9 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
-  let members_list_result = query_brigade_members(ctx, brigade_id)
-
-  case members_list_result {
+  case query_brigade_members(ctx, brigade_id) {
     Ok(members_list) -> wisp.json_response(json.to_string(members_list), 200)
-    Error(err) -> handle_err(err)
+    Error(err) -> handle_error(err)
   }
 }
 
@@ -60,10 +58,12 @@ fn query_brigade_members(
     uuid.from_string(brigade_id)
     |> result.replace_error(InvalidUUID(brigade_id)),
   )
+
   use returned <- result.try(
     sql.query_brigade_members(ctx.conn, brigade_uuid)
     |> result.map_error(DataBaseError),
   )
+
   let members_list = {
     use row <- list.map(returned.rows)
     get_brigade_members_row_to_json(row)
@@ -101,7 +101,7 @@ fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
   }
 }
 
-fn handle_err(err: GetBrigadeMembersError) -> wisp.Response {
+fn handle_error(err: GetBrigadeMembersError) -> wisp.Response {
   case err {
     InvalidUUID(brigade_id) ->
       wisp.bad_request("ID de Brigada de Incêndio inválido:" <> brigade_id)
