@@ -49,6 +49,7 @@ fn handle_form_data(
   form_data form_data: RegisterOccurrenceForm,
 ) -> wisp.Response {
   case insert_occurrence(request:, ctx:, form_data:) {
+    Error(err) -> handle_error(err)
     Ok(returned) -> {
       let resp = {
         json.object([
@@ -60,58 +61,59 @@ fn handle_form_data(
       //   All done!
       wisp.json_response(json.to_string(resp), 201)
     }
-    Error(err) ->
-      case err {
-        AuthenticationFailed(err) -> user.handle_authentication_error(err)
+  }
+}
 
-        InvalidCategory(unknown) ->
-          wisp.bad_request("Categoria inválida: " <> unknown)
-        InvalidSubCategory(unknown) ->
-          wisp.bad_request("Subcategoria inválida: " <> unknown)
+fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
+  case err {
+    AuthenticationFailed(err) -> user.handle_authentication_error(err)
 
-        InvalidParticipantUUID(participant_id) ->
-          wisp.response(401)
-          |> wisp.set_body(wisp.Text(
-            "ID de participante inválido:" <> participant_id,
-          ))
+    InvalidCategory(unknown) ->
+      wisp.bad_request("Categoria inválida: " <> unknown)
+    InvalidSubCategory(unknown) ->
+      wisp.bad_request("Subcategoria inválida: " <> unknown)
 
-        DataBaseError(err) ->
-          case err {
-            pog.ConnectionUnavailable ->
-              wisp.internal_server_error()
-              |> wisp.set_body(wisp.Text(
-                "Conexão com o Banco de Dados não disponível",
-              ))
+    InvalidParticipantUUID(participant_id) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text(
+        "ID de participante inválido:" <> participant_id,
+      ))
 
-            pog.ConstraintViolated(message:, constraint:, detail:) -> {
-              wisp.bad_request(
-                "
+    DataBaseError(err) -> handle_database_error(err)
+
+    DataBaseReturnedEmptyRow(_) ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text("O Banco de Dados não retornou resultados"))
+  }
+}
+
+fn handle_database_error(err: pog.QueryError) -> wisp.Response {
+  case err {
+    pog.ConnectionUnavailable ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text("Conexão com o Banco de Dados não disponível"))
+
+    pog.ConstraintViolated(message:, constraint:, detail:) -> {
+      wisp.bad_request(
+        "
               Uma restrição foi encontrada no Banco de Dados: {{constraint}}
               Mensagem: {{message}}
               Detalhes: {{detail}}"
-                |> string.replace("{{constraint}}", constraint)
-                |> string.replace("{{message}}", message)
-                |> string.replace("{{detail}}", detail),
-              )
-            }
+        |> string.replace("{{constraint}}", constraint)
+        |> string.replace("{{message}}", message)
+        |> string.replace("{{detail}}", detail),
+      )
+    }
 
-            pog.QueryTimeout ->
-              wisp.internal_server_error()
-              |> wisp.set_body(wisp.Text(
-                "O Banco de Dados demorou muito para responder",
-              ))
+    pog.QueryTimeout ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "O Banco de Dados demorou muito para responder",
+      ))
 
-            _ ->
-              wisp.internal_server_error()
-              |> wisp.set_body(wisp.Text(
-                "Ocorreu um erro ao acessar o Banco de Dados",
-              ))
-          }
-
-        DataBaseReturnedEmptyRow(_) ->
-          wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text("O Banco de Dados não retornou resultados"))
-      }
+    _ ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text("Ocorreu um erro ao acessar o Banco de Dados"))
   }
 }
 
@@ -138,12 +140,12 @@ fn insert_occurrence(
     |> result.replace_error(InvalidSubCategory(data.occurrence_subcategory)),
   )
 
-  use participants_id_list <- result.try(
-    list.try_map(data.participants_id, fn(participant) {
-      uuid.from_string(participant)
-      |> result.replace_error(InvalidParticipantUUID(participant))
-    }),
-  )
+  // 
+  use participants_id_list <- result.try({
+    use maybe_uuid <- list.try_map(data.participants_id)
+    uuid.from_string(maybe_uuid)
+    |> result.replace_error(InvalidParticipantUUID(maybe_uuid))
+  })
 
   use returned <- result.try(
     sql.insert_new_occurence(
@@ -206,11 +208,18 @@ pub opaque type RegisterOccurrenceForm {
   )
 }
 
+/// Registering a new occurrence can fail
 type RegisterNewOccurrenceError {
+  /// Failed to authenticate the user
   AuthenticationFailed(user.AuthenticationError)
+  /// Occurrence has an invalid category
   InvalidCategory(String)
+  /// Occurrence has an invalid subcategory
   InvalidSubCategory(String)
+  /// A participant has an invalid UUID
   InvalidParticipantUUID(String)
+  /// Failed to access the database
   DataBaseError(pog.QueryError)
+  /// Database returned no results
   DataBaseReturnedEmptyRow(Nil)
 }

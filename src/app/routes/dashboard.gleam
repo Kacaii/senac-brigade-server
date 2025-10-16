@@ -1,6 +1,4 @@
 import app/routes/dashboard/sql
-import app/routes/role
-import app/routes/user
 import app/web.{type Context}
 import gleam/http
 import gleam/json
@@ -8,7 +6,6 @@ import gleam/list
 import gleam/result
 import pog
 import wisp
-import youid/uuid
 
 /// 󰡦  Retrieve dashboard stats from the DataBase and returns them
 /// as formatted JSON data
@@ -29,30 +26,15 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
-  case get_dashboard_data(request:, ctx:) {
+  case get_dashboard_data(ctx:) {
     Ok(value) -> wisp.json_response(json.to_string(value), 200)
-    Error(err) -> handle_error(request:, err:)
+    Error(err) -> handle_error(err:)
   }
 }
 
 fn get_dashboard_data(
-  request request: wisp.Request,
   ctx ctx: Context,
 ) -> Result(json.Json, GetDashboardStatsError) {
-  //   AUTHORIZATION CHECK --------------------------------------------------
-  use _ <- result.try(
-    user.check_role_authorization(
-      request:,
-      ctx:,
-      cookie_name: "USER_ID",
-      authorized_roles: [
-        role.Admin,
-        role.Analist,
-      ],
-    )
-    |> result.map_error(RoleError),
-  )
-
   //  QUERY THE DATABASE ----------------------------------------------------
   use returned <- result.try(
     sql.query_dashboard_stats(ctx.conn)
@@ -60,20 +42,16 @@ fn get_dashboard_data(
   )
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(DataBaseReturnedEmptyRow),
+    |> result.replace_error(DataBaseReturnedNoResults),
   )
 
   Ok(get_dashboard_stats_row_to_json(row))
 }
 
-fn handle_error(
-  request request: wisp.Request,
-  err err: GetDashboardStatsError,
-) -> wisp.Response {
+fn handle_error(err err: GetDashboardStatsError) -> wisp.Response {
   case err {
     // 󱋬  DataBase couldn't find the required information for the dashboard
-    //
-    DataBaseReturnedEmptyRow -> {
+    DataBaseReturnedNoResults -> {
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
         "O Banco de dados não encontrou os dados solicitados",
@@ -82,65 +60,6 @@ fn handle_error(
 
     // 󱘺  DATABASE ERRORS --------------------------------------------------
     DataBaseError(err) -> handle_db_error(err)
-
-    //   PERMISSION DENIED ------------------------------------------------
-    RoleError(role_err) -> handle_authorization_error(request:, role_err:)
-  }
-}
-
-/// Handle Authorization related errors
-fn handle_authorization_error(
-  request request: wisp.Request,
-  role_err role_err: user.AuthorizationError,
-) {
-  case role_err {
-    user.AuthenticationFailed(auth_err) -> {
-      case auth_err {
-        //   User didn't have a valid UUID
-        //
-        user.InvalidUUID(user_id) ->
-          wisp.response(401)
-          |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> user_id))
-        //   USER_ID cookie is required to access this endpoint
-        //
-        user.MissingCookie ->
-          wisp.response(401)
-          |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
-      }
-    }
-    // 󱏊  Database couldn't find a user role with that UUDI
-    //
-    user.FailedToQueryUserRole ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível identificar o cargo do usuário",
-      ))
-
-    //   User is not authorized to access this endpoint ----------------------
-    //
-    user.Unauthorized(user_uuid, user_role) -> {
-      //   Log who tried to access and whats their role
-      role.log_unauthorized_access_attempt(request:, user_uuid:, user_role:)
-      //   403 FORBIDDEN response
-      wisp.response(403)
-      |> wisp.set_body(wisp.Text(
-        "Usuário não autorizado: "
-        <> role.to_string(user_role)
-        <> " "
-        <> uuid.to_string(user_uuid),
-      ))
-    }
-
-    //   DATABASE ERRORS ------------------------------------------------------
-    //
-    user.DataBaseError(db_err) -> handle_db_error(db_err)
-
-    //   INVALID ROLES --------------------------------------------------------
-    user.InvalidRole(unkown) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "Usuário possui um cargo desconhecido: " <> unkown,
-      ))
   }
 }
 
@@ -184,9 +103,7 @@ fn get_dashboard_stats_row_to_json(
 /// Querying the endpoint can fail
 pub type GetDashboardStatsError {
   /// DataBase could not find the data
-  DataBaseReturnedEmptyRow
+  DataBaseReturnedNoResults
   /// DataBase query went wrong
   DataBaseError(pog.QueryError)
-  /// User/Role related errors
-  RoleError(user.AuthorizationError)
 }
