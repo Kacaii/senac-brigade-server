@@ -52,7 +52,7 @@ fn try_update_user_status(
       request: req,
       ctx: ctx,
       cookie_name: "USER_ID",
-      authorized_roles: [role.Admin],
+      authorized_roles: [role.Admin, role.Developer],
     )
     |> result.map_error(RoleError),
   )

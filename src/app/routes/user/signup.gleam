@@ -71,7 +71,7 @@ fn try_insert_into_database(
       request:,
       ctx:,
       cookie_name: "USER_ID",
-      authorized_roles: [role.Admin],
+      authorized_roles: [role.Admin, role.Developer],
     )
     |> result.map_error(RoleError),
   )

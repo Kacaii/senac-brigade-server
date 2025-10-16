@@ -95,7 +95,7 @@ fn try_delete_user(
       request: req,
       ctx:,
       cookie_name: "USER_ID",
-      authorized_roles: [role.Admin],
+      authorized_roles: [role.Admin, role.Developer],
     )
     |> result.map_error(RoleError),
   )
