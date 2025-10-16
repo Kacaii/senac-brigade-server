@@ -73,6 +73,7 @@ fn cors_config() -> cors.Cors {
   |> cors.allow_method(http.Get)
   |> cors.allow_method(http.Post)
   |> cors.allow_method(http.Put)
+  |> cors.allow_method(http.Delete)
   |> cors.allow_header("authorization")
   |> cors.allow_header("content-type")
   |> cors.allow_header("origin")
