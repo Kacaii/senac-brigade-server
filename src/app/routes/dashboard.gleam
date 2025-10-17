@@ -1,3 +1,4 @@
+import app/database
 import app/routes/dashboard/sql
 import app/web.{type Context}
 import gleam/http
@@ -58,29 +59,8 @@ fn handle_error(err err: GetDashboardStatsError) -> wisp.Response {
       ))
     }
 
-    // 󱘺  DATABASE ERRORS --------------------------------------------------
-    DataBaseError(err) -> handle_db_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
   }
-}
-
-/// Handle DataBase related errors
-fn handle_db_error(err: pog.QueryError) {
-  let db_err_msg = case err {
-    //   Connection failed
-    //
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-
-    //   Took too long
-    //
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-
-    // Fallback response
-    //
-    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(db_err_msg))
 }
 
 fn get_dashboard_stats_row_to_json(

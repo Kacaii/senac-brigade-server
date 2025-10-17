@@ -1,3 +1,4 @@
+import app/database
 import app/routes/role
 import app/routes/user/sql
 import app/web.{type Context}
@@ -112,5 +113,29 @@ pub fn handle_authentication_error(err: AuthenticationError) {
     MissingCookie ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
+  }
+}
+
+pub fn handle_authorization_error(req: wisp.Request, err: AuthorizationError) {
+  case err {
+    AuthenticationFailed(err) -> handle_authentication_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
+    FailedToQueryUserRole ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível confirmar o Cargo do usuário autenticado",
+      ))
+    InvalidRole(err) ->
+      wisp.response(401)
+      |> wisp.set_body(wisp.Text(
+        "Usuário autenticado possui cargo inválido: " <> err,
+      ))
+    Unauthorized(user_uuid, user_role) -> {
+      role.log_unauthorized_access_attempt(req, user_uuid:, user_role:)
+      wisp.response(403)
+      |> wisp.set_body(wisp.Text(
+        "Não autorizado: " <> role.to_string_pt_br(user_role:),
+      ))
+    }
   }
 }

@@ -7,6 +7,7 @@
 //// All requests are processed through the web middleware pipeline before routing.
 //// Unmatched routes return a 404 Not Found response.
 
+import app/routes/admin/admin_update_user
 import app/routes/admin/setup_first_admin
 import app/routes/brigade/delete_brigade
 import app/routes/brigade/get_all_brigades
@@ -37,9 +38,7 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
   case request.method, wisp.path_segments(request) {
     //   Security routes -------------------------------------------------
-    http.Post, ["user", "login"] -> {
-      login.handle_request(request:, ctx:)
-    }
+    http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)
 
     http.Put, ["user", "password"] ->
       update_user_password.handle_request(request:, ctx:)
@@ -51,6 +50,9 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
 
     http.Get, ["admin", "users"] -> get_all_users.handle_request(request:, ctx:)
+
+    http.Put, ["admin", "users", id] ->
+      admin_update_user.handle_request(request:, ctx:, id:)
 
     http.Delete, ["admin", "users", id] ->
       delete_user.handle_request(request:, ctx:, id:)

@@ -14,7 +14,8 @@
 | /admin/signup                  | Register a new user account                                 | POST (Form) |
 | /admin/users                   | List all registred users                                    | GET         |
 | /admin/users/{{id}}            | Delete an user from the DataBase                            | DELETE      |
-| /admin/users/{{id}}/status     | Update the status of a user account                         | PUT         |
+| /admin/users/{{id}}            | Update the user data as an admin                            | PUT (JSON)  |
+| /admin/users/{{id}}/status     | Update the status of a user account                         | PUT (JSON)  |
 | /admin/teams                   | Register a new brigade, with a leader and all their members | POST (Form) |
 | /admin/teams                   | Query all registered brigades                               | GET         |
 | /admin/teams/{{id}}/status     | Update the status of a brigade                              | PUT (JSON)  |
@@ -25,8 +26,8 @@
 | /user/{{id}}/occurrences       | Find all occurrences applied by this user                   | GET         |
 | /user/{{id}}/crew_members      | List fellow brigade members of this user                    | GET         |
 | /user/notification_preferences | Fetch authenticated user notification preferences           | GET         |
-| /user/notification_preferences | Update authenticated user notification preferences          | PUT         |
-| /user/password                 | Update authenticated user password                          | PUT         |
+| /user/notification_preferences | Update authenticated user notification preferences          | PUT (JSON)  |
+| /user/password                 | Update authenticated user password                          | PUT (JSON)  |
 | /brigade/{{id}}/members        | List brigade members                                        | GET         |
 | /occurrence/new                | Register new occurrence                                     | POST (Form) |
 | /dashboard/stats               | Fetch stats for the dashboard page                          | GET         |

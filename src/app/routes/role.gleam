@@ -1,7 +1,25 @@
+import gleam/dynamic/decode
 import gleam/string
 import glight
 import wisp
 import youid/uuid
+
+pub type Role {
+  Sargeant
+  Developer
+  Captain
+  Firefighter
+  Analist
+  Admin
+}
+
+pub fn decoder() {
+  use maybe_role <- decode.then(decode.string)
+  case from_string(maybe_role) {
+    Error(_) -> decode.failure(Firefighter, "user_role")
+    Ok(value) -> decode.success(value)
+  }
+}
 
 pub fn from_string_pt_br(role_name role_name: String) -> Result(Role, String) {
   case string.lowercase(role_name) {
@@ -49,15 +67,6 @@ pub fn to_string(user_role user_role: Role) -> String {
     Firefighter -> "firefighter"
     Sargeant -> "sargeant"
   }
-}
-
-pub type Role {
-  Sargeant
-  Developer
-  Captain
-  Firefighter
-  Analist
-  Admin
 }
 
 /// 󰞏  Log when someone tries to access an endpoint that they dont have permission
