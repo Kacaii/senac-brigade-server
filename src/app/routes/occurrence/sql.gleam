@@ -221,6 +221,45 @@ INNER JOIN public.occurrence AS o
   |> pog.execute(db)
 }
 
+/// A row you get from running the `query_occurrence_participants` query
+/// defined in `./src/app/routes/occurrence/sql/query_occurrence_participants.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryOccurrenceParticipantsRow {
+  QueryOccurrenceParticipantsRow(id: Uuid)
+}
+
+/// 󰀖  Find all users that participated in a occurrence
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_occurrence_participants(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(QueryOccurrenceParticipantsRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(QueryOccurrenceParticipantsRow(id:))
+  }
+
+  "-- 󰀖  Find all users that participated in a occurrence
+SELECT u.id
+FROM public.occurrence_brigade_member AS obm
+INNER JOIN public.user_account AS u
+    ON obm.user_id = u.id
+INNER JOIN public.occurrence AS o
+    ON obm.occurrence_id = o.id
+WHERE obm.occurrence_id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `query_recent_occurrences` query
 /// defined in `./src/app/routes/occurrence/sql/query_recent_occurrences.sql`.
 ///

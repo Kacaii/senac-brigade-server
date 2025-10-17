@@ -12,6 +12,7 @@ import gleam/float
 import gleam/http
 import gleam/json
 import gleam/list
+import gleam/set
 import wisp
 import wisp/simulate
 import youid/uuid
@@ -93,6 +94,25 @@ pub fn register_new_occurrence_test() {
       decode.success(dummy_occurrence_id)
     })
     as "Response should contain valid JSON"
+
+  // Check if users were registered as participants ----------------------------
+  let assert [] = {
+    let dummy_participants_set = set.from_list(dummy_participants_id)
+
+    let registered_participants_set =
+      set.from_list({
+        let assert Ok(returned) =
+          o_sql.query_occurrence_participants(ctx.conn, dummy_occurrence_id)
+          as "Failed to query occurrence participants"
+
+        use row <- list.map(returned.rows)
+        row.id
+      })
+
+    set.difference(dummy_participants_set, registered_participants_set)
+    |> set.to_list()
+  }
+    as "Users were not registered as participants"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(cleanup_occurrence) = {
