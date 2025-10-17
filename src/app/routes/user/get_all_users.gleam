@@ -1,3 +1,4 @@
+import app/database
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -46,7 +47,7 @@ pub fn handle_request(
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   case err {
     RoleError(err) -> handle_role_error(req, err)
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
   }
 }
 
@@ -72,19 +73,8 @@ fn handle_role_error(
         "Acesso não autorizado: " <> role.to_string_pt_br(user_role),
       ))
     }
-    user.DataBaseError(err) -> handle_database_error(err)
+    user.DataBaseError(err) -> database.handle_database_error(err)
   }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-    _ -> "Ocorreu um erro ao consultar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(err_msg))
 }
 
 fn try_query_database(

@@ -1,3 +1,4 @@
+import app/database
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -36,7 +37,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
         "Não foi possível confirmar a remoção do usuário solicitado",
       ))
     RoleError(err) -> handle_role_error(req, err)
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
   }
 }
 
@@ -54,7 +55,7 @@ fn handle_role_error(
       ))
     }
     user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.DataBaseError(err) -> handle_database_error(err)
+    user.DataBaseError(err) -> database.handle_database_error(err)
     user.FailedToQueryUserRole ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
@@ -64,21 +65,6 @@ fn handle_role_error(
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui cargo inválido: " <> invalid))
   }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-    pog.ConstraintViolated(message:, constraint:, detail:) ->
-      constraint <> ": " <> message <> "\n" <> detail
-    pog.PostgresqlError(code:, name:, message:) ->
-      code <> ": " <> name <> ": " <> "\n" <> message
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(err_msg))
 }
 
 fn try_delete_user(

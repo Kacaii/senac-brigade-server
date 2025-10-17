@@ -1,16 +1,18 @@
 //// Processes occurrence registration form data, validates inputs, and creates
 //// a new occurrence record in the database.
 
+import app/database
 import app/routes/occurrence/category
+import app/routes/occurrence/priority
 import app/routes/occurrence/sql
+import app/routes/occurrence/subcategory
 import app/routes/user
 import app/web.{type Context}
 import formal/form
+import gleam/dynamic/decode
 import gleam/json
 import gleam/list
-import gleam/option
 import gleam/result
-import gleam/string
 import gleam/time/timestamp
 import pog
 import wisp
@@ -25,7 +27,10 @@ import youid/uuid
 /// ```json
 /// {
 ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-///   "date": 1759790156.0
+///   "date": 1759790156.0,
+///   "priority": "medium",
+///   "applicant_id": "3292ca76-9582-434c-b572-efc80aa9a730",
+///   "brigade_id": "4b3f860f-0dbf-4825-8a31-246d0bd430a8"
 /// }
 /// ```
 pub fn handle_request(
@@ -61,50 +66,31 @@ fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
 
     InvalidCategory(unknown) ->
       wisp.bad_request("Categoria inválida: " <> unknown)
+
     InvalidSubCategory(unknown) ->
       wisp.bad_request("Subcategoria inválida: " <> unknown)
 
-    InvalidParticipantUUID(participant_id) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "ID de participante inválido:" <> participant_id,
-      ))
-
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
 
     DataBaseReturnedEmptyRow(_) ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text("O Banco de Dados não retornou resultados"))
-  }
-}
 
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  case err {
-    pog.ConnectionUnavailable ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text("Conexão com o Banco de Dados não disponível"))
+    InvalidBrigadeUuid(id) ->
+      wisp.unprocessable_content()
+      |> wisp.set_body(wisp.Text("Equipe possui Uuid inválido: " <> id))
 
-    pog.ConstraintViolated(message:, constraint:, detail:) -> {
-      wisp.bad_request(
-        "
-              Uma restrição foi encontrada no Banco de Dados: {{constraint}}
-              Mensagem: {{message}}
-              Detalhes: {{detail}}"
-        |> string.replace("{{constraint}}", constraint)
-        |> string.replace("{{message}}", message)
-        |> string.replace("{{detail}}", detail),
-      )
-    }
-
-    pog.QueryTimeout ->
-      wisp.internal_server_error()
+    InvalidOccurrencePriority(unknown) ->
+      wisp.unprocessable_content()
       |> wisp.set_body(wisp.Text(
-        "O Banco de Dados demorou muito para responder",
+        "O ocorrencia possui prioridade inválida: " <> unknown,
       ))
 
-    _ ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text("Ocorreu um erro ao acessar o Banco de Dados"))
+    InvalidLocation(unkwown) ->
+      wisp.bad_request(
+        "Localização inválida, o formato precisa ser um par de coordenadas: "
+        <> unkwown,
+      )
   }
 }
 
@@ -120,35 +106,45 @@ fn insert_occurrence(
   )
 
   // 
-  use form_category <- result.try(
-    category.main_category_from_string(data.occurrence_category)
+  use occurrence_category <- result.try(
+    category.from_string(data.occurrence_category)
     |> result.replace_error(InvalidCategory(data.occurrence_category)),
   )
 
   // 
-  use form_subcategory <- result.try(
-    category.sub_category_from_string(data.occurrence_subcategory)
+  use occurrence_subcategory <- result.try(
+    subcategory.from_string(data.occurrence_subcategory)
     |> result.replace_error(InvalidSubCategory(data.occurrence_subcategory)),
   )
 
   // 
-  use participants_id_list <- result.try({
-    use maybe_uuid <- list.try_map(data.participants_id)
-    uuid.from_string(maybe_uuid)
-    |> result.replace_error(InvalidParticipantUUID(maybe_uuid))
-  })
+  use brigade_id <- result.try(
+    uuid.from_string(data.brigade_id)
+    |> result.replace_error(InvalidBrigadeUuid(data.brigade_id)),
+  )
+
+  use occurrence_priority <- result.try(
+    priority.from_string(data.priority)
+    |> result.replace_error(InvalidOccurrencePriority(data.priority)),
+  )
+
+  use location <- result.try(
+    json.parse(data.location, decode.list(decode.float))
+    |> result.replace_error(InvalidLocation(data.location)),
+  )
 
   use returned <- result.try(
     sql.insert_new_occurence(
       ctx.conn,
       applicant_uuid,
-      form_category,
-      form_subcategory,
+      category_to_enum(occurrence_category),
+      subcategory_to_enum(occurrence_subcategory),
+      occurrence_priority,
       data.description,
-      data.location,
+      location,
       data.reference_point,
       data.vehicle_code,
-      participants_id_list,
+      brigade_id,
     )
     |> result.map_error(DataBaseError),
   )
@@ -157,24 +153,52 @@ fn insert_occurrence(
     list.first(returned.rows)
     |> result.map_error(DataBaseReturnedEmptyRow),
   )
-
   // RESPONSE ------------------------------------------------------------------
-  let participants_id =
-    json.nullable(
-      option.map(row.participants_id, fn(id_list) {
-        use user_uuid <- list.map(id_list)
-        let id = uuid.to_string(user_uuid)
-        json.string(id)
-      }),
-      json.preprocessed_array,
-    )
-
   json.object([
     #("id", uuid.to_string(row.id) |> json.string),
     #("applicant_id", uuid.to_string(row.id) |> json.string),
-    #("participants_id", participants_id),
+    #("priority", json.string(enum_to_string(row.priority))),
+    #("brigade_id", uuid.to_string(row.brigade_id) |> json.string),
     #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
   ])
+}
+
+fn enum_to_string(enum: sql.OccurrencePriorityEnum) {
+  case enum {
+    sql.High -> "alta"
+    sql.Low -> "média"
+    sql.Medium -> "baixa"
+  }
+}
+
+fn category_to_enum(category: category.Category) {
+  case category {
+    category.Fire -> sql.Fire
+    category.MedicEmergency -> sql.MedicEmergency
+    category.Other -> sql.Other
+    category.TrafficAccident -> sql.TrafficAccident
+  }
+}
+
+fn subcategory_to_enum(subcategory: subcategory.Subcategory) {
+  case subcategory {
+    subcategory.Collision -> sql.Collision
+    subcategory.Comercial -> sql.Comercial
+    subcategory.Flood -> sql.Flood
+    subcategory.HeartStop -> sql.HeartStop
+    subcategory.InjuredAnimal -> sql.InjuredAnimal
+    subcategory.Intoxication -> sql.Intoxication
+    subcategory.MotorcycleCrash -> sql.MotorcycleCrash
+    subcategory.PreHospitalCare -> sql.PreHospitalCare
+    subcategory.Residential -> sql.Residential
+    subcategory.Rollover -> sql.Rollover
+    subcategory.RunOver -> sql.RunOver
+    subcategory.Seizure -> sql.Seizure
+    subcategory.SeriousInjury -> sql.SeriousInjury
+    subcategory.TreeCrash -> sql.TreeCrash
+    subcategory.Vegetation -> sql.Vegetation
+    subcategory.Vehicle -> sql.Vehicle
+  }
 }
 
 fn occurence_form() -> form.Form(RegisterOccurrenceForm) {
@@ -185,22 +209,22 @@ fn occurence_form() -> form.Form(RegisterOccurrenceForm) {
     use occurrence_subcategory <- form.field("subcategoria", {
       form.parse_string
     })
+    use priority <- form.field("prioridade", form.parse_string)
     use description <- form.field("descricao", { form.parse_string })
-    use location <- form.field("gps", { form.parse_list(form.parse_float) })
+    use location <- form.field("gps", form.parse_string)
     use vehicle_code <- form.field("codigoViatura", { form.parse_string })
     use reference_point <- form.field("pontoDeReferencia", { form.parse_string })
-    use participants_id <- form.field("participantes", {
-      form.parse_list(form.parse_string)
-    })
+    use brigade_id <- form.field("idEquipe", form.parse_string)
 
     form.success(RegisterOccurrenceForm(
       occurrence_category:,
       occurrence_subcategory:,
+      priority:,
       description:,
       location:,
       reference_point:,
       vehicle_code:,
-      participants_id:,
+      brigade_id:,
     ))
   })
 }
@@ -210,11 +234,13 @@ pub opaque type RegisterOccurrenceForm {
   RegisterOccurrenceForm(
     occurrence_category: String,
     occurrence_subcategory: String,
+    priority: String,
     description: String,
-    location: List(Float),
+    /// Needs to be json string with an array of floats
+    location: String,
     reference_point: String,
     vehicle_code: String,
-    participants_id: List(String),
+    brigade_id: String,
   )
 }
 
@@ -227,9 +253,11 @@ type RegisterNewOccurrenceError {
   /// Occurrence has an invalid subcategory
   InvalidSubCategory(String)
   /// A participant has an invalid UUID
-  InvalidParticipantUUID(String)
+  InvalidBrigadeUuid(String)
+  InvalidOccurrencePriority(String)
   /// Failed to access the database
   DataBaseError(pog.QueryError)
   /// Database returned no results
   DataBaseReturnedEmptyRow(Nil)
+  InvalidLocation(String)
 }

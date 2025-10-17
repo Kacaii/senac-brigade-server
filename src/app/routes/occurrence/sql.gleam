@@ -19,8 +19,9 @@ import youid/uuid.{type Uuid}
 pub type InsertNewOccurenceRow {
   InsertNewOccurenceRow(
     id: Uuid,
+    priority: OccurrencePriorityEnum,
     applicant_id: Option(Uuid),
-    participants_id: Option(List(Uuid)),
+    brigade_id: Uuid,
     created_at: Timestamp,
   )
 }
@@ -35,38 +36,39 @@ pub fn insert_new_occurence(
   arg_1: Uuid,
   arg_2: OccurrenceCategoryEnum,
   arg_3: OccurrenceSubcategoryEnum,
-  arg_4: String,
-  arg_5: List(Float),
-  arg_6: String,
+  arg_4: OccurrencePriorityEnum,
+  arg_5: String,
+  arg_6: List(Float),
   arg_7: String,
-  arg_8: List(Uuid),
+  arg_8: String,
+  arg_9: Uuid,
 ) -> Result(pog.Returned(InsertNewOccurenceRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use applicant_id <- decode.field(1, decode.optional(uuid_decoder()))
-    use participants_id <- decode.field(
-      2,
-      decode.optional(decode.list(uuid_decoder())),
-    )
-    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use priority <- decode.field(1, occurrence_priority_enum_decoder())
+    use applicant_id <- decode.field(2, decode.optional(uuid_decoder()))
+    use brigade_id <- decode.field(3, uuid_decoder())
+    use created_at <- decode.field(4, pog.timestamp_decoder())
     decode.success(InsertNewOccurenceRow(
       id:,
+      priority:,
       applicant_id:,
-      participants_id:,
+      brigade_id:,
       created_at:,
     ))
   }
 
   "--   Inserts a new occurrence into the database
-INSERT INTO public.occurrence AS u (
+INSERT INTO public.occurrence AS o (
     applicant_id,
     occurrence_category,
     occurrence_subcategory,
+    priority,
     description,
     location,
     reference_point,
     vehicle_code,
-    participants_id
+    brigade_id
 ) VALUES (
     $1,
     $2,
@@ -75,25 +77,26 @@ INSERT INTO public.occurrence AS u (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
 )
 RETURNING
-    u.id,
-    u.applicant_id,
-    u.participants_id,
-    u.created_at;
+    o.id,
+    o.priority,
+    o.applicant_id,
+    o.brigade_id,
+    o.created_at;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.parameter(occurrence_category_enum_encoder(arg_2))
   |> pog.parameter(occurrence_subcategory_enum_encoder(arg_3))
-  |> pog.parameter(pog.text(arg_4))
-  |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_5))
-  |> pog.parameter(pog.text(arg_6))
+  |> pog.parameter(occurrence_priority_enum_encoder(arg_4))
+  |> pog.parameter(pog.text(arg_5))
+  |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_6))
   |> pog.parameter(pog.text(arg_7))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_8),
-  )
+  |> pog.parameter(pog.text(arg_8))
+  |> pog.parameter(pog.text(uuid.to_string(arg_9)))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -280,7 +283,39 @@ fn occurrence_category_enum_encoder(occurrence_category_enum) -> pog.Value {
     MedicEmergency -> "medic_emergency"
   }
   |> pog.text
-}/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
+}
+
+/// Corresponds to the Postgres `occurrence_priority_enum` enum.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type OccurrencePriorityEnum {
+  High
+  Medium
+  Low
+}
+
+fn occurrence_priority_enum_decoder() -> decode.Decoder(OccurrencePriorityEnum) {
+  use occurrence_priority_enum <- decode.then(decode.string)
+  case occurrence_priority_enum {
+    "high" -> decode.success(High)
+    "medium" -> decode.success(Medium)
+    "low" -> decode.success(Low)
+    _ -> decode.failure(High, "OccurrencePriorityEnum")
+  }
+}
+
+fn occurrence_priority_enum_encoder(occurrence_priority_enum) -> pog.Value {
+  case occurrence_priority_enum {
+    High -> "high"
+    Medium -> "medium"
+    Low -> "low"
+  }
+  |> pog.text
+}
+
+/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -304,7 +339,9 @@ pub type OccurrenceSubcategoryEnum {
   HeartStop
 }
 
-fn occurrence_subcategory_enum_decoder() -> decode.Decoder(OccurrenceSubcategoryEnum) {
+fn occurrence_subcategory_enum_decoder() -> decode.Decoder(
+  OccurrenceSubcategoryEnum,
+) {
   use occurrence_subcategory_enum <- decode.then(decode.string)
   case occurrence_subcategory_enum {
     "injured_animal" -> decode.success(InjuredAnimal)
@@ -327,9 +364,7 @@ fn occurrence_subcategory_enum_decoder() -> decode.Decoder(OccurrenceSubcategory
   }
 }
 
-fn occurrence_subcategory_enum_encoder(
-  occurrence_subcategory_enum,
-) -> pog.Value {
+fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> pog.Value {
   case occurrence_subcategory_enum {
     InjuredAnimal -> "injured_animal"
     Flood -> "flood"

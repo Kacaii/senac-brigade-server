@@ -1,3 +1,4 @@
+import app/database
 import app/routes/admin/sql
 import app/routes/user/sql as user_sql
 import app/web.{type Context}
@@ -92,18 +93,9 @@ fn handle_error(err: SetupAdminError) -> wisp.Response {
       |> wisp.set_body(wisp.Text(
         "A variável de ambiente necessária para o acesso a este endpoint se encontra ausente",
       ))
-    DataBaseError(err) -> handle_database_error(err)
-  }
-}
 
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão con o banco de dados não disponível"
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
+    DataBaseError(err) -> database.handle_database_error(err)
   }
-
-  wisp.internal_server_error() |> wisp.set_body(wisp.Text(err_msg))
 }
 
 fn validate_admin_key(ctx: Context, key: String) -> Result(Nil, SetupAdminError) {

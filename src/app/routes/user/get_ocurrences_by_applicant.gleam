@@ -3,8 +3,9 @@
 //// It returns a list of occurrences (incidents/reports) that were submitted
 //// by the specified user, including detailed information about each occurrence.
 
-import app/routes/occurrence
+import app/routes/occurrence/category
 import app/routes/occurrence/sql
+import app/routes/occurrence/subcategory
 import app/web.{type Context}
 import gleam/http
 import gleam/json
@@ -101,11 +102,11 @@ fn get_occurences_by_applicant_row_to_json(
 
   let category_string =
     enum_to_category(occurrence_category)
-    |> occurrence.category_to_string
+    |> category.to_string
 
   let subcategory_string =
     option.map(occurrence_subcategory, enum_to_subcategory)
-    |> option.map(occurrence.subcategory_to_string)
+    |> option.map(subcategory.to_string)
 
   json.object([
     #("id", json.string(uuid.to_string(id))),
@@ -127,35 +128,35 @@ fn maybe_timestamp(
   timestamp.to_unix_seconds(time_stamp)
 }
 
-fn enum_to_category(enum: sql.OccurrenceCategoryEnum) -> occurrence.Category {
+fn enum_to_category(enum: sql.OccurrenceCategoryEnum) -> category.Category {
   case enum {
-    sql.Other -> occurrence.Other
-    sql.TrafficAccident -> occurrence.TrafficAccident
-    sql.Fire -> occurrence.Fire
-    sql.MedicEmergency -> occurrence.MedicEmergency
+    sql.Other -> category.Other
+    sql.TrafficAccident -> category.TrafficAccident
+    sql.Fire -> category.Fire
+    sql.MedicEmergency -> category.MedicEmergency
   }
 }
 
 fn enum_to_subcategory(
   enum: sql.OccurrenceSubcategoryEnum,
-) -> occurrence.Subcategory {
+) -> subcategory.Subcategory {
   case enum {
-    sql.InjuredAnimal -> occurrence.InjuredAnimal
-    sql.Flood -> occurrence.Flood
-    sql.TreeCrash -> occurrence.TreeCrash
-    sql.MotorcycleCrash -> occurrence.MotorcycleCrash
-    sql.Rollover -> occurrence.Rollover
-    sql.RunOver -> occurrence.RunOver
-    sql.Collision -> occurrence.Collision
-    sql.Vehicle -> occurrence.Vehicle
-    sql.Vegetation -> occurrence.Vegetation
-    sql.Comercial -> occurrence.Comercial
-    sql.Residential -> occurrence.Residential
-    sql.Intoxication -> occurrence.Intoxication
-    sql.SeriousInjury -> occurrence.SeriousInjury
-    sql.Seizure -> occurrence.Seizure
-    sql.HeartStop -> occurrence.HeartStop
-    sql.PreHospitalCare -> occurrence.PreHospitalCare
+    sql.InjuredAnimal -> subcategory.InjuredAnimal
+    sql.Flood -> subcategory.Flood
+    sql.TreeCrash -> subcategory.TreeCrash
+    sql.MotorcycleCrash -> subcategory.MotorcycleCrash
+    sql.Rollover -> subcategory.Rollover
+    sql.RunOver -> subcategory.RunOver
+    sql.Collision -> subcategory.Collision
+    sql.Vehicle -> subcategory.Vehicle
+    sql.Vegetation -> subcategory.Vegetation
+    sql.Comercial -> subcategory.Comercial
+    sql.Residential -> subcategory.Residential
+    sql.Intoxication -> subcategory.Intoxication
+    sql.SeriousInjury -> subcategory.SeriousInjury
+    sql.Seizure -> subcategory.Seizure
+    sql.HeartStop -> subcategory.HeartStop
+    sql.PreHospitalCare -> subcategory.PreHospitalCare
   }
 }
 

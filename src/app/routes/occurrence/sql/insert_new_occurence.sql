@@ -1,13 +1,14 @@
 --   Inserts a new occurrence into the database
-INSERT INTO public.occurrence AS u (
+INSERT INTO public.occurrence AS o (
     applicant_id,
     occurrence_category,
     occurrence_subcategory,
+    priority,
     description,
     location,
     reference_point,
     vehicle_code,
-    participants_id
+    brigade_id
 ) VALUES (
     $1,
     $2,
@@ -16,10 +17,12 @@ INSERT INTO public.occurrence AS u (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
 )
 RETURNING
-    u.id,
-    u.applicant_id,
-    u.participants_id,
-    u.created_at;
+    o.id,
+    o.priority,
+    o.applicant_id,
+    o.brigade_id,
+    o.created_at;

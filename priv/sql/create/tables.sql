@@ -104,17 +104,25 @@ CREATE TYPE public.occurrence_subcategory_enum AS ENUM (
     'injured_animal'
 );
 
+CREATE TYPE occurrence_priority_enum AS ENUM (
+    'low',
+    'medium',
+    'high'
+);
+
 CREATE TABLE IF NOT EXISTS public.occurrence (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     applicant_id UUID REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     occurrence_category OCCURRENCE_CATEGORY_ENUM NOT NULL,
     occurrence_subcategory OCCURRENCE_SUBCATEGORY_ENUM,
+    priority OCCURRENCE_PRIORITY_ENUM NOT NULL,
     description TEXT,
     location POINT NOT NULL,
     reference_point TEXT,
     vehicle_code TEXT NOT NULL,
-    participants_id UUID [],
+    brigade_id UUID NOT NULL REFERENCES public.brigade (id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP DEFAULT NULL

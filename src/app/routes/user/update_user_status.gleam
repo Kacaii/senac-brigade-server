@@ -1,3 +1,4 @@
+import app/database
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -87,23 +88,8 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
         "Não possui possível retornar a confirmação do status atual do usuário",
       ))
     RoleError(err) -> handle_role_error(req, err)
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
   }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-    pog.ConstraintViolated(message:, constraint:, detail:) ->
-      constraint <> ": " <> message <> "\n" <> detail
-    pog.PostgresqlError(code:, name:, message:) ->
-      code <> ": " <> name <> "\n" <> message
-    pog.QueryTimeout -> "O Banco de Dados demorou muito pra responder"
-    _ -> "Ocorreu um erro no Banco de dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(err_msg))
 }
 
 fn handle_role_error(
@@ -112,7 +98,7 @@ fn handle_role_error(
 ) -> wisp.Response {
   case err {
     user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.DataBaseError(err) -> handle_database_error(err)
+    user.DataBaseError(err) -> database.handle_database_error(err)
     user.FailedToQueryUserRole ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
