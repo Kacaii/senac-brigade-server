@@ -4,6 +4,7 @@
 //// by the specified user, including detailed information about each occurrence.
 
 import app/routes/occurrence/category
+import app/routes/occurrence/priority
 import app/routes/occurrence/sql
 import app/routes/occurrence/subcategory
 import app/web.{type Context}
@@ -90,9 +91,10 @@ fn get_occurences_by_applicant_row_to_json(
 ) {
   let sql.QueryOccurencesByApplicantRow(
     id:,
-    description:,
     occurrence_category:,
     occurrence_subcategory:,
+    priority:,
+    description:,
     created_at:,
     updated_at:,
     resolved_at:,
@@ -108,17 +110,29 @@ fn get_occurences_by_applicant_row_to_json(
     option.map(occurrence_subcategory, enum_to_subcategory)
     |> option.map(subcategory.to_string)
 
+  let occurrence_priority =
+    enum_to_priority(priority) |> priority.to_string_pt_br
+
   json.object([
     #("id", json.string(uuid.to_string(id))),
-    #("description", json.nullable(description, json.string)),
     #("category", json.string(category_string)),
     #("subcategory", json.nullable(subcategory_string, json.string)),
+    #("priority", json.string(occurrence_priority)),
+    #("description", json.nullable(description, json.string)),
+    #("location", json.array(location, json.float)),
+    #("reference_point", json.nullable(reference_point, json.string)),
     #("created_at", json.float(timestamp.to_unix_seconds(created_at))),
     #("updated_at", json.float(timestamp.to_unix_seconds(updated_at))),
     #("resolved_at", json.nullable(maybe_timestamp(resolved_at), json.float)),
-    #("location", json.array(location, json.float)),
-    #("reference_point", json.string(option.unwrap(reference_point, ""))),
   ])
+}
+
+fn enum_to_priority(enum: sql.OccurrencePriorityEnum) {
+  case enum {
+    sql.High -> priority.High
+    sql.Low -> priority.Low
+    sql.Medium -> priority.Medium
+  }
 }
 
 fn maybe_timestamp(

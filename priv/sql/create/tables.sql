@@ -118,10 +118,10 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
     occurrence_subcategory OCCURRENCE_SUBCATEGORY_ENUM,
     priority OCCURRENCE_PRIORITY_ENUM NOT NULL,
     description TEXT,
-    location POINT NOT NULL,
+    location FLOAT [] NOT NULL,
     reference_point TEXT,
     vehicle_code TEXT NOT NULL,
-    brigade_id UUID NOT NULL REFERENCES public.brigade (id)
+    brigade_id UUID REFERENCES public.brigade (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -134,9 +134,10 @@ ON public.occurrence (applicant_id);
 CREATE TABLE IF NOT EXISTS public.occurrence_brigade_member (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     user_id UUID REFERENCES public.user_account (id)
-    ON UPDATE CASCADE,
-    occurrence_id UUID REFERENCES public.user_account (id)
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    occurrence_id UUID REFERENCES public.occurrence (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (occurrence_id, user_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_member_user_id

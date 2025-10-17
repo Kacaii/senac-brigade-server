@@ -5,10 +5,6 @@ DROP VIEW IF EXISTS vw_count_total_occurrences;
 DROP VIEW IF EXISTS vw_count_active_brigades;
 
 -- TRIGGERS --------------------------------------------------------------------
-DROP TRIGGER IF EXISTS tgr_insert_member_participation
-ON occurrence;
-DROP FUNCTION IF EXISTS public.dump_occurrence_participants;
-
 DROP TRIGGER IF EXISTS tgr_default_notification_preferences
 ON user_account;
 DROP FUNCTION IF EXISTS public.set_default_notification_preferences;
@@ -16,6 +12,10 @@ DROP FUNCTION IF EXISTS public.set_default_notification_preferences;
 DROP TRIGGER IF EXISTS tgr_insert_brigade_membership
 ON brigade;
 DROP FUNCTION IF EXISTS public.dump_brigade_members;
+
+DROP TRIGGER IF EXISTS tgr_dump_occurrence_participants
+ON occurrence;
+DROP FUNCTION IF EXISTS public.dump_occurrence_participants;
 
 -- INDEXES ---------------------------------------------------------------------
 DROP INDEX IF EXISTS public.idx_brigade_membership_brigade_id;
