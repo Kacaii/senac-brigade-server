@@ -44,7 +44,6 @@ pub fn admin_update_user_test() {
 
   let req = app_test.with_authorization(req)
   let resp = router.handle_request(req, ctx)
-  echo simulate.read_body(resp)
 
   assert resp.status == 200 as "Response should be HTTP 200 OK"
 

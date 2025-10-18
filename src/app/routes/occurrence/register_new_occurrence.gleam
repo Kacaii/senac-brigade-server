@@ -105,16 +105,32 @@ fn handle_body(
   data data: RegisterOccurrenceBody,
 ) -> wisp.Response {
   case insert_occurrence(request:, ctx:, data:) {
-    Error(err) -> handle_error(err)
+    Error(err) -> handle_error(data, err)
     Ok(data) -> wisp.json_response(json.to_string(data), 201)
   }
 }
 
-fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
+fn handle_error(
+  data: RegisterOccurrenceBody,
+  err: RegisterNewOccurrenceError,
+) -> wisp.Response {
   case err {
     AuthenticationFailed(err) -> user.handle_authentication_error(err)
 
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> {
+      case err {
+        pog.ConstraintViolated(_, _, constraint:) -> {
+          case constraint {
+            "occurrence_brigade_id_fkey" ->
+              wisp.bad_request(
+                "Equipe não cadastrada: " <> uuid.to_string(data.brigade_id),
+              )
+            _ -> database.handle_database_error(err)
+          }
+        }
+        err -> database.handle_database_error(err)
+      }
+    }
 
     DataBaseReturnedEmptyRow(_) ->
       wisp.internal_server_error()
