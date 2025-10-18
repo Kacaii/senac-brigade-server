@@ -57,6 +57,10 @@ setup_admin:
 insert_users:
     bash ./priv/dev_insert_users.sh
 
+[group('  dev')]
+clean_users:
+    psql senac_brigade -c "delete from user_account where registration != '000';"
+
 #   Runs a SELECT statement to query the user accounts
 [group('  postgres')]
 [group('  dev')]
