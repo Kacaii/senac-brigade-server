@@ -58,7 +58,7 @@ fn handle_decode_error(err: List(decode.DecodeError)) -> wisp.Response {
       |> wisp.set_body(wisp.Text(
         "Esperava: "
         <> err.expected
-        <> "\nEcontrado: "
+        <> "\nEncontrado: "
         <> err.found
         <> "\nEm: "
         <> string.join(err.path, "/"),
