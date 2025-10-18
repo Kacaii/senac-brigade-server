@@ -57,7 +57,7 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     http.Delete, ["admin", "users", id] ->
       delete_user.handle_request(request:, ctx:, id:)
 
-    http.Post, ["admin", "user", id, "status"] ->
+    http.Put, ["admin", "users", id, "status"] ->
       update_user_status.handle_request(request:, ctx:, id:)
 
     http.Get, ["admin", "teams"] ->
