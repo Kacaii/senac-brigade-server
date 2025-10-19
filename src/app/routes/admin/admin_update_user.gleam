@@ -84,11 +84,7 @@ fn handle_error(
     InvalidUuid(err) ->
       wisp.unprocessable_content()
       |> wisp.set_body(wisp.Text("Usuário possui Uuid inválido: " <> err))
-    MissingUpdateConfirmation ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível confirmar a alteração dos dados do Usuário solicitado",
-      ))
+    UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
     RoleError(err) -> user.handle_authorization_error(req, err)
   }
 }
@@ -129,7 +125,7 @@ fn try_update_user(
 
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(MissingUpdateConfirmation),
+    |> result.replace_error(UuidNotFound(user_id)),
   )
 
   let user_role = enum_to_role(row.user_role)
@@ -214,5 +210,5 @@ type AdminUpdateUserError {
   DataBaseError(pog.QueryError)
   InvalidUuid(String)
   RoleError(user.AuthorizationError)
-  MissingUpdateConfirmation
+  UuidNotFound(String)
 }

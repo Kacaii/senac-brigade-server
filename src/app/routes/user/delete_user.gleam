@@ -31,11 +31,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
       |> wisp.set_body(wisp.Text(
         "Usuário possui Uuid Inválido: " <> invalid_uuid,
       ))
-    MissingDeleteConfirmation ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível confirmar a remoção do usuário solicitado",
-      ))
+    UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
     RoleError(err) -> handle_role_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
@@ -91,7 +87,7 @@ fn try_delete_user(
   )
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(MissingDeleteConfirmation),
+    |> result.replace_error(UuidNotFound(id)),
   )
 
   json.object([
@@ -104,5 +100,5 @@ type DeleteUserError {
   DataBaseError(pog.QueryError)
   InvalidUserUuid(String)
   RoleError(user.AuthorizationError)
-  MissingDeleteConfirmation
+  UuidNotFound(String)
 }

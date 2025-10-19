@@ -36,11 +36,7 @@ fn handle_error(err: DeleteBrigadeError) -> wisp.Response {
   case err {
     InvalidBrigadeUuid(id) ->
       wisp.bad_request("Equipe possui UUID inválido: " <> id)
-    MissingDeleteConfirmation ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "O Banco de Dados não retornou informações sobre a equipe removida",
-      ))
+    UuidNotFound(id) -> wisp.bad_request("Equipe não econtrada: " <> id)
     DataBaseError(err) -> handle_database_error(err)
   }
 }
@@ -73,7 +69,7 @@ fn delete_from_database(
   )
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(MissingDeleteConfirmation),
+    |> result.replace_error(UuidNotFound(id)),
   )
 
   json.object([
@@ -85,5 +81,5 @@ fn delete_from_database(
 type DeleteBrigadeError {
   InvalidBrigadeUuid(String)
   DataBaseError(pog.QueryError)
-  MissingDeleteConfirmation
+  UuidNotFound(String)
 }

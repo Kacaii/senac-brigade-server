@@ -46,11 +46,7 @@ fn handle_error(err: UpdateBrigadeStatusError) -> wisp.Response {
       |> wisp.set_body(wisp.Text(
         "Brigada de incêndio possui UUID Inválido: " <> id,
       ))
-    MissingStatusConfirmation ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não possui possível retornar confirmação do status atual da brigada de incêndio",
-      ))
+    UuidNotFound(id) -> wisp.bad_request("Equipe não encontrada: " <> id)
     DataBaseError(err) -> handle_database_error(err)
   }
 }
@@ -84,7 +80,7 @@ fn try_update_status(
   )
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(MissingStatusConfirmation),
+    |> result.replace_error(UuidNotFound(id)),
   )
 
   Ok(
@@ -104,5 +100,5 @@ fn is_active_decoder() -> decode.Decoder(Bool) {
 type UpdateBrigadeStatusError {
   InvalidBrigadeUuid(String)
   DataBaseError(pog.QueryError)
-  MissingStatusConfirmation
+  UuidNotFound(String)
 }

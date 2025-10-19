@@ -67,7 +67,7 @@ fn try_update_user_status(
   )
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(MissingUpdateConfirmation),
+    |> result.replace_error(UuidNotFound(user_id)),
   )
 
   // 
@@ -82,11 +82,7 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
     InvalidUuid(user_id) ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
-    MissingUpdateConfirmation ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não possui possível retornar a confirmação do status atual do usuário",
-      ))
+    UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
     RoleError(err) -> handle_role_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
@@ -125,7 +121,7 @@ fn body_decoder() -> decode.Decoder(Bool) {
 
 type UpdateUserStatusError {
   RoleError(user.AuthorizationError)
-  MissingUpdateConfirmation
+  UuidNotFound(String)
   InvalidUuid(String)
   DataBaseError(pog.QueryError)
 }
