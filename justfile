@@ -19,6 +19,18 @@ update:
 squirrel:
     gleam run -m squirrel
 
+# 󰙨  Run unit tests
+[group('  gleam')]
+[group('  dev')]
+test:
+    gleam test
+
+# 󱌢  Run dev script
+[group('  gleam')]
+[group('  dev')]
+dev:
+    gleam dev
+
 # 󰏓  Builds the project for production
 [group('  ship')]
 [group('  gleam')]
@@ -51,11 +63,6 @@ prod:
 [group('  dev')]
 setup_admin:
     http POST :8000/admin/setup key="admin"
-
-#   Login and generate users with different roles
-[group('  admin')]
-insert_users:
-    bash ./priv/dev_insert_users.sh
 
 [group('  dev')]
 clean_users:

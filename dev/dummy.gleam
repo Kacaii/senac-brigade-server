@@ -10,7 +10,6 @@ import app/web
 import gleam/dict
 import gleam/int
 import gleam/list
-import wisp
 import youid/uuid
 
 /// Panics on failure
@@ -63,7 +62,13 @@ pub fn random_brigade(
   participants participants: List(uuid.Uuid),
 ) {
   let assert Ok(returned) =
-    b_sql.insert_new_brigade(ctx.conn, applicant, "wobble", participants, True)
+    b_sql.insert_new_brigade(
+      ctx.conn,
+      applicant,
+      uuid.v7_string(),
+      participants,
+      True,
+    )
     as "Failed to create dummy brigade"
 
   let assert Ok(row) = list.first(returned.rows)
@@ -143,14 +148,14 @@ pub fn random_user(ctx: web.Context) -> uuid.Uuid {
   let assert Ok(returned) =
     u_sql.insert_new_user(
       ctx.conn,
-      wisp.random_string(6),
-      wisp.random_string(6),
-      int.random(3_333_333_333) |> int.to_string(),
-      wisp.random_string(6) <> "@email.com",
-      "",
+      uuid.v7_string(),
+      uuid.v7_string(),
+      uuid.v7_string(),
+      uuid.v7_string() <> "@email.com",
+      uuid.v7_string(),
       role_to_enum(r_role),
     )
-    as "Failed to create dummy user"
+    as "Failed to create Dummy user"
 
   let assert Ok(row) = list.first(returned.rows)
   row.id
