@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     leader_id UUID REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
+    vehicle_code TEXT NOT NULL,
     brigade_name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
     members_id UUID [],
@@ -112,18 +113,17 @@ CREATE TYPE occurrence_priority_enum AS ENUM (
 
 CREATE TABLE IF NOT EXISTS public.occurrence (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    applicant_id UUID REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE SET NULL,
+    applicant_id UUID NOT NULL REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
     occurrence_category OCCURRENCE_CATEGORY_ENUM NOT NULL,
     occurrence_subcategory OCCURRENCE_SUBCATEGORY_ENUM,
     priority OCCURRENCE_PRIORITY_ENUM NOT NULL,
     description TEXT,
-    location FLOAT [] NOT NULL,
+    occurrence_location FLOAT [] NOT NULL,
     reference_point TEXT,
-    vehicle_code TEXT NOT NULL,
-    brigade_id UUID REFERENCES public.brigade (id)
-    ON UPDATE CASCADE ON DELETE SET NULL,
+    brigade_list UUID [] DEFAULT ARRAY[]::UUID [] NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    arrived_at TIMESTAMP DEFAULT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP DEFAULT NULL
 );

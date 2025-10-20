@@ -55,3 +55,11 @@ pub fn decoder() -> decode.Decoder(Category) {
     Ok(value) -> decode.success(value)
   }
 }
+
+pub fn decoder_pt_br() -> decode.Decoder(Category) {
+  use category_string <- decode.then(decode.string)
+  case from_string_pt_br(category_string) {
+    Error(_) -> decode.failure(Other, "categoria")
+    Ok(value) -> decode.success(value)
+  }
+}

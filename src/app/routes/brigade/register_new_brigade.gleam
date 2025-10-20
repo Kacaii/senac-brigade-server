@@ -89,6 +89,7 @@ fn try_register_brigade(
       ctx.conn,
       leader_id,
       form_data.name,
+      form_data.vehicle_code,
       members_id,
       form_data.is_active,
     )
@@ -160,17 +161,26 @@ fn register_brigade_form() -> form.Form(RegisterBrigadeFormData) {
     use leader_id <- form.field("lider_id", {
       form.parse_string |> form.check_not_empty()
     })
+
     use name <- form.field("nome", {
       form.parse_string |> form.check_not_empty()
     })
+
     use members_id <- form.field("membros", {
       form.parse_list(form.parse_string)
     })
+
+    use vehicle_code <- form.field(
+      "codigoViatura",
+      form.parse_string
+        |> form.check_not_empty(),
+    )
     use is_active <- form.field("ativo", { form.parse_checkbox })
 
     form.success(RegisterBrigadeFormData(
       leader_id:,
       name:,
+      vehicle_code:,
       members_id:,
       is_active:,
     ))
@@ -181,6 +191,7 @@ type RegisterBrigadeFormData {
   RegisterBrigadeFormData(
     leader_id: String,
     name: String,
+    vehicle_code: String,
     members_id: List(String),
     is_active: Bool,
   )

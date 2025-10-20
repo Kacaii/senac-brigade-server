@@ -3,11 +3,13 @@
 import app/routes/brigade/sql as b_sql
 import app/routes/occurrence/category
 import app/routes/occurrence/priority
+import app/routes/occurrence/sql as o_sql
 import app/routes/occurrence/subcategory
 import app/routes/role
 import app/routes/user/sql as u_sql
 import app/web
 import gleam/dict
+import gleam/float
 import gleam/int
 import gleam/list
 import youid/uuid
@@ -66,6 +68,7 @@ pub fn random_brigade(
       ctx.conn,
       applicant,
       uuid.v7_string(),
+      uuid.v7_string(),
       participants,
       True,
     )
@@ -75,6 +78,18 @@ pub fn random_brigade(
     as "Database returned no results"
 
   row.id
+}
+
+/// Panic on failure
+pub fn clean_brigade(ctx: web.Context, dummy: uuid.Uuid) {
+  let assert Ok(cleanup_brigade) = {
+    let assert Ok(returned) = b_sql.delete_brigade_by_id(ctx.conn, dummy)
+      as "Failed to delete dummy brigade"
+
+    list.first(returned.rows)
+  }
+
+  assert cleanup_brigade.id == dummy as "Deleted the wrong Brigade"
 }
 
 /// Panics on failure
@@ -159,4 +174,100 @@ pub fn random_user(ctx: web.Context) -> uuid.Uuid {
 
   let assert Ok(row) = list.first(returned.rows)
   row.id
+}
+
+/// Panic on failure
+pub fn clean_user(ctx: web.Context, dummy: uuid.Uuid) {
+  let assert Ok(cleanup_applicant) = {
+    let assert Ok(returned) = u_sql.delete_user_by_id(ctx.conn, dummy)
+      as "Failed to cleanup dummy user"
+
+    list.first(returned.rows)
+  }
+
+  assert cleanup_applicant.id == dummy as "Deleted the wrong User"
+}
+
+/// Panic on failure
+pub fn clean_user_list(ctx: web.Context, dummy: List(uuid.Uuid)) {
+  let cleanup_participants = {
+    use participant <- list.map(dummy)
+    let assert Ok(returned) = u_sql.delete_user_by_id(ctx.conn, participant)
+      as "Failed to delete participant"
+    let assert Ok(row) = list.first(returned.rows)
+      as "Database returned no results"
+
+    row.id
+  }
+
+  assert cleanup_participants == dummy as "Deleted the wrong Participants"
+}
+
+/// Panic on failure
+pub fn random_occurrence(
+  ctx: web.Context,
+  applicant_id applicant_id: uuid.Uuid,
+  brigade_list brigade_list: List(uuid.Uuid),
+) -> uuid.Uuid {
+  let dummy_category = case random_category() {
+    category.Fire -> o_sql.Fire
+    category.MedicEmergency -> o_sql.MedicEmergency
+    category.Other -> o_sql.Other
+    category.TrafficAccident -> o_sql.TrafficAccident
+  }
+
+  let dummy_subcategory = case random_subcategory() {
+    subcategory.Collision -> o_sql.Collision
+    subcategory.Comercial -> o_sql.Comercial
+    subcategory.Flood -> o_sql.Flood
+    subcategory.HeartStop -> o_sql.HeartStop
+    subcategory.InjuredAnimal -> o_sql.InjuredAnimal
+    subcategory.Intoxication -> o_sql.Intoxication
+    subcategory.MotorcycleCrash -> o_sql.MotorcycleCrash
+    subcategory.PreHospitalCare -> o_sql.PreHospitalCare
+    subcategory.Residential -> o_sql.Residential
+    subcategory.Rollover -> o_sql.Rollover
+    subcategory.RunOver -> o_sql.RunOver
+    subcategory.Seizure -> o_sql.Seizure
+    subcategory.SeriousInjury -> o_sql.SeriousInjury
+    subcategory.TreeCrash -> o_sql.TreeCrash
+    subcategory.Vegetation -> o_sql.Vegetation
+    subcategory.Vehicle -> o_sql.Vehicle
+  }
+
+  let dummy_priority = case random_priority() {
+    priority.High -> o_sql.High
+    priority.Low -> o_sql.Low
+    priority.Medium -> o_sql.Medium
+  }
+
+  let assert Ok(returned) =
+    o_sql.insert_new_occurence(
+      ctx.conn,
+      applicant_id,
+      dummy_category,
+      dummy_subcategory,
+      dummy_priority,
+      uuid.v7_string(),
+      [float.random() *. 100.0, float.random() *. 100.0],
+      uuid.v7_string(),
+      brigade_list,
+    )
+    as "Failed to generate a dummy Occurrence"
+
+  let assert Ok(row) = list.first(returned.rows)
+    as "Database returned no results"
+
+  row.id
+}
+
+/// Panic on failure
+pub fn clean_occurrence(ctx: web.Context, dummy: uuid.Uuid) {
+  let assert Ok(cleanup_occurrence) = {
+    let assert Ok(returned) = o_sql.delete_occurence_by_id(ctx.conn, dummy)
+      as "Failed to cleanup dummy occurrence"
+    list.first(returned.rows)
+  }
+
+  assert cleanup_occurrence.id == dummy as "Deleted the wrong Occurrence"
 }

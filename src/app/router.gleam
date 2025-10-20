@@ -17,12 +17,12 @@ import app/routes/brigade/update_brigade_status
 import app/routes/dashboard
 import app/routes/notification/get_notification_preferences
 import app/routes/notification/update_notification_preferences
+import app/routes/occurrence/get_ocurrences_by_applicant
 import app/routes/occurrence/register_new_occurrence
 import app/routes/role/get_role_list
 import app/routes/user/delete_user
 import app/routes/user/get_all_users
 import app/routes/user/get_crew_members
-import app/routes/user/get_ocurrences_by_applicant
 import app/routes/user/get_user_profile
 import app/routes/user/login
 import app/routes/user/signup

@@ -12,7 +12,6 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/option
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
@@ -75,9 +74,11 @@ fn body_decoder() {
   use priority <- decode.field("prioridade", priority.decoder())
   use description <- decode.field("descricao", decode.string)
   use location <- decode.field("gps", decode.list(decode.float))
-  use vehicle_code <- decode.field("codigoViatura", decode.string)
   use reference_point <- decode.field("pontoDeReferencia", decode.string)
-  use brigade_id <- decode.field("idEquipe", brigade_uuid_decoder())
+  use brigade_list <- decode.field(
+    "idEquipes",
+    decode.list(brigade_uuid_decoder()),
+  )
 
   decode.success(RegisterOccurrenceBody(
     occurrence_category: occurence_category,
@@ -86,8 +87,7 @@ fn body_decoder() {
     description: description,
     location: location,
     reference_point: reference_point,
-    vehicle_code: vehicle_code,
-    brigade_id: brigade_id,
+    brigade_list: brigade_list,
   ))
 }
 
@@ -105,32 +105,15 @@ fn handle_body(
   data data: RegisterOccurrenceBody,
 ) -> wisp.Response {
   case insert_occurrence(request:, ctx:, data:) {
-    Error(err) -> handle_error(data, err)
+    Error(err) -> handle_error(err)
     Ok(data) -> wisp.json_response(json.to_string(data), 201)
   }
 }
 
-fn handle_error(
-  data: RegisterOccurrenceBody,
-  err: RegisterNewOccurrenceError,
-) -> wisp.Response {
+fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   case err {
     AuthenticationFailed(err) -> user.handle_authentication_error(err)
-
-    DataBaseError(err) -> {
-      case err {
-        pog.ConstraintViolated(_, _, constraint:) -> {
-          case constraint {
-            "occurrence_brigade_id_fkey" ->
-              wisp.bad_request(
-                "Equipe não cadastrada: " <> uuid.to_string(data.brigade_id),
-              )
-            _ -> database.handle_database_error(err)
-          }
-        }
-        err -> database.handle_database_error(err)
-      }
-    }
+    DataBaseError(err) -> database.handle_database_error(err)
 
     DataBaseReturnedEmptyRow(_) ->
       wisp.internal_server_error()
@@ -159,8 +142,7 @@ fn insert_occurrence(
       data.description,
       data.location,
       data.reference_point,
-      data.vehicle_code,
-      data.brigade_id,
+      data.brigade_list,
     )
     |> result.map_error(DataBaseError),
   )
@@ -170,7 +152,7 @@ fn insert_occurrence(
     |> result.map_error(DataBaseReturnedEmptyRow),
   )
   // RESPONSE ------------------------------------------------------------------
-  let brigade_id = option.map(row.brigade_id, uuid.to_string)
+  let brigade_list = list.map(row.brigade_list, uuid.to_string)
   let occurrence_priority =
     enum_to_priority(row.priority) |> priority.to_string_pt_br
 
@@ -178,7 +160,7 @@ fn insert_occurrence(
     #("id", uuid.to_string(row.id) |> json.string),
     #("applicant_id", uuid.to_string(row.id) |> json.string),
     #("priority", json.string(occurrence_priority)),
-    #("brigade_id", json.nullable(brigade_id, json.string)),
+    #("brigade_id", json.array(brigade_list, json.string)),
     #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
   ])
 }
@@ -238,8 +220,7 @@ pub opaque type RegisterOccurrenceBody {
     description: String,
     location: List(Float),
     reference_point: String,
-    vehicle_code: String,
-    brigade_id: uuid.Uuid,
+    brigade_list: List(uuid.Uuid),
   )
 }
 

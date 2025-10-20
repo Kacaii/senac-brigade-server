@@ -67,8 +67,9 @@ pub fn insert_new_brigade(
   db: pog.Connection,
   arg_1: Uuid,
   arg_2: String,
-  arg_3: List(Uuid),
-  arg_4: Bool,
+  arg_3: String,
+  arg_4: List(Uuid),
+  arg_5: Bool,
 ) -> Result(pog.Returned(InsertNewBrigadeRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
@@ -80,13 +81,15 @@ pub fn insert_new_brigade(
 INSERT INTO public.brigade AS b (
     leader_id,
     brigade_name,
+    vehicle_code,
     members_id,
     is_active
 ) VALUES (
     $1,
     $2,
     $3,
-    $4
+    $4,
+    $5
 ) RETURNING
     b.id,
     b.created_at;
@@ -94,10 +97,11 @@ INSERT INTO public.brigade AS b (
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(arg_3))
   |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_3),
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_4),
   )
-  |> pog.parameter(pog.bool(arg_4))
+  |> pog.parameter(pog.bool(arg_5))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

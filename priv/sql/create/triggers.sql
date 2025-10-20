@@ -45,10 +45,8 @@ RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.occurrence_brigade_member (occurrence_id, user_id)
     SELECT NEW.id, UNNEST(b.members_id)
-        FROM public.occurrence AS o
-    JOIN public.brigade AS b
-        on o.brigade_id = b.id
-    WHERE o.id = NEW.id
+        FROM public.brigade as b
+    WHERE b.id = ANY(NEW.brigade_list)
     AND b.members_id IS NOT NULL
     AND ARRAY_LENGTH(b.members_id, 1) > 0;
 

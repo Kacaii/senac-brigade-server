@@ -5,5 +5,4 @@ SELECT
     u.user_role,
     u.phone,
     u.email
-FROM public.user_account AS u
-LIMIT 20;
+FROM public.user_account AS u;

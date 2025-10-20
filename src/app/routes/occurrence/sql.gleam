@@ -55,8 +55,8 @@ pub type InsertNewOccurenceRow {
   InsertNewOccurenceRow(
     id: Uuid,
     priority: OccurrencePriorityEnum,
-    applicant_id: Option(Uuid),
-    brigade_id: Option(Uuid),
+    applicant_id: Uuid,
+    brigade_list: List(Uuid),
     created_at: Timestamp,
   )
 }
@@ -75,20 +75,19 @@ pub fn insert_new_occurence(
   arg_5: String,
   arg_6: List(Float),
   arg_7: String,
-  arg_8: String,
-  arg_9: Uuid,
+  arg_8: List(Uuid),
 ) -> Result(pog.Returned(InsertNewOccurenceRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use priority <- decode.field(1, occurrence_priority_enum_decoder())
-    use applicant_id <- decode.field(2, decode.optional(uuid_decoder()))
-    use brigade_id <- decode.field(3, decode.optional(uuid_decoder()))
+    use applicant_id <- decode.field(2, uuid_decoder())
+    use brigade_list <- decode.field(3, decode.list(uuid_decoder()))
     use created_at <- decode.field(4, pog.timestamp_decoder())
     decode.success(InsertNewOccurenceRow(
       id:,
       priority:,
       applicant_id:,
-      brigade_id:,
+      brigade_list:,
       created_at:,
     ))
   }
@@ -100,10 +99,9 @@ INSERT INTO public.occurrence AS o (
     occurrence_subcategory,
     priority,
     description,
-    location,
+    occurrence_location,
     reference_point,
-    vehicle_code,
-    brigade_id
+    brigade_list
 ) VALUES (
     $1,
     $2,
@@ -112,14 +110,13 @@ INSERT INTO public.occurrence AS o (
     $5,
     $6,
     $7,
-    $8,
-    $9
+    $8
 )
 RETURNING
     o.id,
     o.priority,
     o.applicant_id,
-    o.brigade_id,
+    o.brigade_list,
     o.created_at;
 "
   |> pog.query
@@ -130,8 +127,9 @@ RETURNING
   |> pog.parameter(pog.text(arg_5))
   |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_6))
   |> pog.parameter(pog.text(arg_7))
-  |> pog.parameter(pog.text(arg_8))
-  |> pog.parameter(pog.text(uuid.to_string(arg_9)))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_8),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -145,15 +143,17 @@ RETURNING
 pub type QueryOccurencesByApplicantRow {
   QueryOccurencesByApplicantRow(
     id: Uuid,
-    occurrence_category: OccurrenceCategoryEnum,
-    occurrence_subcategory: Option(OccurrenceSubcategoryEnum),
-    priority: OccurrencePriorityEnum,
-    description: Option(String),
-    location: List(Float),
-    reference_point: Option(String),
-    created_at: Timestamp,
-    updated_at: Timestamp,
     resolved_at: Option(Timestamp),
+    priority: OccurrencePriorityEnum,
+    occurrence_category: OccurrenceCategoryEnum,
+    occurrence_location: List(Float),
+    details: Option(String),
+    applicant_name: String,
+    created_at: Timestamp,
+    arrived_at: Option(Timestamp),
+    applicant_registration: String,
+    applicant_id: Uuid,
+    brigade_list: String,
   )
 }
 
@@ -169,32 +169,33 @@ pub fn query_occurences_by_applicant(
 ) -> Result(pog.Returned(QueryOccurencesByApplicantRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
+    use resolved_at <- decode.field(1, decode.optional(pog.timestamp_decoder()))
+    use priority <- decode.field(2, occurrence_priority_enum_decoder())
     use occurrence_category <- decode.field(
-      1,
+      3,
       occurrence_category_enum_decoder(),
     )
-    use occurrence_subcategory <- decode.field(
-      2,
-      decode.optional(occurrence_subcategory_enum_decoder()),
-    )
-    use priority <- decode.field(3, occurrence_priority_enum_decoder())
-    use description <- decode.field(4, decode.optional(decode.string))
-    use location <- decode.field(5, decode.list(decode.float))
-    use reference_point <- decode.field(6, decode.optional(decode.string))
+    use occurrence_location <- decode.field(4, decode.list(decode.float))
+    use details <- decode.field(5, decode.optional(decode.string))
+    use applicant_name <- decode.field(6, decode.string)
     use created_at <- decode.field(7, pog.timestamp_decoder())
-    use updated_at <- decode.field(8, pog.timestamp_decoder())
-    use resolved_at <- decode.field(9, decode.optional(pog.timestamp_decoder()))
+    use arrived_at <- decode.field(8, decode.optional(pog.timestamp_decoder()))
+    use applicant_registration <- decode.field(9, decode.string)
+    use applicant_id <- decode.field(10, uuid_decoder())
+    use brigade_list <- decode.field(11, decode.string)
     decode.success(QueryOccurencesByApplicantRow(
       id:,
-      occurrence_category:,
-      occurrence_subcategory:,
-      priority:,
-      description:,
-      location:,
-      reference_point:,
-      created_at:,
-      updated_at:,
       resolved_at:,
+      priority:,
+      occurrence_category:,
+      occurrence_location:,
+      details:,
+      applicant_name:,
+      created_at:,
+      arrived_at:,
+      applicant_registration:,
+      applicant_id:,
+      brigade_list:,
     ))
   }
 
@@ -202,18 +203,31 @@ pub fn query_occurences_by_applicant(
 -- including detailed category information and resolution status.
 SELECT
     o.id,
-    o.occurrence_category,
-    o.occurrence_subcategory,
+    o.resolved_at,
     o.priority,
-    o.description,
-    o.location,
-    o.reference_point,
+    o.occurrence_category,
+    o.occurrence_location,
+    o.description AS details,
+    u.full_name AS applicant_name,
     o.created_at,
-    o.updated_at,
-    o.resolved_at
-FROM public.query_all_occurrences_by_user_id($1) AS oc_list (id)
-INNER JOIN public.occurrence AS o
-    ON oc_list.id = o.id
+    o.arrived_at,
+    u.registration AS applicant_registration,
+    o.applicant_id,
+    (
+        SELECT JSON_AGG(JSON_BUILD_OBJECT(
+            'id', b.id,
+            'leader_full_name', leader_u.full_name,
+            'vehicle_code', b.vehicle_code
+        )) FROM public.brigade AS b
+        INNER JOIN public.user_account AS leader_u
+            ON b.leader_id = leader_u.id
+        WHERE b.id = ANY(o.brigade_list)
+    ) AS brigade_list
+
+FROM public.occurrence AS o
+INNER JOIN public.user_account AS u
+    ON o.applicant_id = u.id
+WHERE o.applicant_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -273,7 +287,7 @@ pub type QueryRecentOccurrencesRow {
     description: Option(String),
     occurrence_category: OccurrenceCategoryEnum,
     occurrence_subcategory: Option(OccurrenceSubcategoryEnum),
-    location: List(Float),
+    occurrence_location: List(Float),
     reference_point: Option(String),
   )
 }
@@ -298,7 +312,7 @@ pub fn query_recent_occurrences(
       4,
       decode.optional(occurrence_subcategory_enum_decoder()),
     )
-    use location <- decode.field(5, decode.list(decode.float))
+    use occurrence_location <- decode.field(5, decode.list(decode.float))
     use reference_point <- decode.field(6, decode.optional(decode.string))
     decode.success(QueryRecentOccurrencesRow(
       id:,
@@ -306,7 +320,7 @@ pub fn query_recent_occurrences(
       description:,
       occurrence_category:,
       occurrence_subcategory:,
-      location:,
+      occurrence_location:,
       reference_point:,
     ))
   }
@@ -318,7 +332,7 @@ SELECT
     o.description,
     o.occurrence_category,
     o.occurrence_subcategory,
-    o.location,
+    o.occurrence_location,
     o.reference_point
 FROM public.occurrence AS o
 WHERE o.created_at >= (NOW() - '1 day'::INTERVAL);

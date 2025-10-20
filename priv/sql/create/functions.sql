@@ -62,19 +62,3 @@ WHERE bm.brigade_id IN (
 
 END;
 $$ LANGUAGE plpgsql;
-
---   Returns all occurrences applied by an user -------------------------------
-CREATE OR REPLACE FUNCTION public.query_all_occurrences_by_user_id(user_id UUID)
-RETURNS SETOF UUID AS $$
-BEGIN
-
-RETURN QUERY
-
-SELECT o.id
-FROM public.occurrence AS o
-WHERE o.applicant_id = $1;
-
-END;
-$$ LANGUAGE plpgsql;
-
-COMMIT;

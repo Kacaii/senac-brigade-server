@@ -5,10 +5,9 @@ INSERT INTO public.occurrence AS o (
     occurrence_subcategory,
     priority,
     description,
-    location,
+    occurrence_location,
     reference_point,
-    vehicle_code,
-    brigade_id
+    brigade_list
 ) VALUES (
     $1,
     $2,
@@ -17,12 +16,11 @@ INSERT INTO public.occurrence AS o (
     $5,
     $6,
     $7,
-    $8,
-    $9
+    $8
 )
 RETURNING
     o.id,
     o.priority,
     o.applicant_id,
-    o.brigade_id,
+    o.brigade_list,
     o.created_at;

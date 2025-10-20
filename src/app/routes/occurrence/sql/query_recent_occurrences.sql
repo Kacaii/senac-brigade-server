@@ -5,7 +5,7 @@ SELECT
     o.description,
     o.occurrence_category,
     o.occurrence_subcategory,
-    o.location,
+    o.occurrence_location,
     o.reference_point
 FROM public.occurrence AS o
 WHERE o.created_at >= (NOW() - '1 day'::INTERVAL);
