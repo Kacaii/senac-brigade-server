@@ -45,6 +45,42 @@ RETURNING o.id;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `delete_occurrence_by_id` query
+/// defined in `./src/app/routes/occurrence/sql/delete_occurrence_by_id.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type DeleteOccurrenceByIdRow {
+  DeleteOccurrenceByIdRow(id: Uuid)
+}
+
+/// Runs the `delete_occurrence_by_id` query
+/// defined in `./src/app/routes/occurrence/sql/delete_occurrence_by_id.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn delete_occurrence_by_id(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(DeleteOccurrenceByIdRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(DeleteOccurrenceByIdRow(id:))
+  }
+
+  "DELETE FROM public.occurrence AS o
+Where o.id = $1
+RETURNING o.id;
+
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `insert_new_occurence` query
 /// defined in `./src/app/routes/occurrence/sql/insert_new_occurence.sql`.
 ///
