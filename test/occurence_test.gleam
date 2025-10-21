@@ -226,3 +226,48 @@ pub fn get_occurrences_by_applicant_test() {
   dummy.clean_user(ctx, dummy_applicant_id)
   dummy.clean_user_list(ctx, dummy_participants_id)
 }
+
+pub fn delete_occurrence_test() {
+  let ctx = app_test.global_data()
+
+  // DUMMY
+  let dummy_applicant = dummy.random_user(ctx)
+  let dummy_occurrence =
+    dummy.random_occurrence(
+      ctx,
+      applicant_id: dummy_applicant,
+      brigade_list: [],
+    )
+
+  let path = "/occurrence/" <> uuid.to_string(dummy_occurrence)
+  let req = simulate.request(http.Delete, path)
+  let resp = router.handle_request(req, ctx)
+
+  assert resp.status == 401 as "Only accessible to Admins"
+
+  let with_auth = app_test.with_authorization(req)
+  let resp = router.handle_request(with_auth, ctx)
+
+  assert resp.status == 200 as "Status should be HTTP 200 OK"
+
+  let body = simulate.read_body(resp)
+  let assert Ok(deleted_occurrence) =
+    json.parse(body, {
+      let uuid_decoder = {
+        use maybe_uuid <- decode.then(decode.string)
+        case uuid.from_string(maybe_uuid) {
+          Error(_) -> decode.failure(uuid.v7(), "occurrence_uuid")
+          Ok(value) -> decode.success(value)
+        }
+      }
+
+      use id <- decode.field("id", uuid_decoder)
+      decode.success(id)
+    })
+
+  assert deleted_occurrence == dummy_occurrence
+    as "Deleted the wrong Occurrence"
+
+  // 󰃢  CLEANUP ----------------------------------------------------- ----------
+  dummy.clean_user(ctx, dummy_applicant)
+}

@@ -264,7 +264,7 @@ pub fn random_occurrence(
 /// Panic on failure
 pub fn clean_occurrence(ctx: web.Context, dummy: uuid.Uuid) {
   let assert Ok(cleanup_occurrence) = {
-    let assert Ok(returned) = o_sql.delete_occurence_by_id(ctx.conn, dummy)
+    let assert Ok(returned) = o_sql.delete_occurrence_by_id(ctx.conn, dummy)
       as "Failed to cleanup dummy occurrence"
     list.first(returned.rows)
   }

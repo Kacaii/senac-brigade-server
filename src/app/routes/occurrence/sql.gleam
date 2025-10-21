@@ -10,41 +10,6 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `delete_occurence_by_id` query
-/// defined in `./src/app/routes/occurrence/sql/delete_occurence_by_id.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type DeleteOccurenceByIdRow {
-  DeleteOccurenceByIdRow(id: Uuid)
-}
-
-///   Remove an occurence from the database
-///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn delete_occurence_by_id(
-  db: pog.Connection,
-  arg_1: Uuid,
-) -> Result(pog.Returned(DeleteOccurenceByIdRow), pog.QueryError) {
-  let decoder = {
-    use id <- decode.field(0, uuid_decoder())
-    decode.success(DeleteOccurenceByIdRow(id:))
-  }
-
-  "--   Remove an occurence from the database
-DELETE FROM public.occurrence AS o
-WHERE o.id = $1
-RETURNING o.id;
-"
-  |> pog.query
-  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
 /// A row you get from running the `delete_occurrence_by_id` query
 /// defined in `./src/app/routes/occurrence/sql/delete_occurrence_by_id.sql`.
 ///
@@ -55,8 +20,7 @@ pub type DeleteOccurrenceByIdRow {
   DeleteOccurrenceByIdRow(id: Uuid)
 }
 
-/// Runs the `delete_occurrence_by_id` query
-/// defined in `./src/app/routes/occurrence/sql/delete_occurrence_by_id.sql`.
+///   Remove an occurrence from the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -70,10 +34,10 @@ pub fn delete_occurrence_by_id(
     decode.success(DeleteOccurrenceByIdRow(id:))
   }
 
-  "DELETE FROM public.occurrence AS o
-Where o.id = $1
+  "--   Remove an occurrence from the database
+DELETE FROM public.occurrence AS o
+WHERE o.id = $1
 RETURNING o.id;
-
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
