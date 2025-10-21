@@ -266,7 +266,7 @@ fn handle_error(err: SignupError) {
       case err {
         user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
         user.DataBaseError(err) -> handle_database_error(err)
-        user.FailedToQueryUserRole ->
+        user.UserRoleNotFound ->
           wisp.internal_server_error()
           |> wisp.set_body(wisp.Text(
             "Não foi possível identificar o cargo do usuário autenticado",

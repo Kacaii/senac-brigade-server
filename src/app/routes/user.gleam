@@ -17,16 +17,11 @@ pub fn get_user_role(
     sql.query_user_role(ctx.conn, id)
     |> result.map_error(DataBaseError),
   )
-  use row <- result.try(
-    list.first(returned.rows)
-    |> result.replace_error(FailedToQueryUserRole),
-  )
 
-  let user_role =
-    row.user_role
-    |> enum_to_role()
-
-  Ok(user_role)
+  case list.first(returned.rows) {
+    Error(_) -> Error(UserRoleNotFound)
+    Ok(row) -> Ok(enum_to_role(row.user_role))
+  }
 }
 
 fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
@@ -92,7 +87,7 @@ pub type AuthorizationError {
   /// 󰆼  DataBase query failed
   DataBaseError(pog.QueryError)
   /// 󰡦  DataBase found no results
-  FailedToQueryUserRole
+  UserRoleNotFound
   ///   User doesnt have a valid role
   InvalidRole(String)
 }
@@ -120,7 +115,7 @@ pub fn handle_authorization_error(req: wisp.Request, err: AuthorizationError) {
   case err {
     AuthenticationFailed(err) -> handle_authentication_error(err)
     DataBaseError(err) -> database.handle_database_error(err)
-    FailedToQueryUserRole ->
+    UserRoleNotFound ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
         "Não foi possível confirmar o Cargo do usuário autenticado",

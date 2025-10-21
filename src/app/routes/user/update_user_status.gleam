@@ -36,7 +36,7 @@ pub fn handle_request(
     Ok(is_active) -> {
       case try_update_user_status(req:, ctx:, user_id:, is_active:) {
         Error(err) -> handle_error(req, err)
-        Ok(resp) -> wisp.json_response(json.to_string(resp), 200)
+        Ok(resp) -> wisp.json_response(resp, 200)
       }
     }
   }
@@ -47,7 +47,7 @@ fn try_update_user_status(
   ctx ctx: Context,
   user_id user_id: String,
   is_active is_active: Bool,
-) {
+) -> Result(String, UpdateUserStatusError) {
   use _ <- result.try(
     user.check_role_authorization(
       request: req,
@@ -57,24 +57,27 @@ fn try_update_user_status(
     )
     |> result.map_error(RoleError),
   )
+
   use user_uuid <- result.try(
     uuid.from_string(user_id)
     |> result.replace_error(InvalidUuid(user_id)),
   )
+
   use returned <- result.try(
     sql.update_user_status(ctx.conn, user_uuid, is_active)
     |> result.map_error(DataBaseError),
   )
-  use row <- result.map(
-    list.first(returned.rows)
-    |> result.replace_error(UuidNotFound(user_id)),
-  )
 
-  // 
-  json.object([
-    #("id", json.string(uuid.to_string(row.id))),
-    #("is_active", json.bool(row.is_active)),
-  ])
+  case list.first(returned.rows) {
+    Error(_) -> Error(UserNotFound(user_id))
+    Ok(row) ->
+      json.object([
+        #("id", json.string(uuid.to_string(row.id))),
+        #("is_active", json.bool(row.is_active)),
+      ])
+      |> json.to_string
+      |> Ok
+  }
 }
 
 fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response {
@@ -82,7 +85,7 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
     InvalidUuid(user_id) ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
-    UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
+    UserNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
     RoleError(err) -> handle_role_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
@@ -95,7 +98,7 @@ fn handle_role_error(
   case err {
     user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
     user.DataBaseError(err) -> database.handle_database_error(err)
-    user.FailedToQueryUserRole ->
+    user.UserRoleNotFound ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
         "Não foi possível consultar o cargo do usuário autenticado",
@@ -121,7 +124,7 @@ fn body_decoder() -> decode.Decoder(Bool) {
 
 type UpdateUserStatusError {
   RoleError(user.AuthorizationError)
-  UuidNotFound(String)
+  UserNotFound(String)
   InvalidUuid(String)
   DataBaseError(pog.QueryError)
 }

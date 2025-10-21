@@ -19,7 +19,7 @@ pub fn handle_request(
   use <- wisp.require_method(req, http.Delete)
 
   case try_delete_user(req, ctx, user_id) {
-    Ok(deleted_user) -> wisp.json_response(json.to_string(deleted_user), 200)
+    Ok(deleted_user) -> wisp.json_response(deleted_user, 200)
     Error(err) -> handle_error(req, err)
   }
 }
@@ -27,39 +27,10 @@ pub fn handle_request(
 fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
   case err {
     InvalidUserUuid(invalid_uuid) ->
-      wisp.unprocessable_content()
-      |> wisp.set_body(wisp.Text(
-        "Usuário possui Uuid Inválido: " <> invalid_uuid,
-      ))
+      wisp.bad_request("Usuário possui Uuid Inválido: " <> invalid_uuid)
     UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    RoleError(err) -> handle_role_error(req, err)
+    RoleError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
-  }
-}
-
-fn handle_role_error(
-  req: wisp.Request,
-  err: user.AuthorizationError,
-) -> wisp.Response {
-  case err {
-    user.Unauthorized(user_uuid, user_role) -> {
-      role.log_unauthorized_access_attempt(request: req, user_uuid:, user_role:)
-
-      wisp.response(403)
-      |> wisp.set_body(wisp.Text(
-        "Acesso não autorizado: " <> role.to_string_pt_br(user_role),
-      ))
-    }
-    user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.DataBaseError(err) -> database.handle_database_error(err)
-    user.FailedToQueryUserRole ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível consultar o cargo do usuário autenticado",
-      ))
-    user.InvalidRole(invalid) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Usuário possui cargo inválido: " <> invalid))
   }
 }
 
@@ -67,11 +38,12 @@ fn try_delete_user(
   req: wisp.Request,
   ctx: Context,
   id: String,
-) -> Result(json.Json, DeleteUserError) {
+) -> Result(String, DeleteUserError) {
   use target_user_uuid <- result.try(
     uuid.from_string(id)
     |> result.replace_error(InvalidUserUuid(id)),
   )
+
   use _ <- result.try(
     user.check_role_authorization(
       request: req,
@@ -81,19 +53,23 @@ fn try_delete_user(
     )
     |> result.map_error(RoleError),
   )
+
   use returned <- result.try(
     sql.delete_user_by_id(ctx.conn, target_user_uuid)
     |> result.map_error(DataBaseError),
   )
-  use row <- result.map(
-    list.first(returned.rows)
-    |> result.replace_error(UuidNotFound(id)),
-  )
 
-  json.object([
-    #("id", json.string(uuid.to_string(row.id))),
-    #("full_name", json.string(row.full_name)),
-  ])
+  case list.first(returned.rows) {
+    Error(_) -> Error(UuidNotFound(id))
+    Ok(row) -> {
+      json.object([
+        #("id", json.string(uuid.to_string(row.id))),
+        #("full_name", json.string(row.full_name)),
+      ])
+      |> json.to_string
+      |> Ok
+    }
+  }
 }
 
 type DeleteUserError {

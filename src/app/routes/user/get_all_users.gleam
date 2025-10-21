@@ -57,7 +57,7 @@ fn handle_role_error(
 ) -> wisp.Response {
   case err {
     user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.FailedToQueryUserRole ->
+    user.UserRoleNotFound ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
         "Não foi possível identificar o cargo do usuário",
