@@ -31,20 +31,21 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
     UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
     RoleError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
+    CantDeleteSelf -> wisp.bad_request("Um usuário não deve remover a si mesmo")
   }
 }
 
 fn try_delete_user(
   req: wisp.Request,
   ctx: Context,
-  id: String,
+  target_id: String,
 ) -> Result(String, DeleteUserError) {
   use target_user_uuid <- result.try(
-    uuid.from_string(id)
-    |> result.replace_error(InvalidUserUuid(id)),
+    uuid.from_string(target_id)
+    |> result.replace_error(InvalidUserUuid(target_id)),
   )
 
-  use _ <- result.try(
+  use #(user_uuid, _) <- result.try(
     user.check_role_authorization(
       request: req,
       ctx:,
@@ -54,20 +55,25 @@ fn try_delete_user(
     |> result.map_error(RoleError),
   )
 
-  use returned <- result.try(
-    sql.delete_user_by_id(ctx.conn, target_user_uuid)
-    |> result.map_error(DataBaseError),
-  )
+  case uuid.to_string(user_uuid) == target_id {
+    True -> Error(CantDeleteSelf)
+    False -> {
+      use returned <- result.try(
+        sql.delete_user_by_id(ctx.conn, target_user_uuid)
+        |> result.map_error(DataBaseError),
+      )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(UuidNotFound(id))
-    Ok(row) -> {
-      json.object([
-        #("id", json.string(uuid.to_string(row.id))),
-        #("full_name", json.string(row.full_name)),
-      ])
-      |> json.to_string
-      |> Ok
+      case list.first(returned.rows) {
+        Error(_) -> Error(UuidNotFound(target_id))
+        Ok(row) -> {
+          json.object([
+            #("id", json.string(uuid.to_string(row.id))),
+            #("full_name", json.string(row.full_name)),
+          ])
+          |> json.to_string
+          |> Ok
+        }
+      }
     }
   }
 }
@@ -77,4 +83,5 @@ type DeleteUserError {
   InvalidUserUuid(String)
   RoleError(user.AuthorizationError)
   UuidNotFound(String)
+  CantDeleteSelf
 }

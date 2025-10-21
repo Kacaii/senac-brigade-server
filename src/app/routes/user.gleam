@@ -60,7 +60,7 @@ pub fn check_role_authorization(
   ctx ctx: Context,
   cookie_name cookie_name: String,
   authorized_roles authorized_roles: List(role.Role),
-) -> Result(role.Role, AuthorizationError) {
+) -> Result(#(uuid.Uuid, role.Role), AuthorizationError) {
   //   Indentify who is sending the request -----------------------------------
   use user_uuid <- result.try(
     auth_user_from_cookie(request:, cookie_name:)
@@ -70,12 +70,12 @@ pub fn check_role_authorization(
   use user_role <- result.try(get_user_role(ctx, user_uuid))
 
   // 󰈞  Check if that role has authorization -----------------------------------
-  use found <- result.try(
+  use user_role <- result.try(
     list.find(authorized_roles, fn(authorized) { user_role == authorized })
     |> result.replace_error(Unauthorized(user_uuid, user_role)),
   )
 
-  Ok(found)
+  Ok(#(user_uuid, user_role))
 }
 
 ///   Errors related to an User account or role
