@@ -1,5 +1,5 @@
 //// This module contains the code to run the sql queries defined in
-//// `./src/app/routes/user/sql`.
+//// `../../../.././src/app/routes/user/sql`.
 //// > 🐿️ This module was generated automatically using v4.4.2 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
@@ -10,7 +10,7 @@ import pog
 import youid/uuid.{type Uuid}
 
 /// A row you get from running the `delete_user_by_id` query
-/// defined in `./src/app/routes/user/sql/delete_user_by_id.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/delete_user_by_id.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -46,7 +46,7 @@ RETURNING u.id, u.full_name;
 }
 
 /// A row you get from running the `insert_new_user` query
-/// defined in `./src/app/routes/user/sql/insert_new_user.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/insert_new_user.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -99,7 +99,7 @@ RETURNING u.id;
 }
 
 /// A row you get from running the `query_all_users` query
-/// defined in `./src/app/routes/user/sql/query_all_users.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_all_users.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -156,7 +156,7 @@ FROM public.user_account AS u;
 }
 
 /// A row you get from running the `query_crew_members` query
-/// defined in `./src/app/routes/user/sql/query_crew_members.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_crew_members.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -211,7 +211,7 @@ INNER JOIN public.user_account AS u
 }
 
 /// A row you get from running the `query_login_token` query
-/// defined in `./src/app/routes/user/sql/query_login_token.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_login_token.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -253,7 +253,7 @@ WHERE u.registration = $1;
 }
 
 /// A row you get from running the `query_occurrences_by_participant` query
-/// defined in `./src/app/routes/user/sql/query_occurrences_by_participant.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_occurrences_by_participant.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -292,7 +292,7 @@ WHERE obm.user_id = $1;
 }
 
 /// A row you get from running the `query_user_id_by_registration` query
-/// defined in `./src/app/routes/user/sql/query_user_id_by_registration.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_user_id_by_registration.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -327,7 +327,7 @@ WHERE u.registration = $1;
 }
 
 /// A row you get from running the `query_user_name` query
-/// defined in `./src/app/routes/user/sql/query_user_name.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_user_name.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -362,7 +362,7 @@ WHERE u.id = $1;
 }
 
 /// A row you get from running the `query_user_password` query
-/// defined in `./src/app/routes/user/sql/query_user_password.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_user_password.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -397,7 +397,7 @@ WHERE u.id = $1;
 }
 
 /// A row you get from running the `query_user_profile` query
-/// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_user_profile.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -457,7 +457,7 @@ WHERE u.id = $1;
 }
 
 /// A row you get from running the `query_user_role` query
-/// defined in `./src/app/routes/user/sql/query_user_role.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/query_user_role.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -492,6 +492,54 @@ WHERE u.id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `update_user` query
+/// defined in `../../../.././src/app/routes/user/sql/update_user.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UpdateUserRow {
+  UpdateUserRow(full_name: String, email: Option(String), phone: Option(String))
+}
+
+/// Runs the `update_user` query
+/// defined in `../../../.././src/app/routes/user/sql/update_user.sql`.
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_user(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: String,
+  arg_3: String,
+  arg_4: String,
+) -> Result(pog.Returned(UpdateUserRow), pog.QueryError) {
+  let decoder = {
+    use full_name <- decode.field(0, decode.string)
+    use email <- decode.field(1, decode.optional(decode.string))
+    use phone <- decode.field(2, decode.optional(decode.string))
+    decode.success(UpdateUserRow(full_name:, email:, phone:))
+  }
+
+  "UPDATE public.user_account AS u
+SET
+
+ full_name = $2,
+ email = $3,
+ phone = $4
+
+WHERE u.id = $1 
+RETURNING u.full_name, u.email, u.phone;"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(arg_3))
+  |> pog.parameter(pog.text(arg_4))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 ///   Set an new value to the password of an user
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
@@ -519,7 +567,7 @@ WHERE id = $1;
 }
 
 /// A row you get from running the `update_user_status` query
-/// defined in `./src/app/routes/user/sql/update_user_status.sql`.
+/// defined in `../../../.././src/app/routes/user/sql/update_user_status.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
