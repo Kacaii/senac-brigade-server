@@ -22,16 +22,19 @@ import youid/uuid
 ///      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 ///      "full_name": "Ana Carolina Silva Santos",
 ///      "user_role": "bombeiro militar",
+///      "brigade_id": "e134efdf-a131-4c4b-85ab-f4cb5146ec3f"
 ///    },
 ///    {
 ///      "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
 ///      "full_name": "Carlos Eduardo Oliveira Pereira",
 ///      "user_role": "salva vidas",
+///      "brigade_id": "e134efdf-a131-4c4b-85ab-f4cb5146ec3f"
 ///    },
 ///    {
 ///      "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
 ///      "full_name": "Mariana Costa Rodrigues",
 ///      "user_role": "bombeiro",
+///      "brigade_id": "e134efdf-a131-4c4b-85ab-f4cb5146ec3f"
 ///    }
 /// ]
 /// ```
@@ -69,21 +72,17 @@ fn query_crew_members(ctx ctx: Context, user_id user_id: String) {
   Ok(json.preprocessed_array(fellow_members_list))
 }
 
-fn get_crew_members_row_to_json(
-  get_crew_members_row: sql.QueryCrewMembersRow,
-) -> json.Json {
-  let sql.QueryCrewMembersRow(id:, full_name:, user_role:) =
-    get_crew_members_row
-
+fn get_crew_members_row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
   let role_name =
-    user_role
+    row.user_role
     |> enum_to_role()
     |> role.to_string_pt_br()
 
   json.object([
-    #("id", json.string(uuid.to_string(id))),
-    #("full_name", json.string(full_name)),
+    #("id", json.string(uuid.to_string(row.id))),
+    #("full_name", json.string(row.full_name)),
     #("user_role", json.string(role_name)),
+    #("brigade_id", json.string(uuid.to_string(row.brigade_uuid))),
   ])
 }
 

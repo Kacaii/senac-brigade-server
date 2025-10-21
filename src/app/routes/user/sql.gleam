@@ -162,7 +162,12 @@ FROM public.user_account AS u;
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryCrewMembersRow {
-  QueryCrewMembersRow(id: Uuid, full_name: String, user_role: UserRoleEnum)
+  QueryCrewMembersRow(
+    id: Uuid,
+    full_name: String,
+    user_role: UserRoleEnum,
+    brigade_uuid: Uuid,
+  )
 }
 
 /// 󰢫  Retrieves detailed information about fellow brigade members
@@ -179,7 +184,13 @@ pub fn query_crew_members(
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use user_role <- decode.field(2, user_role_enum_decoder())
-    decode.success(QueryCrewMembersRow(id:, full_name:, user_role:))
+    use brigade_uuid <- decode.field(3, uuid_decoder())
+    decode.success(QueryCrewMembersRow(
+      id:,
+      full_name:,
+      user_role:,
+      brigade_uuid:,
+    ))
   }
 
   "-- 󰢫  Retrieves detailed information about fellow brigade members
@@ -187,11 +198,11 @@ pub fn query_crew_members(
 SELECT
     u.id,
     u.full_name,
-    u.user_role
-FROM public.query_crew_members($1) AS crew_members (id)
-INNER JOIN
-    public.user_account AS u
-    ON crew_members.id = u.id
+    u.user_role,
+    cm.brigade_uuid
+FROM public.query_crew_members($1) AS cm
+INNER JOIN public.user_account AS u
+    ON cm.member_uuid = u.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

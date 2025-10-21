@@ -3,8 +3,8 @@
 SELECT
     u.id,
     u.full_name,
-    u.user_role
-FROM public.query_crew_members($1) AS crew_members (id)
-INNER JOIN
-    public.user_account AS u
-    ON crew_members.id = u.id
+    u.user_role,
+    cm.brigade_uuid
+FROM public.query_crew_members($1) AS cm
+INNER JOIN public.user_account AS u
+    ON cm.member_uuid = u.id;
