@@ -8,7 +8,7 @@ DROP FUNCTION IF EXISTS public.query_all_occurrences_by_user_id;
 
 --   CREATE -------------------------------------------------------------------
 
---   Returns the user_account UUID by using their registration ----------------
+--   Returns the user_account UUID by using their registration
 CREATE OR REPLACE FUNCTION public.query_user_id_by_registration(rg TEXT)
 RETURNS UUID AS $$
 
@@ -25,7 +25,7 @@ RETURN user_id;
 END;
 $$ LANGUAGE plpgsql;
 
---   Returns all members of a brigade by using the brigade's UUID -------------
+--   Returns all members of a brigade by using the brigade's UUID
 CREATE OR REPLACE FUNCTION public.query_brigade_members_id(brigade_id UUID)
 RETURNS SETOF UUID AS $$
 BEGIN
@@ -41,7 +41,7 @@ WHERE bm.brigade_id = $1;
 END;
 $$ LANGUAGE plpgsql;
 
---   Returns all users that are in the same brigades as the target user -------
+--   Returns all users that are in the same brigades as the target user
 CREATE OR REPLACE FUNCTION public.query_crew_members_id(user_id UUID)
 RETURNS SETOF UUID AS $$
 BEGIN
