@@ -58,7 +58,7 @@ pub type InsertNewBrigadeRow {
   InsertNewBrigadeRow(id: Uuid, created_at: Timestamp)
 }
 
-///   Registe a new brigade into the database
+///   Register a new brigade into the database
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -77,7 +77,7 @@ pub fn insert_new_brigade(
     decode.success(InsertNewBrigadeRow(id:, created_at:))
   }
 
-  "--   Registe a new brigade into the database
+  "--   Register a new brigade into the database
 INSERT INTO public.brigade AS b (
     leader_id,
     brigade_name,

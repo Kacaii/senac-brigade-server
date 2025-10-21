@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS public.notification_preference (
     notification_type NOTIFICATION_TYPE_ENUM NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, notification_type)
 );
 
 CREATE TABLE IF NOT EXISTS public.brigade (
@@ -49,7 +50,7 @@ CREATE TABLE IF NOT EXISTS public.brigade (
     vehicle_code TEXT NOT NULL,
     brigade_name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
-    members_id UUID [],
+    members_id UUID [] NOT NULL DEFAULT '{}',
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -63,7 +64,8 @@ CREATE TABLE IF NOT EXISTS public.brigade_membership (
     user_id UUID REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
     brigade_id UUID REFERENCES public.brigade (id)
-    ON UPDATE CASCADE ON DELETE CASCADE
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (user_id, brigade_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_brigade_membership_user_id
@@ -121,7 +123,7 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
     description TEXT,
     occurrence_location FLOAT [] NOT NULL,
     reference_point TEXT,
-    brigade_list UUID [] DEFAULT ARRAY[]::UUID [] NOT NULL,
+    brigade_list UUID [] NOT NULL DEFAULT '{}',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     arrived_at TIMESTAMP DEFAULT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
