@@ -188,7 +188,7 @@ SELECT
     u.id,
     u.full_name,
     u.user_role
-FROM QUERY_CREW_MEMBERS_ID($1) AS crew_members (id)
+FROM public.query_crew_members($1) AS crew_members (id)
 INNER JOIN
     public.user_account AS u
     ON crew_members.id = u.id

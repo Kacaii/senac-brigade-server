@@ -213,6 +213,7 @@ SELECT
     o.arrived_at,
     u.registration AS applicant_registration,
     o.applicant_id,
+
     (
         SELECT JSON_AGG(JSON_BUILD_OBJECT(
             'id', b.id,

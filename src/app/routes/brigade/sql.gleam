@@ -244,8 +244,9 @@ SELECT
     u.user_role
 FROM public.user_account AS u
 INNER JOIN
-    public.query_brigade_members_id($1) AS brigade_members (id)
-    ON u.id = brigade_members.id;
+    public.brigade AS b
+    ON u.id = ANY(b.members_id)
+WHERE b.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
