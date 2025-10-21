@@ -69,6 +69,7 @@ erDiagram
         UUID id PK
         UUID leader_id FK
         TEXT name
+        TEXT vehicle_code
         TEXT description
         BOOLEAN is_active
         TIMESTAMP created_at
@@ -92,8 +93,7 @@ erDiagram
         TEXT description
         POINT location
         TEXT reference_point
-        TEXT vehicle_code
-        UUID[] participants_id
+        UUID[] brigade_list
         TIMESTAMP created_at
         TIMESTAMP updated_at
         TIMESTAMP resolved_at
