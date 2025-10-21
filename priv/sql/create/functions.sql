@@ -8,21 +8,19 @@ DROP FUNCTION IF EXISTS public.query_occurrence_participants;
 
 --   Returns all users that are in the same brigades as the target user
 CREATE OR REPLACE FUNCTION public.query_crew_members(p_user_id UUID)
-RETURNS TABLE (member_id UUID)
+RETURNS TABLE (member_uuid UUID, brigade_uuid UUID)
 LANGUAGE plpgsql
 STABLE
 PARALLEL SAFE
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT DISTINCT u.id
-    FROM public.user_account AS u
-    INNER JOIN public.brigade_membership AS bm ON u.id = bm.user_id
-    INNER JOIN public.brigade AS b ON bm.brigade_id = b.id
+    SELECT DISTINCT bm.user_id as member_uuid, bm.brigade_id as brigade_uuid
+    FROM public.brigade_membership AS bm
     INNER JOIN public.brigade_membership AS target_bm
         ON bm.brigade_id = target_bm.brigade_id
     WHERE target_bm.user_id = p_user_id
-        AND u.id <> p_user_id;
+        AND bm.user_id <> p_user_id;
 END;
 $$;
 
