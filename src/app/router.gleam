@@ -108,7 +108,7 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     http.Get, ["user", "roles"] -> get_role_list.handle_request(request, ctx)
 
     // Fallback routes ---------------------------------------------------------
-    _, [] -> wisp.ok() |> wisp.set_body(wisp.Text("🌠"))
+    _, [] -> wisp.ok() |> wisp.html_body("<h2>🌠</h2>")
     _, _ -> wisp.not_found()
   }
 }
