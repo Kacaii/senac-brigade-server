@@ -13,22 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install psql
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
-      - name: rebuild database
-        run: |
-          psql $DATABASE_URL -f priv/sql/drop.sql
-          psql $DATABASE_URL -f priv/sql/create/tables.sql
-          psql $DATABASE_URL -f priv/sql/create/triggers.sql
-          psql $DATABASE_URL -f priv/sql/create/functions.sql
-          psql $DATABASE_URL -f priv/sql/create/views.sql
-
-        env:
-          database_url: ${{ secrets.DATABASE_URL }}
-
       - name: build image
         run: docker build . --file dockerfile --tag webapp
 
