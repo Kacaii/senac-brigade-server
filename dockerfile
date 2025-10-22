@@ -10,7 +10,6 @@ COPY --from=gleam /bin/gleam /bin/gleam
 COPY . /app/
 RUN apk add --no-cache build-base
 RUN apk add --no-cache postgresql-client
-RUN apk add --no-cache just
 WORKDIR /app
 RUN gleam export erlang-shipment
 
@@ -30,7 +29,6 @@ RUN \
 COPY --from=build /app/build/erlang-shipment /app
 COPY --from=build /usr/bin/just /usr/local/bin/just
 COPY healthcheck.sh /app/healthcheck.sh
-COPY justfile /app/justfile
 
 RUN chmod +x /app/healthcheck.sh
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD [ "/app/healthcheck.sh" ]

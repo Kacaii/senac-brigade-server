@@ -58,7 +58,6 @@ prod:
     just rebuild_empty
     just setup_admin
 
-# 󰒋  Generat -- rebuilde the first admin user, use this with the server RUNNING
 [group('  gleam')]
 [group('  dev')]
 setup_admin:
