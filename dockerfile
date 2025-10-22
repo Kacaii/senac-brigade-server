@@ -11,7 +11,6 @@ COPY . /app/
 RUN apk add --no-cache build-base
 RUN apk add --no-cache postgresql-client
 WORKDIR /app
-RUN gleam dev -- rebuild
 RUN gleam export erlang-shipment
 
 # Final stage
