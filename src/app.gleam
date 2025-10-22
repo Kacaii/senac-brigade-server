@@ -79,6 +79,7 @@ pub fn start_application_supervised(
   let mist_pool_child = {
     wisp_mist.handler(handler, secret_key)
     |> mist.new()
+    |> mist.bind("0.0.0.0")
     |> mist.port(8000)
   }
 
