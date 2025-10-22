@@ -12,12 +12,6 @@ RUN apk add --no-cache build-base
 RUN apk add --no-cache postgresql-client
 RUN cd /app && gleam export erlang-shipment
 
-RUN psql senac_brigade -f priv/sql/drop.sql
-RUN psql senac_brigade -f priv/sql/create/tables.sql
-RUN psql senac_brigade -f priv/sql/create/triggers.sql
-RUN psql senac_brigade -f priv/sql/create/functions.sql
-RUN psql senac_brigade -f priv/sql/create/views.sql
-
 # Final stage
 FROM erlang:${ERLANG_VERSION}-alpine
 ARG GIT_SHA
