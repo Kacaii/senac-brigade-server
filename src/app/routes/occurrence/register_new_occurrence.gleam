@@ -13,7 +13,6 @@ import gleam/http
 import gleam/json
 import gleam/list
 import gleam/result
-import gleam/string
 import gleam/time/timestamp
 import pog
 import wisp
@@ -45,23 +44,7 @@ pub fn handle_request(
 
   case decode_result {
     Ok(data) -> handle_body(request:, ctx:, data:)
-    Error(err) -> handle_decode_error(err)
-  }
-}
-
-fn handle_decode_error(err: List(decode.DecodeError)) -> wisp.Response {
-  case err {
-    [] -> wisp.ok()
-    [err, ..] ->
-      wisp.unprocessable_content()
-      |> wisp.set_body(wisp.Text(
-        "Esperava: "
-        <> err.expected
-        <> "\nEncontrado: "
-        <> err.found
-        <> "\nEm: "
-        <> string.join(err.path, "/"),
-      ))
+    Error(err) -> web.handle_decode_error(err)
   }
 }
 

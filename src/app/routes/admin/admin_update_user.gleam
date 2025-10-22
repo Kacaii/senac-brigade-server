@@ -8,7 +8,6 @@ import gleam/http
 import gleam/json
 import gleam/list
 import gleam/result
-import gleam/string
 import gleam/time/timestamp
 import pog
 import wisp
@@ -39,7 +38,7 @@ pub fn handle_request(
   use body <- wisp.require_json(req)
 
   case decode.run(body, body_decoder()) {
-    Error(err) -> handle_decode_error(err)
+    Error(err) -> web.handle_decode_error(err)
     Ok(value) -> handle_body(req, ctx, value, user_id)
   }
 }
@@ -160,23 +159,6 @@ fn role_to_enum(role: role.Role) {
     role.Developer -> sql.Developer
     role.Firefighter -> sql.Firefighter
     role.Sargeant -> sql.Sargeant
-  }
-}
-
-fn handle_decode_error(err: List(decode.DecodeError)) -> wisp.Response {
-  case err {
-    [] -> wisp.ok()
-    [err, ..] -> {
-      wisp.unprocessable_content()
-      |> wisp.set_body(wisp.Text(
-        "Esperava: "
-        <> err.expected
-        <> "\nEncontrado: "
-        <> err.found
-        <> "\nEm: "
-        <> string.join(err.path, "/"),
-      ))
-    }
   }
 }
 
