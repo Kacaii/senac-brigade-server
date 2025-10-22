@@ -15,7 +15,6 @@ jobs:
 
       - name: rebuild database
         run: \
-          just clear_log_file
           psql $DATABASE_URL -f priv/sql/drop.sql
           psql $DATABASE_URL -f priv/sql/create/tables.sql
           psql $DATABASE_URL -f priv/sql/create/triggers.sql
