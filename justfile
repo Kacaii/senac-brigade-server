@@ -1,6 +1,6 @@
 log_file_path := 'priv/log/server.log'
 
-alias r := rebuild_full
+alias r := rebuild
 alias s := squirrel
 alias u := update
 
@@ -42,24 +42,12 @@ build:
 prod:
     ./build/erlang-shipment/entrypoint.sh run
 
-# 󰜉  Rebuild an empty database
-[group('  postgres')]
-[group('  ship')]
-@rebuild_empty:
-    just clear_log_file
-    psql senac_brigade -f priv/sql/drop.sql
-    psql senac_brigade -f priv/sql/create/tables.sql
-    psql senac_brigade -f priv/sql/create/triggers.sql
-    psql senac_brigade -f priv/sql/create/functions.sql
-    psql senac_brigade -f priv/sql/create/views.sql
-
-# 󰜉  Rebuild the database with values in it
-[group('  postgres')]
+# 󰜉  Rebuild the database [group('  postgres')]
 [group('  dev')]
-@rebuild_full:
-    just rebuild_empty
+@rebuild:
+    gleam dev
 
-# 󰒋  Generate the first admin user, use this with the server RUNNING
+# 󰒋  Generat -- rebuilde the first admin user, use this with the server RUNNING
 [group('  dev')]
 setup_admin:
     http POST :8000/admin/setup key="admin"
@@ -95,4 +83,5 @@ list_brigades:
 
 [group('  dev')]
 @peek_log_file:
+    bat priv/log/server.log
     bat priv/log/server.log

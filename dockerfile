@@ -10,7 +10,9 @@ COPY --from=gleam /bin/gleam /bin/gleam
 COPY . /app/
 RUN apk add --no-cache build-base
 RUN apk add --no-cache postgresql-client
-RUN cd /app && gleam export erlang-shipment
+WORKDIR /app
+RUN gleam dev -- rebuild
+RUN gleam export erlang-shipment
 
 # Final stage
 FROM erlang:${ERLANG_VERSION}-alpine
