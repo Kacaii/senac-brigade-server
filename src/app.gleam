@@ -18,15 +18,20 @@
 //// only that specific process will be restarted, leaving the other unaffected.
 
 import app/router
+import app/routes/admin/sql as admin_sql
 import app/web.{Context}
 import envoy
 import gleam/erlang/process
+import gleam/http
+import gleam/json
+import gleam/list
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
 import gleam/result
 import mist
 import pog
 import wisp
+import wisp/simulate
 import wisp/wisp_mist
 
 /// Application entry
@@ -41,6 +46,7 @@ pub fn main() -> Nil {
 
   // Pass the application context to the router
   let ctx = Context(static_directory: static_directory(), conn:)
+
   let handler = router.handle_request(_, ctx)
 
   // Secret key used for signing and encryption
@@ -106,4 +112,21 @@ pub fn static_directory() -> String {
     as "Failed to access priv directory"
 
   priv_directory <> "/static"
+}
+
+pub fn setup_admin(ctx: web.Context) {
+  let assert Ok(returned) = admin_sql.count_total_users(ctx.conn)
+  let assert Ok(row) = list.first(returned.rows)
+
+  case row.total == 0 {
+    False -> Nil
+    True -> {
+      let setup_admin_req =
+        simulate.browser_request(http.Post, "/admin/setup")
+        |> simulate.json_body(json.object([#("key", json.string("admin"))]))
+
+      router.handle_request(setup_admin_req, ctx)
+      Nil
+    }
+  }
 }

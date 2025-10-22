@@ -1,15 +1,11 @@
 import app
-import app/router
 import app/web
 import argv
 import dummy
 import gleam/erlang/process
-import gleam/http
 import gleam/io
-import gleam/json
 import gleam/list
 import pog
-import wisp/simulate
 
 const n_user_accounts = 100
 
@@ -17,19 +13,10 @@ pub fn main() -> Nil {
   let ctx = setup_context()
 
   case argv.load().arguments {
-    ["admin"] -> setup_admin(ctx)
+    ["admin"] -> app.setup_admin(ctx)
     ["dummy"] -> dummy_users(ctx)
     _ -> Nil
   }
-}
-
-fn setup_admin(ctx: web.Context) {
-  let setup_admin_req =
-    simulate.browser_request(http.Post, "/admin/setup")
-    |> simulate.json_body(json.object([#("key", json.string("admin"))]))
-
-  let resp = router.handle_request(setup_admin_req, ctx)
-  assert resp.status == 201 as "Failed to create first Admin"
 }
 
 fn dummy_users(ctx: web.Context) {
