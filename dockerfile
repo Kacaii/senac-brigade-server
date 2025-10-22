@@ -24,9 +24,10 @@ RUN \
   addgroup --system webapp && \
   adduser --system webapp -g webapp
 COPY --from=build /app/build/erlang-shipment /app
+COPY --from=build /usr/bin/just /usr/local/bin/just
 COPY healthcheck.sh /app/healthcheck.sh
 COPY justfile /app/justfile
 WORKDIR /app
-RUN just rebuild_full
+RUN /usr/local/bin/just rebuild_full
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["run"]
