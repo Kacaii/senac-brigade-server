@@ -1,3 +1,4 @@
+import app/database
 import app/routes/brigade/sql
 import app/routes/role
 import app/routes/user
@@ -117,42 +118,9 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
       ))
     InvalidUuid(user_id) ->
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
-    DataBaseError(err) -> handle_database_error(err)
-    RoleError(err) -> handle_role_error(request:, err:)
+    DataBaseError(err) -> database.handle_database_error(err)
+    RoleError(err) -> user.handle_authorization_error(request, err)
   }
-}
-
-fn handle_role_error(
-  request request: wisp.Request,
-  err err: user.AuthorizationError,
-) -> wisp.Response {
-  case err {
-    user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.DataBaseError(err) -> handle_database_error(err)
-    user.UserRoleNotFound ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível consultar o cargo do usuário autenticado",
-      ))
-    user.InvalidRole(unknown) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Usuário possui cargo inválido: " <> unknown))
-    user.Unauthorized(user_uuid, user_role) -> {
-      role.log_unauthorized_access_attempt(request:, user_uuid:, user_role:)
-      wisp.response(403)
-    }
-  }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let db_err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(db_err_msg))
 }
 
 /// 󱐁  Form that decodes the `RegisterBrigadeFormData` type

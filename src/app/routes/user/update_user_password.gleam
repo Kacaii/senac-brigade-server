@@ -1,3 +1,4 @@
+import app/database
 import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
@@ -60,29 +61,10 @@ fn handle_error(err: UpdatePasswordError) -> wisp.Response {
         "Ocorreu um erro ao encriptografar a senha do usuário",
       ))
     WrongPassword -> wisp.bad_request("Senha incorreta")
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
     MustBeDifferent ->
       wisp.bad_request("A senha nova precisa ser diferente da antiga")
   }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let db_err_msg = case err {
-    //   Connection failed
-    //
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-
-    //   Took too long
-    //
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-
-    // Fallback response
-    //
-    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(db_err_msg))
 }
 
 fn update_user_password(

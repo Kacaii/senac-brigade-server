@@ -1,3 +1,4 @@
+import app/database
 import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/http
@@ -37,23 +38,8 @@ fn handle_error(err: DeleteBrigadeError) -> wisp.Response {
     InvalidBrigadeUuid(id) ->
       wisp.bad_request("Equipe possui UUID inválido: " <> id)
     UuidNotFound(id) -> wisp.bad_request("Equipe não econtrada: " <> id)
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
   }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão com o Banco de Dados não disponível"
-    pog.ConstraintViolated(message:, constraint:, detail:) ->
-      constraint <> ": " <> message <> "\n" <> detail
-    pog.PostgresqlError(code:, name:, message:) ->
-      code <> ": " <> name <> "\n" <> message
-    pog.QueryTimeout -> "O Banco de Dados demorou muito pra responder"
-    _ -> "Ocorreu um erro no Banco de dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(err_msg))
 }
 
 fn delete_from_database(

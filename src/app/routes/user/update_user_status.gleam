@@ -86,34 +86,8 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
     UserNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    RoleError(err) -> handle_role_error(req, err)
+    RoleError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
-  }
-}
-
-fn handle_role_error(
-  req: wisp.Request,
-  err: user.AuthorizationError,
-) -> wisp.Response {
-  case err {
-    user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.DataBaseError(err) -> database.handle_database_error(err)
-    user.UserRoleNotFound ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível consultar o cargo do usuário autenticado",
-      ))
-    user.InvalidRole(user_role) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Usuário possui cargo inválido: " <> user_role))
-    user.Unauthorized(user_uuid, user_role) -> {
-      role.log_unauthorized_access_attempt(request: req, user_uuid:, user_role:)
-
-      wisp.response(403)
-      |> wisp.set_body(wisp.Text(
-        "Não autorizado: " <> role.to_string_pt_br(user_role),
-      ))
-    }
   }
 }
 

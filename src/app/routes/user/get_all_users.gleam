@@ -46,34 +46,8 @@ pub fn handle_request(
 
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   case err {
-    RoleError(err) -> handle_role_error(req, err)
+    RoleError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
-  }
-}
-
-fn handle_role_error(
-  req: wisp.Request,
-  err: user.AuthorizationError,
-) -> wisp.Response {
-  case err {
-    user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    user.UserRoleNotFound ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível identificar o cargo do usuário",
-      ))
-    user.InvalidRole(invalid) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Usuário possui cargo inválido: " <> invalid))
-
-    user.Unauthorized(user_uuid, user_role) -> {
-      role.log_unauthorized_access_attempt(request: req, user_uuid:, user_role:)
-      wisp.response(403)
-      |> wisp.set_body(wisp.Text(
-        "Acesso não autorizado: " <> role.to_string_pt_br(user_role),
-      ))
-    }
-    user.DataBaseError(err) -> database.handle_database_error(err)
   }
 }
 

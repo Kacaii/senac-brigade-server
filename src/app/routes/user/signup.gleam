@@ -6,6 +6,7 @@
 //// Passwords are hashed using Argon2 before storage and all sensitive
 //// operations are logged for audit purposes.
 
+import app/database
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -15,7 +16,6 @@ import formal/form
 import gleam/json
 import gleam/list
 import gleam/result
-import gleam/string
 import glight
 import pog
 import wisp
@@ -166,82 +166,18 @@ fn log_signup(signup: SignUp) -> Nil {
   Nil
 }
 
-fn handle_database_error(err: pog.QueryError) {
+fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   case err {
-    pog.ConnectionUnavailable -> {
-      let body =
-        "Conexão com o Banco de Dados não disponível"
-        |> wisp.Text
-
-      wisp.internal_server_error()
-      |> wisp.set_body(body)
+    pog.ConstraintViolated(_, _, constraint: "user_account_registration_key") -> {
+      "Matrícula já cadastrada. Experimente fazer login"
+      |> wisp.bad_request()
     }
-    pog.QueryTimeout -> {
-      let body =
-        "O Banco de Dados demorou muito para responder, talvez tenha perdido a conexão?"
-        |> wisp.Text
-
-      wisp.internal_server_error()
-      |> wisp.set_body(body)
+    pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
+      "Email já cadastrado. Por favor, utilize um diferente"
+      |> wisp.bad_request()
     }
 
-    pog.ConstraintViolated(message:, constraint:, detail:) -> {
-      case constraint {
-        //   Registration must be unique --------------------------
-        "user_account_registration_key" -> {
-          "Matrícula já cadastrada. Experimente fazer login"
-          |> wisp.bad_request()
-        }
-        // 󰇮  Email must be unique ---------------------------------
-        "user_account_email_key" -> {
-          "Email já cadastrado. Por favor, utilize um diferente"
-          |> wisp.bad_request()
-        }
-        //   Some other constrain ---------------------------------
-        _ -> {
-          let body =
-            "
-                🐘  O Banco de Dados apresentou um erro
-
-                Constraint: {{constraint}}
-                Mensagem:   {{message}}
-                Detalhe:    {{detail}}
-                "
-            |> string.replace("{{constraint}}", constraint)
-            |> string.replace("{{message}}", message)
-            |> string.replace("{{detail}}", detail)
-            |> wisp.Text
-
-          wisp.internal_server_error()
-          |> wisp.set_body(body)
-        }
-      }
-    }
-    pog.PostgresqlError(code:, name:, message:) -> {
-      let body =
-        "
-            🐘  O Banco de Dados apresentou um erro
-
-            Código:     {{code}}
-            Nome:       {{name}}
-            Mensagem:   {{message}}
-            "
-        |> string.replace("{{code}}", code)
-        |> string.replace("{{name}}", name)
-        |> string.replace("{{message}}", message)
-        |> wisp.Text
-
-      wisp.internal_server_error()
-      |> wisp.set_body(body)
-    }
-    _ -> {
-      let body =
-        "Ocorreu um erro ao inserir o usuário no Banco de Dados"
-        |> wisp.Text
-
-      wisp.internal_server_error()
-      |> wisp.set_body(body)
-    }
+    err -> database.handle_database_error(err)
   }
 }
 

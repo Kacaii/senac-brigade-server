@@ -1,3 +1,4 @@
+import app/database
 import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/http
@@ -45,23 +46,8 @@ pub fn handle_request(
 
 fn handle_error(err: QueryAllBrigadesError) -> wisp.Response {
   case err {
-    DataBaseError(err) -> handle_database_error(err)
+    DataBaseError(err) -> database.handle_database_error(err)
   }
-}
-
-fn handle_database_error(err: pog.QueryError) -> wisp.Response {
-  let err_msg = case err {
-    pog.ConnectionUnavailable -> "Conexão com o banco de dados não disponível"
-    pog.ConstraintViolated(message:, constraint:, detail:) ->
-      constraint <> ": " <> message <> "\n" <> detail
-    pog.PostgresqlError(code:, name:, message:) ->
-      "Erro: " <> code <> " " <> name <> "\n" <> message
-    pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-    _ -> "Ocorreu um erro ao consultar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(err_msg))
 }
 
 fn query_database(ctx ctx: Context) -> Result(json.Json, QueryAllBrigadesError) {

@@ -1,4 +1,5 @@
-import gleam/int
+import app/web
+import gleam/json
 import pog
 import wisp
 
@@ -9,14 +10,15 @@ pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
       |> wisp.set_body(wisp.Text("Conexão com o Banco de Dados não disponível"))
 
     pog.ConstraintViolated(message:, constraint:, detail:) -> {
-      wisp.bad_request(
-        "Uma restrição foi encontrada no Banco de Dados: "
-        <> constraint
-        <> "\n"
-        <> message
-        <> "\n"
-        <> detail,
-      )
+      let body =
+        json.object([
+          #("message", json.string(message)),
+          #("constrain", json.string(constraint)),
+          #("detail", json.string(detail)),
+        ])
+        |> json.to_string()
+
+      wisp.json_response(body, 500)
     }
 
     pog.QueryTimeout ->
@@ -26,40 +28,38 @@ pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
       ))
 
     pog.PostgresqlError(code:, name:, message:) -> {
-      let err_msg = code <> ": " <> name <> "\n" <> message
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_msg))
+      let body =
+        json.object([
+          #("code", json.string(code)),
+          #("name", json.string(name)),
+          #("message", json.string(message)),
+        ])
+        |> json.to_string()
+
+      wisp.json_response(body, 500)
     }
 
     pog.UnexpectedArgumentCount(expected:, got:) -> {
-      let err_msg =
-        "Número de argumentos inválido\n"
-        <> "Esperava:"
-        <> int.to_string(expected)
-        <> " Recebeu: "
-        <> int.to_string(got)
+      let body =
+        json.object([
+          #("expected", json.int(expected)),
+          #("got", json.int(got)),
+        ])
+        |> json.to_string()
 
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_msg))
+      wisp.json_response(body, 500)
     }
 
     pog.UnexpectedArgumentType(expected:, got:) -> {
-      let err_msg =
-        "Tipo de argumento inválido\n"
-        <> "Esperava:"
-        <> expected
-        <> " Recebeu: "
-        <> got
+      let body =
+        json.object([
+          #("expected", json.string(expected)),
+          #("got", json.string(got)),
+        ])
+        |> json.to_string()
 
-      wisp.unprocessable_content()
-      |> wisp.set_body(wisp.Text(err_msg))
+      wisp.json_response(body, 500)
     }
-    pog.UnexpectedResultType(_) -> {
-      let err_msg =
-        "Não foi possível decodificar o resultado retornado pelo Banco de Dados"
-
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_msg))
-    }
+    pog.UnexpectedResultType(err) -> web.handle_decode_error(err)
   }
 }
