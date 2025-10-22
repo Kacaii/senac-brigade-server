@@ -14,13 +14,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: install psql
-        run: \
-          sudo apt install -y postgresql-common
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
-          sudo apt install -y postgresql-18
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
       - name: rebuild database
-        run: \
+        run: |
           psql $DATABASE_URL -f priv/sql/drop.sql
           psql $DATABASE_URL -f priv/sql/create/tables.sql
           psql $DATABASE_URL -f priv/sql/create/triggers.sql
