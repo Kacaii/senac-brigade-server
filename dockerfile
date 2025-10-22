@@ -10,6 +10,7 @@ COPY --from=gleam /bin/gleam /bin/gleam
 COPY . /app/
 RUN apk add --no-cache build-base
 RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache just
 WORKDIR /app
 RUN gleam export erlang-shipment
 
@@ -24,6 +25,8 @@ RUN \
   adduser --system webapp -g webapp
 COPY --from=build /app/build/erlang-shipment /app
 COPY healthcheck.sh /app/healthcheck.sh
+COPY justfile /app/justfile
 WORKDIR /app
+RUN just rebuild_full
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["run"]
