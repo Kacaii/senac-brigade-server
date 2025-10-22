@@ -8,8 +8,8 @@ FROM ghcr.io/gleam-lang/gleam:${GLEAM_VERSION}-scratch AS gleam
 FROM erlang:${ERLANG_VERSION}-alpine AS build
 COPY --from=gleam /bin/gleam /bin/gleam
 COPY . /app/
-RUN apk add --no-cache build-base=latest
-RUN apk add --no-cache postgresql-client=latest
+RUN apk add --no-cache build-base
+RUN apk add --no-cache postgresql-client
 RUN cd /app && gleam export erlang-shipment
 
 RUN psql senac_brigade -f priv/sql/drop.sql
