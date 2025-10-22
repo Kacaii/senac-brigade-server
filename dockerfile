@@ -25,7 +25,6 @@ RUN \
   adduser --system webapp -g webapp
 
 COPY --from=build /app/build/erlang-shipment /app
-COPY --from=build /usr/bin/just /usr/local/bin/just
 COPY healthcheck.sh /app/healthcheck.sh
 
 RUN chmod +x /app/healthcheck.sh
