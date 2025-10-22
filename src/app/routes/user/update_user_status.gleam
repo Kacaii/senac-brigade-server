@@ -32,7 +32,7 @@ pub fn handle_request(
   use json_data <- wisp.require_json(req)
 
   case decode.run(json_data, body_decoder()) {
-    Error(_) -> wisp.unprocessable_content()
+    Error(err) -> web.handle_decode_error(err)
     Ok(is_active) -> {
       case try_update_user_status(req:, ctx:, user_id:, is_active:) {
         Error(err) -> handle_error(req, err)

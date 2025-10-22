@@ -48,17 +48,43 @@ pub fn admin_update_user_test() {
   assert resp.status == 200 as "Response should be HTTP 200 OK"
 
   let body = simulate.read_body(resp)
-  let assert Ok(updated_user_data) =
-    json.parse(body, admin_updated_user_response_decoder())
+  let assert Ok(_) =
+    json.parse(body, {
+      // USER UUID Decoder
+      let uuid_decoder = {
+        use maybe_uuid <- decode.then(decode.string)
+        case uuid.from_string(maybe_uuid) {
+          Error(_) -> decode.failure(uuid.v7(), "uuid")
+          Ok(value) -> decode.success(value)
+        }
+      }
 
-  //   ASSERTIONS -------------------------------------------------------------
-  assert updated_user_data.user_uuid == dummy_user_id as "Wrong user uudid"
-  assert updated_user_data.full_name == new_full_name as "Wrong user name"
-  assert updated_user_data.email == new_email as "Wrong user email"
-  assert updated_user_data.user_role == new_role as "Wrong user role"
-  assert updated_user_data.is_active == new_status as "Wrong user status"
-  assert updated_user_data.registration == new_registration
-    as "Wrong user registration"
+      // USER ROLE DECODER
+      let user_role_decoder = {
+        use maybe_role <- decode.then(decode.string)
+        case role.from_string_pt_br(maybe_role) {
+          Error(_) -> decode.failure(role.Firefighter, "user_role")
+          Ok(value) -> decode.success(value)
+        }
+      }
+
+      use user_uuid <- decode.field("id", uuid_decoder)
+      use full_name <- decode.field("full_name", decode.string)
+      use email <- decode.field("email", decode.string)
+      use user_role <- decode.field("user_role", user_role_decoder)
+      use registration <- decode.field("registration", decode.string)
+      use is_active <- decode.field("is_active", decode.bool)
+
+      //   ASSERT
+      assert user_uuid == dummy_user_id as "Wrong user uudid"
+      assert full_name == new_full_name as "Wrong user name"
+      assert email == new_email as "Wrong user email"
+      assert user_role == new_role as "Wrong user role"
+      assert is_active == new_status as "Wrong user status"
+      assert registration == new_registration as "Wrong user registration"
+
+      decode.success(Nil)
+    })
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(deleted_user) = {
@@ -71,51 +97,38 @@ pub fn admin_update_user_test() {
   assert deleted_user.id == dummy_user_id as "Deleted the wrong user"
 }
 
-pub type AdminUpdateUserResponse {
-  AdminUpdateUserResponse(
-    user_uuid: uuid.Uuid,
-    full_name: String,
-    email: String,
-    user_role: role.Role,
-    registration: String,
-    updated_at: Float,
-    is_active: Bool,
-  )
-}
+pub fn update_user_status_test() {
+  let ctx = app_test.global_data()
 
-fn admin_updated_user_response_decoder() {
-  // USER UUID Decoder
-  let uuid_decoder = {
-    use maybe_uuid <- decode.then(decode.string)
-    case uuid.from_string(maybe_uuid) {
-      Error(_) -> decode.failure(uuid.v7(), "uuid")
-      Ok(value) -> decode.success(value)
-    }
-  }
+  let dummy_user = dummy.random_user(ctx)
+  let path = "/admin/users/" <> uuid.to_string(dummy_user) <> "/status"
 
-  // USER ROLE DECODER
-  let user_role_decoder = {
-    use maybe_role <- decode.then(decode.string)
-    case role.from_string_pt_br(maybe_role) {
-      Error(_) -> decode.failure(role.Firefighter, "user_role")
-      Ok(value) -> decode.success(value)
-    }
-  }
+  let target_status = False
 
-  use user_uuid <- decode.field("id", uuid_decoder)
-  use full_name <- decode.field("full_name", decode.string)
-  use email <- decode.field("email", decode.string)
-  use user_role <- decode.field("user_role", user_role_decoder)
-  use registration <- decode.field("registration", decode.string)
-  use updated_at <- decode.field("updated_at", decode.float)
-  use is_active <- decode.field("is_active", decode.bool)
-  decode.success(AdminUpdateUserResponse(
-    user_uuid:,
-    full_name:,
-    email:,
-    user_role:,
-    registration:,
-    updated_at:,
-    is_active:,
-  ))
+  let req =
+    simulate.request(http.Put, path)
+    |> simulate.json_body(json.object([#("status", json.bool(target_status))]))
+
+  let resp = router.handle_request(req, ctx)
+
+  assert resp.status == 401 as "Only accessible to Admin users"
+
+  let req = app_test.with_authorization(req)
+  let resp = router.handle_request(req, ctx)
+
+  assert resp.status == 200 as "Status should be 200"
+  let body = simulate.read_body(resp)
+
+  let assert Ok(_) =
+    json.parse(body, {
+      use id <- decode.field("id", decode.string)
+      use is_active <- decode.field("is_active", decode.bool)
+
+      assert id == uuid.to_string(dummy_user) as "Incorrect field value"
+      assert is_active == target_status as "Incorrect field value"
+
+      decode.success(Nil)
+    })
+
+  dummy.clean_user(ctx, dummy_user)
 }

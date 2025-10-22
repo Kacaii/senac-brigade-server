@@ -16,7 +16,10 @@
 //// - Static file serving from `/static` path
 
 import cors_builder as cors
+import gleam/dynamic/decode
 import gleam/http
+import gleam/json
+import gleam/string
 import glight
 import pog
 import wisp
@@ -78,4 +81,22 @@ fn cors_config() -> cors.Cors {
   |> cors.allow_header("content-type")
   |> cors.allow_header("origin")
   |> cors.allow_credentials()
+}
+
+pub fn handle_decode_error(err: List(decode.DecodeError)) -> wisp.Response {
+  case err {
+    [] -> wisp.ok()
+    [err, ..] -> {
+      let body =
+        json.to_string(
+          json.object([
+            #("expected", json.string(err.expected)),
+            #("found", json.string(err.found)),
+            #("path", json.string(string.join(err.path, "/"))),
+          ]),
+        )
+
+      wisp.json_response(body, 422)
+    }
+  }
 }
