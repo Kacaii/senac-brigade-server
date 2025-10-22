@@ -17,7 +17,7 @@ jobs:
         run: sudo apt install just
 
       - name: rebuild database
-        run: /usr/local/bin/just rebuild_full
+        run: just rebuild_full
         env:
           database_url: ${{ secrets.DATABASE_URL }}
 
