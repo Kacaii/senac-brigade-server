@@ -1,4 +1,4 @@
-name: Build container image
+name: build container image
 on:
   push:
     tags:
@@ -13,15 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image
-        run: docker build . --file Dockerfile --tag webapp
+      - name: rebuild database
+        run: /usr/local/bin/just rebuild_full
+        env:
+          database_url: ${{ secrets.DATABASE_URL }}
 
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: build image
+        run: docker build . --file dockerfile --tag webapp
 
-      - name: Push image
+      - name: log in to registry
+        run: echo "${{ secrets.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: push image
         run: |
-          IMAGE_ID=ghcr.io/kacaii/senac-brigade-server
-          TAG="$IMAGE_ID":$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          docker tag webapp "$TAG"
-          docker push "$TAG"
+          image_id=ghcr.io/kacaii/senac-brigade-server
+          tag="$image_id":$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          docker tag webapp "$tag"
+          docker push "$tag"

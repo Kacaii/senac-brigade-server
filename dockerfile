@@ -20,14 +20,21 @@ ARG GIT_SHA
 ARG BUILD_TIME
 ENV GIT_SHA=${GIT_SHA}
 ENV BUILD_TIME=${BUILD_TIME}
+
+ENV DATABASE_URL=""
+
 RUN \
   addgroup --system webapp && \
   adduser --system webapp -g webapp
+
 COPY --from=build /app/build/erlang-shipment /app
 COPY --from=build /usr/bin/just /usr/local/bin/just
 COPY healthcheck.sh /app/healthcheck.sh
 COPY justfile /app/justfile
+
+RUN chmod +x /app/healthcheck.sh
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD [ "/app/healthcheck.sh" ]
+
 WORKDIR /app
-RUN /usr/local/bin/just rebuild_full
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["run"]
