@@ -23,6 +23,7 @@ import app/web.{Context}
 import envoy
 import gleam/erlang/process
 import gleam/http
+import gleam/io
 import gleam/json
 import gleam/list
 import gleam/otp/actor
@@ -115,6 +116,7 @@ pub fn static_directory() -> String {
 }
 
 pub fn setup_admin(ctx: web.Context) {
+  // Check if the database is empty
   let assert Ok(returned) = admin_sql.count_total_users(ctx.conn)
   let assert Ok(row) = list.first(returned.rows)
 
@@ -126,7 +128,7 @@ pub fn setup_admin(ctx: web.Context) {
         |> simulate.json_body(json.object([#("key", json.string("admin"))]))
 
       router.handle_request(setup_admin_req, ctx)
-      Nil
+      io.println("  Administrador cadastrado com sucesso!")
     }
   }
 }

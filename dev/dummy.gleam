@@ -12,6 +12,7 @@ import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
+import wisp
 import youid/uuid
 
 /// Panics on failure
@@ -67,7 +68,7 @@ pub fn random_brigade(
     b_sql.insert_new_brigade(
       ctx.conn,
       applicant,
-      uuid.v7_string(),
+      "BRIGADE " <> wisp.random_string(4),
       uuid.v7_string(),
       participants,
       True,
@@ -163,10 +164,10 @@ pub fn random_user(ctx: web.Context) -> uuid.Uuid {
   let assert Ok(returned) =
     u_sql.insert_new_user(
       ctx.conn,
+      "USER " <> wisp.random_string(6),
+      "M " <> wisp.random_string(6),
       uuid.v7_string(),
-      uuid.v7_string(),
-      uuid.v7_string(),
-      uuid.v7_string() <> "@email.com",
+      wisp.random_string(8) <> "@email.com",
       uuid.v7_string(),
       role_to_enum(r_role),
     )
@@ -248,9 +249,9 @@ pub fn random_occurrence(
       dummy_category,
       dummy_subcategory,
       dummy_priority,
-      uuid.v7_string(),
+      "Description: " <> wisp.random_string(12),
       [float.random() *. 100.0, float.random() *. 100.0],
-      uuid.v7_string(),
+      "Next to: " <> wisp.random_string(12),
       brigade_list,
     )
     as "Failed to generate a dummy Occurrence"
