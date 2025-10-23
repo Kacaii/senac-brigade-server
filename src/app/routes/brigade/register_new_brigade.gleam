@@ -62,7 +62,7 @@ fn try_register_brigade(
     user.check_role_authorization(
       request:,
       ctx:,
-      cookie_name: "USER_ID",
+      cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
     |> result.map_error(RoleError),

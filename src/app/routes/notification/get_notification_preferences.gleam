@@ -65,7 +65,7 @@ fn query_database(
   ctx: Context,
 ) -> Result(json.Json, GetNotificationPreferencesError) {
   use user_uuid <- result.try(
-    user.auth_user_from_cookie(request: req, cookie_name: "USER_ID")
+    user.auth_user_from_cookie(request: req, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AuthenticationFailed),
   )
 

@@ -98,7 +98,7 @@ fn try_update_user(
     user.check_role_authorization(
       request: req,
       ctx:,
-      cookie_name: "USER_ID",
+      cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
     |> result.map_error(RoleError),

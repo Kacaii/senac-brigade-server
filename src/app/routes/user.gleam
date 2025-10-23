@@ -8,6 +8,8 @@ import pog
 import wisp
 import youid/uuid
 
+pub const uuid_cookie_name = "USER_ID"
+
 ///   Query the database to find the user's role name
 pub fn get_user_role(
   ctx ctx: Context,

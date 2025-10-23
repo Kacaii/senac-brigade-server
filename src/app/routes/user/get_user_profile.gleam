@@ -39,7 +39,7 @@ pub fn handle_request(
 
 pub fn query_user_data(context: Context, request: wisp.Request) {
   use id <- result.try(
-    user.auth_user_from_cookie(request:, cookie_name: "USER_ID")
+    user.auth_user_from_cookie(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AuthenticationFailed),
   )
 

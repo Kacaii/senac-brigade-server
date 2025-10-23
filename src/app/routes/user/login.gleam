@@ -3,6 +3,7 @@
 ////   Uses signed cookies to prevent tampering and logs all login attempts.
 
 import app/routes/role
+import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
 import argus
@@ -14,8 +15,6 @@ import glight
 import pog
 import wisp
 import youid/uuid
-
-const user_id_cookie_name = "USER_ID"
 
 type LogIn {
   LogIn(registration: String, password: String)
@@ -59,7 +58,7 @@ pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
         request:,
         ctx:,
         login_data:,
-        cookie_name: user_id_cookie_name,
+        cookie_name: user.uuid_cookie_name,
       )
   }
 }

@@ -1,5 +1,6 @@
 import app/router
 import app/routes/role
+import app/routes/user
 import app/routes/user/sql
 import app_test
 import gleam/dynamic/decode
@@ -41,7 +42,7 @@ pub fn login_test() {
   let cookies = response.get_cookies(resp)
   assert cookies != [] as "Server should set a session Cookie on login"
 
-  let assert Ok(_) = list.key_find(cookies, "USER_ID")
+  let assert Ok(_) = list.key_find(cookies, user.uuid_cookie_name)
     as "No Cookie named USER_ID was found in the server response"
 }
 
