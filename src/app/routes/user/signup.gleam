@@ -45,15 +45,12 @@ pub fn handle_request(
     Ok(signup) -> {
       case try_insert_into_database(request: req, ctx:, signup:) {
         Ok(new_user) -> {
-          //   Logs new user account
           log_signup(signup)
-
-          // 󱅡  All good!
           wisp.json_response(json.to_string(new_user), 201)
         }
 
         //   Server errors ----------------------------------------------------
-        Error(err) -> handle_error(err)
+        Error(err) -> handle_error(req, err)
       }
     }
   }
@@ -181,9 +178,8 @@ fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   }
 }
 
-fn handle_error(err: SignupError) {
+fn handle_error(req: wisp.Request, err: SignupError) {
   case err {
-    // 󱔼  Hashing went wrong
     HashError -> {
       let body =
         "Ocorreu um erro ao encriptografar a senha do usuário"
@@ -192,33 +188,10 @@ fn handle_error(err: SignupError) {
       wisp.internal_server_error()
       |> wisp.set_body(body)
     }
-    //   Something when wrong inside the database
     DataBaseError(err) -> handle_database_error(err)
-
     InvalidRole(unknown) ->
       wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
-
-    RoleError(err) -> {
-      case err {
-        user.AuthenticationFailed(err) -> user.handle_authentication_error(err)
-        user.DataBaseError(err) -> handle_database_error(err)
-        user.UserRoleNotFound ->
-          wisp.internal_server_error()
-          |> wisp.set_body(wisp.Text(
-            "Não foi possível identificar o cargo do usuário autenticado",
-          ))
-        user.InvalidRole(unknown) ->
-          wisp.response(401)
-          |> wisp.set_body(wisp.Text(
-            "Usuário possui cargo inválido: " <> unknown,
-          ))
-        user.Unauthorized(_, user_role) ->
-          wisp.response(403)
-          |> wisp.set_body(wisp.Text(
-            "Cargo não autorizado: " <> role.to_string_pt_br(user_role),
-          ))
-      }
-    }
+    RoleError(err) -> user.handle_authorization_error(req, err)
     MissingSignupConfirmation ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
