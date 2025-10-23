@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
     occurrence_subcategory OCCURRENCE_SUBCATEGORY_ENUM,
     priority OCCURRENCE_PRIORITY_ENUM NOT NULL,
     description TEXT,
-    occurrence_location FLOAT [] NOT NULL,
+    occurrence_location FLOAT [],
     reference_point TEXT,
     brigade_list UUID [] NOT NULL DEFAULT '{}',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

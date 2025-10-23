@@ -161,7 +161,7 @@ pub type Payload {
     status: String,
     priority: priority.Priority,
     call: PayloadCall,
-    occurrence_location: List(Float),
+    occurrence_location: option.Option(List(Float)),
     timestamp: PayloadTimestamp,
     metadata: PayloadMetadata,
     brigade_list: List(PayloadBrigade),
@@ -169,12 +169,17 @@ pub type Payload {
 }
 
 fn payload_to_json(data: Payload) -> json.Json {
+  let occurrence_location_json =
+    json.nullable(data.occurrence_location, fn(location) {
+      json.array(location, json.float)
+    })
+
   json.object([
     #("id", json.string(uuid.to_string(data.id))),
     #("status", json.string(data.status)),
     #("prioridade", json.string(priority.to_string_pt_br(data.priority))),
     #("chamado", payload_call_to_json(data.call)),
-    #("coordenadas", json.array(data.occurrence_location, json.float)),
+    #("coordenadas", occurrence_location_json),
     #("timestamps", payload_timestamp_to_json(data.timestamp)),
     #("metadata", payload_metadata_to_json(data.metadata)),
     #("equipes", payload_brigade_list_to_json(data.brigade_list)),

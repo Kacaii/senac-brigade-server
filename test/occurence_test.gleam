@@ -209,7 +209,11 @@ pub fn get_occurrences_by_applicant_test() {
         use _ <- decode.field("status", decode.string)
         use _ <- decode.field("prioridade", priority_decoder)
         use _ <- decode.field("chamado", call_decoder)
-        use _ <- decode.field("coordenadas", decode.list(decode.float))
+        use _ <- decode.optional_field(
+          "coordenadas",
+          [],
+          decode.list(decode.float),
+        )
         use _ <- decode.field("timestamps", occurrence_timestamp_decoder)
         use _ <- decode.field("metadata", occurrence_metadata_decoder)
         use _ <- decode.field(

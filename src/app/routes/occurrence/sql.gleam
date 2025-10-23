@@ -146,7 +146,7 @@ pub type QueryOccurencesByApplicantRow {
     resolved_at: Option(Timestamp),
     priority: OccurrencePriorityEnum,
     occurrence_category: OccurrenceCategoryEnum,
-    occurrence_location: List(Float),
+    occurrence_location: Option(List(Float)),
     details: Option(String),
     applicant_name: String,
     created_at: Timestamp,
@@ -175,7 +175,10 @@ pub fn query_occurences_by_applicant(
       3,
       occurrence_category_enum_decoder(),
     )
-    use occurrence_location <- decode.field(4, decode.list(decode.float))
+    use occurrence_location <- decode.field(
+      4,
+      decode.optional(decode.list(decode.float)),
+    )
     use details <- decode.field(5, decode.optional(decode.string))
     use applicant_name <- decode.field(6, decode.string)
     use created_at <- decode.field(7, pog.timestamp_decoder())
@@ -283,7 +286,7 @@ pub type QueryRecentOccurrencesRow {
     description: Option(String),
     occurrence_category: OccurrenceCategoryEnum,
     occurrence_subcategory: Option(OccurrenceSubcategoryEnum),
-    occurrence_location: List(Float),
+    occurrence_location: Option(List(Float)),
     reference_point: Option(String),
   )
 }
@@ -308,7 +311,10 @@ pub fn query_recent_occurrences(
       4,
       decode.optional(occurrence_subcategory_enum_decoder()),
     )
-    use occurrence_location <- decode.field(5, decode.list(decode.float))
+    use occurrence_location <- decode.field(
+      5,
+      decode.optional(decode.list(decode.float)),
+    )
     use reference_point <- decode.field(6, decode.optional(decode.string))
     decode.success(QueryRecentOccurrencesRow(
       id:,
