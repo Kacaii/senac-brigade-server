@@ -28,7 +28,7 @@ pub fn register_new_occurrence_test() {
   let dummy_brigade_id =
     dummy.random_brigade(
       ctx:,
-      applicant: dummy_applicant_id,
+      leader_id: dummy_applicant_id,
       participants: dummy_participants_id,
     )
 
@@ -139,7 +139,7 @@ pub fn get_occurrences_by_applicant_test() {
   let dummy_brigade_id =
     dummy.random_brigade(
       ctx:,
-      applicant: dummy_applicant_id,
+      leader_id: dummy_applicant_id,
       participants: dummy_participants_id,
     )
 

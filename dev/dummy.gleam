@@ -61,13 +61,13 @@ pub fn random_priority() {
 /// Panics on failure
 pub fn random_brigade(
   ctx ctx: web.Context,
-  applicant applicant: uuid.Uuid,
+  leader_id leader_id: uuid.Uuid,
   participants participants: List(uuid.Uuid),
 ) {
   let assert Ok(returned) =
     b_sql.insert_new_brigade(
       ctx.conn,
-      applicant,
+      leader_id,
       "BRIGADE " <> wisp.random_string(4),
       uuid.v7_string(),
       participants,
