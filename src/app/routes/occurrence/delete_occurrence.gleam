@@ -10,13 +10,21 @@ import pog
 import wisp
 import youid/uuid
 
+///   Deleting an occurrence can fail
 type DeleteOccurrenceError {
+  /// 󰿀  Occurrence has invalid Uuid
   InvalidUuid(String)
+  ///   Authentication failed
   AuthenticationError(user.AuthenticationError)
+  /// 󱙀  Failed to query the DataBase
   DataBaseError(pog.QueryError)
+  /// 󱪘  Occurrence was not found in the system 
   OccurrenceNotFound(String)
 }
 
+/// 󱪟  Remove a occurrence from the Database and returns its uuid
+/// as a JSON formatted response
+///
 /// ## Response
 ///
 /// ```json
