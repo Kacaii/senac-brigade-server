@@ -66,13 +66,24 @@ fn handle_error(
         pog.ConstraintViolated(_, _, constraint:) -> {
           case constraint {
             // Unique Email
-            "user_account_email_key" ->
-              wisp.bad_request("Email já está sendo utilizado: " <> body.email)
+            "user_account_email_key" -> {
+              let resp = wisp.response(409)
+              let body =
+                wisp.Text("Email já está sendo utilizado: " <> body.email)
+
+              wisp.set_body(resp, body)
+            }
+
             // Unique Registration
-            "user_account_registration_key" ->
-              wisp.bad_request(
-                "Matrícula já está sendo utilizada: " <> body.registration,
-              )
+            "user_account_registration_key" -> {
+              let resp = wisp.response(409)
+              let body =
+                wisp.Text(
+                  "Matrícula já está sendo utilizada: " <> body.registration,
+                )
+
+              wisp.set_body(resp, body)
+            }
 
             _ -> database.handle_database_error(err)
           }
@@ -80,11 +91,13 @@ fn handle_error(
         err -> database.handle_database_error(err)
       }
     }
+    AccessError(err) -> user.handle_authorization_error(req, err)
     InvalidUuid(err) ->
       wisp.unprocessable_content()
       |> wisp.set_body(wisp.Text("Usuário possui Uuid inválido: " <> err))
-    UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    AccessError(err) -> user.handle_authorization_error(req, err)
+    UserNotFound(id) ->
+      wisp.not_found()
+      |> wisp.set_body(wisp.Text("Usuário não encontrado: " <> id))
   }
 }
 
@@ -124,7 +137,7 @@ fn try_update_user(
 
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(UuidNotFound(user_id)),
+    |> result.replace_error(UserNotFound(user_id)),
   )
 
   let user_role = enum_to_role(row.user_role)
@@ -192,5 +205,5 @@ type AdminUpdateUserError {
   DataBaseError(pog.QueryError)
   InvalidUuid(String)
   AccessError(user.AccessControlError)
-  UuidNotFound(String)
+  UserNotFound(String)
 }
