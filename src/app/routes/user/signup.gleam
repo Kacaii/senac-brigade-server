@@ -209,7 +209,7 @@ type SignupError {
   ///   Unknown user role
   InvalidRole(String)
   ///   User / Role related issues
-  RoleError(user.AuthorizationError)
+  RoleError(user.AccessControlError)
   /// 󰡦  Database didnt return information about the new user
   MissingSignupConfirmation
 }

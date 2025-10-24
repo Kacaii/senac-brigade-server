@@ -169,5 +169,5 @@ type RegisterBrigadeError {
   InvalidUuid(String)
   DataBaseError(pog.QueryError)
   DataBaseReturnedEmptyRow
-  RoleError(user.AuthorizationError)
+  RoleError(user.AccessControlError)
 }

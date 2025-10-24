@@ -81,7 +81,7 @@ fn try_delete_user(
 type DeleteUserError {
   DataBaseError(pog.QueryError)
   InvalidUserUuid(String)
-  RoleError(user.AuthorizationError)
+  RoleError(user.AccessControlError)
   UuidNotFound(String)
   CantDeleteSelf
 }

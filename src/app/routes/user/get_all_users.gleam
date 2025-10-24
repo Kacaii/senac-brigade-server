@@ -105,6 +105,6 @@ fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
 }
 
 type GetAllUsersError {
-  RoleError(user.AuthorizationError)
+  RoleError(user.AccessControlError)
   DataBaseError(pog.QueryError)
 }

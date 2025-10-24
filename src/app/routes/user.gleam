@@ -14,14 +14,14 @@ pub const uuid_cookie_name = "USER_ID"
 pub fn get_user_role(
   ctx ctx: Context,
   user_uuid id: uuid.Uuid,
-) -> Result(role.Role, AuthorizationError) {
+) -> Result(role.Role, AccessControlError) {
   use returned <- result.try(
     sql.query_user_role(ctx.conn, id)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   case list.first(returned.rows) {
-    Error(_) -> Error(UserRoleNotFound)
+    Error(_) -> Error(RoleNotFound)
     Ok(row) -> Ok(enum_to_role(row.user_role))
   }
 }
@@ -62,11 +62,11 @@ pub fn check_role_authorization(
   ctx ctx: Context,
   cookie_name cookie_name: String,
   authorized_roles authorized_roles: List(role.Role),
-) -> Result(#(uuid.Uuid, role.Role), AuthorizationError) {
+) -> Result(#(uuid.Uuid, role.Role), AccessControlError) {
   //   Indentify who is sending the request -----------------------------------
   use user_uuid <- result.try(
     auth_user_from_cookie(request:, cookie_name:)
-    |> result.map_error(AuthenticationFailed),
+    |> result.map_error(Authentication),
   )
   // 󰯦  Query the User's role --------------------------------------------------
   use user_role <- result.try(get_user_role(ctx, user_uuid))
@@ -74,31 +74,31 @@ pub fn check_role_authorization(
   // 󰈞  Check if that role has authorization -----------------------------------
   use user_role <- result.try(
     list.find(authorized_roles, fn(authorized) { user_role == authorized })
-    |> result.replace_error(Unauthorized(user_uuid, user_role)),
+    |> result.replace_error(Authorization(user_uuid, user_role)),
   )
 
   Ok(#(user_uuid, user_role))
 }
 
-///   Errors related to an User account or role
-pub type AuthorizationError {
-  ///   User is not authorized to access data
-  Unauthorized(uuid.Uuid, role.Role)
-  /// 󰗹  Failed to authenticate user
-  AuthenticationFailed(AuthenticationError)
-  /// 󰆼  DataBase query failed
-  DataBaseError(pog.QueryError)
-  /// 󰡦  DataBase found no results
-  UserRoleNotFound
+///   Errors related to user access control (authentication & authorization)
+pub type AccessControlError {
+  /// 󰗹  Authentication failed
+  Authentication(AuthenticationError)
+  ///   User is authentication but lacks permissions
+  Authorization(uuid.Uuid, role.Role)
+  /// 󰆼  DataBase operation failed during access control check
+  DataBase(pog.QueryError)
+  /// 󰡦  User role was not found in system
+  RoleNotFound
   ///   User doesnt have a valid role
   InvalidRole(String)
 }
 
-///   Authentication can fail
+///   Authentication-specific failures
 pub type AuthenticationError {
   ///   Request is missing the authetication Cookie
   MissingCookie
-  /// 󰘨  User doesnt have a valid UUID
+  /// 󰘨  User doesn't have a valid UUID
   InvalidUUID(String)
 }
 
@@ -113,11 +113,11 @@ pub fn handle_authentication_error(err: AuthenticationError) {
   }
 }
 
-pub fn handle_authorization_error(req: wisp.Request, err: AuthorizationError) {
+pub fn handle_authorization_error(req: wisp.Request, err: AccessControlError) {
   case err {
-    AuthenticationFailed(err) -> handle_authentication_error(err)
-    DataBaseError(err) -> database.handle_database_error(err)
-    UserRoleNotFound ->
+    Authentication(err) -> handle_authentication_error(err)
+    DataBase(err) -> database.handle_database_error(err)
+    RoleNotFound ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
         "Não foi possível confirmar o Cargo do usuário autenticado",
@@ -127,7 +127,7 @@ pub fn handle_authorization_error(req: wisp.Request, err: AuthorizationError) {
       |> wisp.set_body(wisp.Text(
         "Usuário autenticado possui cargo inválido: " <> err,
       ))
-    Unauthorized(user_uuid, user_role) -> {
+    Authorization(user_uuid, user_role) -> {
       role.log_unauthorized_access_attempt(req, user_uuid:, user_role:)
       wisp.response(403)
       |> wisp.set_body(wisp.Text(

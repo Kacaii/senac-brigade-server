@@ -97,7 +97,7 @@ fn body_decoder() -> decode.Decoder(Bool) {
 }
 
 type UpdateUserStatusError {
-  RoleError(user.AuthorizationError)
+  RoleError(user.AccessControlError)
   UserNotFound(String)
   InvalidUuid(String)
   DataBaseError(pog.QueryError)

@@ -191,6 +191,6 @@ type AdminUpdateUserBody {
 type AdminUpdateUserError {
   DataBaseError(pog.QueryError)
   InvalidUuid(String)
-  RoleError(user.AuthorizationError)
+  RoleError(user.AccessControlError)
   UuidNotFound(String)
 }
