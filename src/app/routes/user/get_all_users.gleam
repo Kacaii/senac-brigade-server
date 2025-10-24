@@ -46,7 +46,7 @@ pub fn handle_request(
 
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   case err {
-    RoleError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
 }
@@ -62,7 +62,7 @@ fn try_query_database(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(RoleError),
+    |> result.map_error(AccessError),
   )
 
   use returned <- result.map(
@@ -105,6 +105,6 @@ fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
 }
 
 type GetAllUsersError {
-  RoleError(user.AccessControlError)
+  AccessError(user.AccessControlError)
   DataBaseError(pog.QueryError)
 }

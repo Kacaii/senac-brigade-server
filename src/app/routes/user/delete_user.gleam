@@ -29,7 +29,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
     InvalidUserUuid(invalid_uuid) ->
       wisp.bad_request("Usuário possui Uuid Inválido: " <> invalid_uuid)
     UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    RoleError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
     CantDeleteSelf -> wisp.bad_request("Um usuário não deve remover a si mesmo")
   }
@@ -52,7 +52,7 @@ fn try_delete_user(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(RoleError),
+    |> result.map_error(AccessError),
   )
 
   case uuid.to_string(user_uuid) == target_id {
@@ -81,7 +81,7 @@ fn try_delete_user(
 type DeleteUserError {
   DataBaseError(pog.QueryError)
   InvalidUserUuid(String)
-  RoleError(user.AccessControlError)
+  AccessError(user.AccessControlError)
   UuidNotFound(String)
   CantDeleteSelf
 }

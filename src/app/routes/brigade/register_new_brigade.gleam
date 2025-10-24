@@ -65,7 +65,7 @@ fn try_register_brigade(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(RoleError),
+    |> result.map_error(AccessError),
   )
 
   // Leader of that brigade
@@ -119,7 +119,7 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
     InvalidUuid(user_id) ->
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
     DataBaseError(err) -> database.handle_database_error(err)
-    RoleError(err) -> user.handle_authorization_error(request, err)
+    AccessError(err) -> user.handle_authorization_error(request, err)
   }
 }
 
@@ -169,5 +169,5 @@ type RegisterBrigadeError {
   InvalidUuid(String)
   DataBaseError(pog.QueryError)
   DataBaseReturnedEmptyRow
-  RoleError(user.AccessControlError)
+  AccessError(user.AccessControlError)
 }

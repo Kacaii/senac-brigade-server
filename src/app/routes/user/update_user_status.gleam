@@ -55,7 +55,7 @@ fn try_update_user_status(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(RoleError),
+    |> result.map_error(AccessError),
   )
 
   use user_uuid <- result.try(
@@ -86,7 +86,7 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
     UserNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    RoleError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_authorization_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
 }
@@ -97,7 +97,7 @@ fn body_decoder() -> decode.Decoder(Bool) {
 }
 
 type UpdateUserStatusError {
-  RoleError(user.AccessControlError)
+  AccessError(user.AccessControlError)
   UserNotFound(String)
   InvalidUuid(String)
   DataBaseError(pog.QueryError)
