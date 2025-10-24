@@ -2,6 +2,7 @@ import app/database
 import app/routes/role
 import app/routes/user/sql
 import app/web.{type Context}
+import gleam/json
 import gleam/list
 import gleam/result
 import pog
@@ -42,14 +43,14 @@ pub fn auth_user_from_cookie(
   request request: wisp.Request,
   cookie_name cookie_name: String,
 ) -> Result(uuid.Uuid, AuthenticationError) {
-  use user_id <- result.try(
+  use maybe_uuid <- result.try(
     wisp.get_cookie(request:, name: cookie_name, security: wisp.Signed)
     |> result.replace_error(MissingCookie),
   )
 
   use user_uuid <- result.try(
-    uuid.from_string(user_id)
-    |> result.replace_error(InvalidUUID(user_id)),
+    uuid.from_string(maybe_uuid)
+    |> result.replace_error(InvalidUUID(maybe_uuid)),
   )
 
   Ok(user_uuid)
@@ -68,13 +69,18 @@ pub fn check_role_authorization(
     auth_user_from_cookie(request:, cookie_name:)
     |> result.map_error(Authentication),
   )
+
   // 󰯦  Query the User's role --------------------------------------------------
   use user_role <- result.try(get_user_role(ctx, user_uuid))
 
   // 󰈞  Check if that role has authorization -----------------------------------
   use user_role <- result.try(
     list.find(authorized_roles, fn(authorized) { user_role == authorized })
-    |> result.replace_error(Authorization(user_uuid, user_role)),
+    |> result.replace_error(Authorization(
+      user_uuid:,
+      user_role:,
+      authorized_roles:,
+    )),
   )
 
   Ok(#(user_uuid, user_role))
@@ -85,7 +91,11 @@ pub type AccessControlError {
   /// 󰗹  Authentication failed
   Authentication(AuthenticationError)
   ///   User is authentication but lacks permissions
-  Authorization(uuid.Uuid, role.Role)
+  Authorization(
+    user_uuid: uuid.Uuid,
+    user_role: role.Role,
+    authorized_roles: List(role.Role),
+  )
   /// 󰆼  DataBase operation failed during access control check
   DataBase(pog.QueryError)
   /// 󰡦  User role was not found in system
@@ -115,24 +125,51 @@ pub fn handle_authentication_error(err: AuthenticationError) {
 
 pub fn handle_authorization_error(req: wisp.Request, err: AccessControlError) {
   case err {
-    Authentication(err) -> handle_authentication_error(err)
-    DataBase(err) -> database.handle_database_error(err)
-    RoleNotFound ->
+    Authentication(auth_err) -> handle_authentication_error(auth_err)
+    DataBase(db_err) -> database.handle_database_error(db_err)
+
+    RoleNotFound -> {
+      // 401 Unauthorized
+      let resp = wisp.response(401)
+      // Body
+      let body =
+        wisp.Text("Não foi possível confirmar o Cargo do usuário autenticado")
+
+      // 󱃜  Send response
+      wisp.set_body(resp, body)
+    }
+
+    InvalidRole(role_string) ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text(
-        "Não foi possível confirmar o Cargo do usuário autenticado",
+        "Usuário autenticado possui cargo inválido: " <> role_string,
       ))
-    InvalidRole(err) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "Usuário autenticado possui cargo inválido: " <> err,
-      ))
-    Authorization(user_uuid, user_role) -> {
-      role.log_unauthorized_access_attempt(req, user_uuid:, user_role:)
-      wisp.response(403)
-      |> wisp.set_body(wisp.Text(
-        "Não autorizado: " <> role.to_string_pt_br(user_role:),
-      ))
+
+    Authorization(user_uuid:, user_role:, authorized_roles:) -> {
+      //   LOG
+      role.log_unauthorized_access_attempt(
+        request: req,
+        user_uuid:,
+        user_role:,
+        required: authorized_roles,
+      )
+
+      // JSON BODY
+      let role_to_json = fn(role: role.Role) {
+        role.to_string_pt_br(role) |> json.string
+      }
+
+      // Response
+      let resp = wisp.response(403)
+      let body =
+        json.object([
+          #("id", json.string(uuid.to_string(user_uuid))),
+          #("user_role", json.string(role.to_string_pt_br(user_role:))),
+          #("required", json.array(authorized_roles, role_to_json)),
+        ])
+        |> json.to_string
+
+      wisp.json_response(body, resp.status)
     }
   }
 }
