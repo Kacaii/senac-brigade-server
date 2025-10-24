@@ -75,3 +75,55 @@ pub fn get_brigade_members_test() {
   dummy.clean_user_list(ctx, dummy_members)
   dummy.clean_brigade(ctx, dummy_brigade)
 }
+
+pub fn get_all_brigades_test() {
+  let ctx = app_test.global_data()
+  let path = "/admin/teams"
+
+  // 󰚩  DUMMY ------------------------------------------------------------------
+  let leader_id = dummy.random_user(ctx)
+
+  // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
+  let dummy_members =
+    list.map(list.range(0, 9), fn(_) { dummy.random_user(ctx) })
+
+  // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
+  let dummy_brigade =
+    dummy.random_brigade(ctx:, leader_id:, participants: dummy_members)
+
+  // START ---------------------------------------------------------------------
+  let req = simulate.browser_request(http.Get, path)
+  let resp = router.handle_request(req, ctx)
+
+  assert resp.status == 200 as "Enpoint should be accessible"
+
+  let body = simulate.read_body(resp)
+  let assert Ok(returned_list) =
+    json.parse(
+      body,
+      decode.list({
+        let uuid_decoder = {
+          use maybe_uuid <- decode.then(decode.string)
+          case uuid.from_string(maybe_uuid) {
+            Error(_) -> decode.failure(uuid.v7(), "brigade_uuid")
+            Ok(value) -> decode.success(value)
+          }
+        }
+
+        use brigade_uuid <- decode.field("id", uuid_decoder)
+        use _ <- decode.optional_field("brigade_name", "null", decode.string)
+        use _ <- decode.optional_field("leader_name", "wibble", decode.string)
+        use _ <- decode.field("is_active", decode.bool)
+        decode.success(brigade_uuid)
+      }),
+    )
+    as "Response should contain valid JSON"
+
+  assert list.contains(returned_list, dummy_brigade)
+    as "Response should contain the dummy brigade"
+
+  // 󰃢  CLEANUP ---------------------------------------------------------------- 
+  dummy.clean_user(ctx, leader_id)
+  dummy.clean_user_list(ctx, dummy_members)
+  dummy.clean_brigade(ctx, dummy_brigade)
+}
