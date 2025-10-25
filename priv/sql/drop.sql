@@ -31,7 +31,7 @@ DROP TABLE IF EXISTS public.occurrence_brigade_member;
 DROP TABLE IF EXISTS public.occurrence;
 DROP TABLE IF EXISTS public.brigade_membership;
 DROP TABLE IF EXISTS public.brigade;
-DROP TABLE IF EXISTS public.notification_preference;
+DROP TABLE IF EXISTS public.user_notification_preference;
 DROP TABLE IF EXISTS public.user_account;
 -- pgt-ignore-end lint/safety/banDropTable
 

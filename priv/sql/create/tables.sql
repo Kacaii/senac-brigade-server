@@ -32,7 +32,7 @@ CREATE TYPE public.notification_type_enum AS ENUM (
     'other'
 );
 
-CREATE TABLE IF NOT EXISTS public.notification_preference (
+CREATE TABLE IF NOT EXISTS public.user_notification_preference (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     user_id UUID REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,

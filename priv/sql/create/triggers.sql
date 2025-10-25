@@ -4,7 +4,7 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO public.notification_preference (user_id, notification_type)
+    INSERT INTO public.user_notification_preference (user_id, notification_type)
     VALUES
         (NEW.id, 'fire'),
         (NEW.id, 'emergency'),

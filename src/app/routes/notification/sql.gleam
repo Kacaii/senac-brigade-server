@@ -40,7 +40,7 @@ pub fn query_notification_preferences(
 SELECT
     np.notification_type,
     np.enabled
-FROM public.notification_preference AS np
+FROM public.user_notification_preference AS np
 WHERE np.user_id = $1;
 "
   |> pog.query
@@ -63,7 +63,7 @@ pub fn update_notification_preferences(
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
   "--   Update user notification preference
-UPDATE public.notification_preference AS np
+UPDATE public.user_notification_preference AS np
 SET
     enabled = $3,
     updated_at = CURRENT_TIMESTAMP

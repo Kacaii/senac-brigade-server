@@ -1,5 +1,5 @@
 --   Update user notification preference
-UPDATE public.notification_preference AS np
+UPDATE public.user_notification_preference AS np
 SET
     enabled = $3,
     updated_at = CURRENT_TIMESTAMP
