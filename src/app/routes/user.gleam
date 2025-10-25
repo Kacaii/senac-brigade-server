@@ -52,7 +52,7 @@ pub fn get_user_role(
     Ok(row) ->
       Ok(case row.user_role {
         sql.Admin -> role.Admin
-        sql.Analist -> role.Analist
+        sql.Analyst -> role.Analyst
         sql.Captain -> role.Captain
         sql.Developer -> role.Developer
         sql.Firefighter -> role.Firefighter

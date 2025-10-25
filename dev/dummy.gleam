@@ -21,7 +21,7 @@ pub fn random_role() -> role.Role {
     dict.from_list([
       #(0, role.Firefighter),
       #(1, role.Admin),
-      #(2, role.Analist),
+      #(2, role.Analyst),
       #(3, role.Captain),
       #(4, role.Developer),
       #(5, role.Sargeant),
@@ -153,7 +153,7 @@ pub fn random_user(ctx: web.Context) -> uuid.Uuid {
   let role_to_enum = fn(role: role.Role) {
     case role {
       role.Admin -> u_sql.Admin
-      role.Analist -> u_sql.Analist
+      role.Analyst -> u_sql.Analyst
       role.Captain -> u_sql.Captain
       role.Developer -> u_sql.Developer
       role.Firefighter -> u_sql.Firefighter

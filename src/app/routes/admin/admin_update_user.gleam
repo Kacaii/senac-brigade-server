@@ -156,7 +156,7 @@ fn try_update_user(
 fn enum_to_role(enum: sql.UserRoleEnum) {
   case enum {
     sql.Admin -> role.Admin
-    sql.Analist -> role.Analist
+    sql.Analyst -> role.Analyst
     sql.Captain -> role.Captain
     sql.Developer -> role.Developer
     sql.Firefighter -> role.Firefighter
@@ -167,7 +167,7 @@ fn enum_to_role(enum: sql.UserRoleEnum) {
 fn role_to_enum(role: role.Role) {
   case role {
     role.Admin -> sql.Admin
-    role.Analist -> sql.Analist
+    role.Analyst -> sql.Analyst
     role.Captain -> sql.Captain
     role.Developer -> sql.Developer
     role.Firefighter -> sql.Firefighter

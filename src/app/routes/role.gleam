@@ -11,7 +11,7 @@ pub type Role {
   Developer
   Captain
   Firefighter
-  Analist
+  Analyst
   Admin
 }
 
@@ -26,7 +26,7 @@ pub fn decoder() {
 pub fn from_string_pt_br(role_name role_name: String) -> Result(Role, String) {
   case string.lowercase(role_name) {
     "administrador" -> Ok(Admin)
-    "analista" -> Ok(Analist)
+    "analista" -> Ok(Analyst)
     "bombeiro" -> Ok(Firefighter)
     "capitão" -> Ok(Captain)
     "desenvolvedor" -> Ok(Developer)
@@ -39,7 +39,7 @@ pub fn from_string_pt_br(role_name role_name: String) -> Result(Role, String) {
 pub fn to_string_pt_br(user_role user_role: Role) -> String {
   case user_role {
     Admin -> "administrador"
-    Analist -> "analista"
+    Analyst -> "analista"
     Captain -> "capitão"
     Developer -> "desenvolvedor"
     Firefighter -> "bombeiro"
@@ -50,7 +50,7 @@ pub fn to_string_pt_br(user_role user_role: Role) -> String {
 pub fn from_string(role_name role_name: String) -> Result(Role, String) {
   case string.lowercase(role_name) {
     "admin" -> Ok(Admin)
-    "analist" -> Ok(Analist)
+    "analyst" -> Ok(Analyst)
     "firefighter" -> Ok(Firefighter)
     "captain" -> Ok(Captain)
     "developer" -> Ok(Developer)
@@ -63,7 +63,7 @@ pub fn from_string(role_name role_name: String) -> Result(Role, String) {
 pub fn to_string(user_role user_role: Role) -> String {
   case user_role {
     Admin -> "admin"
-    Analist -> "analist"
+    Analyst -> "analyst"
     Captain -> "captain"
     Developer -> "developer"
     Firefighter -> "firefighter"

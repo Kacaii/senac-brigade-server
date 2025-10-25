@@ -2,7 +2,7 @@ BEGIN;
 
 CREATE TYPE public.user_role_enum AS ENUM (
     'admin',
-    'analist',
+    'analyst',
     'firefighter',
     'captain',
     'developer',

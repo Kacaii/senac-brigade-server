@@ -53,7 +53,7 @@ pub fn signup_test() {
 
   let available_roles = [
     role.Admin,
-    role.Analist,
+    role.Analyst,
     role.Captain,
     role.Developer,
     role.Firefighter,

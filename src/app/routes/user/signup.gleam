@@ -217,7 +217,7 @@ type SignupError {
 fn role_to_enum(user_role: role.Role) -> sql.UserRoleEnum {
   case user_role {
     role.Admin -> sql.Admin
-    role.Analist -> sql.Analist
+    role.Analyst -> sql.Analyst
     role.Captain -> sql.Captain
     role.Developer -> sql.Developer
     role.Firefighter -> sql.Firefighter

@@ -96,7 +96,7 @@ fn row_to_json(row: sql.QueryAllUsersRow) -> json.Json {
 fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
   case user_role {
     sql.Admin -> role.Admin
-    sql.Analist -> role.Analist
+    sql.Analyst -> role.Analyst
     sql.Captain -> role.Captain
     sql.Developer -> role.Developer
     sql.Firefighter -> role.Firefighter

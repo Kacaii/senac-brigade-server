@@ -571,7 +571,7 @@ pub type UserRoleEnum {
   Developer
   Captain
   Firefighter
-  Analist
+  Analyst
   Admin
 }
 
@@ -582,7 +582,7 @@ fn user_role_enum_decoder() -> decode.Decoder(UserRoleEnum) {
     "developer" -> decode.success(Developer)
     "captain" -> decode.success(Captain)
     "firefighter" -> decode.success(Firefighter)
-    "analist" -> decode.success(Analist)
+    "analyst" -> decode.success(Analyst)
     "admin" -> decode.success(Admin)
     _ -> decode.failure(Sargeant, "UserRoleEnum")
   }
@@ -594,7 +594,7 @@ fn user_role_enum_encoder(user_role_enum) -> pog.Value {
     Developer -> "developer"
     Captain -> "captain"
     Firefighter -> "firefighter"
-    Analist -> "analist"
+    Analyst -> "analyst"
     Admin -> "admin"
   }
   |> pog.text
