@@ -46,7 +46,7 @@ pub fn handle_request(
 
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   case err {
-    AccessError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_access_control_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
 }

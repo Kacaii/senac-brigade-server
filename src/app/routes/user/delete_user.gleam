@@ -29,7 +29,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
     InvalidUserUuid(invalid_uuid) ->
       wisp.bad_request("Usuário possui Uuid Inválido: " <> invalid_uuid)
     UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    AccessError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_access_control_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
     CantDeleteSelf -> wisp.bad_request("Um usuário não deve remover a si mesmo")
   }

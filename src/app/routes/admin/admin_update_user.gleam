@@ -91,7 +91,7 @@ fn handle_error(
         err -> database.handle_database_error(err)
       }
     }
-    AccessError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_access_control_error(req, err)
     InvalidUuid(err) ->
       wisp.unprocessable_content()
       |> wisp.set_body(wisp.Text("Usuário possui Uuid inválido: " <> err))

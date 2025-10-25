@@ -191,7 +191,7 @@ fn handle_error(req: wisp.Request, err: SignupError) {
     DataBaseError(err) -> handle_database_error(err)
     InvalidRole(unknown) ->
       wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
-    AccessError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_access_control_error(req, err)
     MissingSignupConfirmation ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(

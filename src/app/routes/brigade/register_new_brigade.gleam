@@ -119,7 +119,7 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
     InvalidUuid(user_id) ->
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
     DataBaseError(err) -> database.handle_database_error(err)
-    AccessError(err) -> user.handle_authorization_error(request, err)
+    AccessError(err) -> user.handle_access_control_error(request, err)
   }
 }
 

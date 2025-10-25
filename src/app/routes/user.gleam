@@ -11,6 +11,32 @@ import youid/uuid
 
 pub const uuid_cookie_name = "USER_ID"
 
+///   Errors related to user access control (authentication & authorization)
+pub type AccessControlError {
+  /// 󰗹  Authentication failed
+  Authentication(AuthenticationError)
+  ///   User is authentication but lacks permissions
+  Authorization(
+    user_uuid: uuid.Uuid,
+    user_role: role.Role,
+    authorized_roles: List(role.Role),
+  )
+  /// 󰆼  DataBase operation failed during access control check
+  DataBase(pog.QueryError)
+  /// 󰡦  User role was not found in system
+  RoleNotFound
+  ///   User doesnt have a valid role
+  InvalidRole(String)
+}
+
+///   Authentication-specific failures
+pub type AuthenticationError {
+  ///   Request is missing the authetication Cookie
+  MissingCookie
+  /// 󰘨  User doesn't have a valid UUID
+  InvalidUUID(String)
+}
+
 ///   Query the database to find the user's role name
 pub fn get_user_role(
   ctx ctx: Context,
@@ -23,18 +49,15 @@ pub fn get_user_role(
 
   case list.first(returned.rows) {
     Error(_) -> Error(RoleNotFound)
-    Ok(row) -> Ok(enum_to_role(row.user_role))
-  }
-}
-
-fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
-  case user_role {
-    sql.Admin -> role.Admin
-    sql.Analist -> role.Analist
-    sql.Captain -> role.Captain
-    sql.Developer -> role.Developer
-    sql.Firefighter -> role.Firefighter
-    sql.Sargeant -> role.Sargeant
+    Ok(row) ->
+      Ok(case row.user_role {
+        sql.Admin -> role.Admin
+        sql.Analist -> role.Analist
+        sql.Captain -> role.Captain
+        sql.Developer -> role.Developer
+        sql.Firefighter -> role.Firefighter
+        sql.Sargeant -> role.Sargeant
+      })
   }
 }
 
@@ -86,32 +109,6 @@ pub fn check_role_authorization(
   Ok(#(user_uuid, user_role))
 }
 
-///   Errors related to user access control (authentication & authorization)
-pub type AccessControlError {
-  /// 󰗹  Authentication failed
-  Authentication(AuthenticationError)
-  ///   User is authentication but lacks permissions
-  Authorization(
-    user_uuid: uuid.Uuid,
-    user_role: role.Role,
-    authorized_roles: List(role.Role),
-  )
-  /// 󰆼  DataBase operation failed during access control check
-  DataBase(pog.QueryError)
-  /// 󰡦  User role was not found in system
-  RoleNotFound
-  ///   User doesnt have a valid role
-  InvalidRole(String)
-}
-
-///   Authentication-specific failures
-pub type AuthenticationError {
-  ///   Request is missing the authetication Cookie
-  MissingCookie
-  /// 󰘨  User doesn't have a valid UUID
-  InvalidUUID(String)
-}
-
 pub fn handle_authentication_error(err: AuthenticationError) {
   case err {
     InvalidUUID(id) ->
@@ -123,11 +120,10 @@ pub fn handle_authentication_error(err: AuthenticationError) {
   }
 }
 
-pub fn handle_authorization_error(req: wisp.Request, err: AccessControlError) {
+pub fn handle_access_control_error(req: wisp.Request, err: AccessControlError) {
   case err {
     Authentication(auth_err) -> handle_authentication_error(auth_err)
     DataBase(db_err) -> database.handle_database_error(db_err)
-
     RoleNotFound -> {
       // 401 Unauthorized
       let resp = wisp.response(401)

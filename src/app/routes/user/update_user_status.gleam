@@ -86,7 +86,7 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
     UserNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    AccessError(err) -> user.handle_authorization_error(req, err)
+    AccessError(err) -> user.handle_access_control_error(req, err)
     DataBaseError(err) -> database.handle_database_error(err)
   }
 }
