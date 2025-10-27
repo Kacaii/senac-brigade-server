@@ -12,6 +12,7 @@ import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
+import gleam/set
 import wisp
 import youid/uuid
 
@@ -62,40 +63,69 @@ pub fn random_priority() {
 pub fn random_brigade(
   ctx ctx: web.Context,
   leader_id leader_id: uuid.Uuid,
-  members members: List(uuid.Uuid),
+  members dummy_members: List(uuid.Uuid),
 ) {
   let assert Ok(returned) =
     b_sql.insert_new_brigade(
       ctx.conn,
       leader_id,
       "BRIGADE " <> wisp.random_string(4),
-      uuid.v7_string(),
+      "VEHICLE " <> wisp.random_string(3),
       True,
     )
     as "Failed to create dummy brigade"
 
-  let assert Ok(row) = list.first(returned.rows)
-    as "Database returned no results"
+  let assert Ok(inserted_brigade_row) = list.first(returned.rows)
+    as "Database returned no results after creating new Brigade"
 
-  let assert Ok(_) =
-    list.try_each(members, fn(id) {
-      b_sql.assign_brigade_member(ctx.conn, row.id, id)
+  let assigments =
+    list.map(dummy_members, fn(member_id) {
+      //
+      let assert Ok(returned) =
+        b_sql.assign_brigade_member(
+          ctx.conn,
+          inserted_brigade_row.id,
+          member_id,
+        )
+        as "Failed to assign Brigade Member"
+      //
+      let assert Ok(id) = list.first(returned.rows)
+        as "No results after assigning brigade member"
+
+      id
     })
-    as "Failed to assign members"
 
-  row.id
+  let assigned_members = list.map(assigments, fn(value) { value.user_id })
+
+  let assigned_members_set = set.from_list(assigned_members)
+  let dummy_members_set = set.from_list(dummy_members)
+
+  assert set.difference(assigned_members_set, dummy_members_set)
+    |> set.to_list
+    == []
+    as "Returned members contain unexpected users"
+
+  assert set.difference(dummy_members_set, assigned_members_set)
+    |> set.to_list
+    == []
+    as "Some brigade members were not returned"
+
+  inserted_brigade_row.id
 }
 
 /// Panic on failure
 pub fn clean_brigade(ctx: web.Context, dummy: uuid.Uuid) {
-  let assert Ok(cleanup_brigade) = {
+  let cleanup_brigade_id = {
     let assert Ok(returned) = b_sql.delete_brigade_by_id(ctx.conn, dummy)
       as "Failed to delete dummy brigade"
 
-    list.first(returned.rows)
+    let assert Ok(row) = list.first(returned.rows)
+      as "Not results after deleting a brigade"
+
+    row.id
   }
 
-  assert cleanup_brigade.id == dummy as "Deleted the wrong Brigade"
+  assert cleanup_brigade_id == dummy as "Deleted the wrong Brigade"
 }
 
 /// Panics on failure

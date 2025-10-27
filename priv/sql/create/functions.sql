@@ -23,23 +23,4 @@ BEGIN
 END;
 $$;
 
-
---   Returns all users participated in a occurrence
-CREATE OR REPLACE FUNCTION public.query_occurrence_participants(p_occ_id UUID)
-RETURNS TABLE (user_id UUID)
-LANGUAGE plpgsql
-STABLE
-PARALLEL SAFE
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT DISTINCT
-        participant.user_id
-    FROM public.brigade_membership as participant
-    INNER JOIN public.occurrence_brigade as ob
-        ON participant.brigade_id = ob.brigade_id
-    WHERE occurrence_brigade.occurrence_id = p_occ_id;
-END;
-$$;
-
 COMMIT;

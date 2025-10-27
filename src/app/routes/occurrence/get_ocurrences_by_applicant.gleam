@@ -70,7 +70,7 @@ fn query_occurrences(ctx ctx: Context, user_id user_id: String) {
       timestamp: PayloadTimestamp(
         created_at: row.created_at,
         arrival_in_place: row.arrived_at,
-        resolved_at: row.arrived_at,
+        resolved_at: row.resolved_at,
       ),
       metadata: PayloadMetadata(
         applicant_id: row.applicant_id,
@@ -101,11 +101,17 @@ fn brigade_list_decoder(data: String) {
 
     decode.list({
       use brigade_id <- decode.field("id", brigade_uuid_decoder)
+      use brigade_name <- decode.optional_field(
+        "brigade_name",
+        "null",
+        decode.string,
+      )
       use leader_name <- decode.field("leader_full_name", decode.string)
       use vehicle_code <- decode.field("vehicle_code", decode.string)
 
       decode.success(PayloadBrigade(
         id: brigade_id,
+        brigade_name: brigade_name,
         vehicle_code: vehicle_code,
         leader_name: leader_name,
       ))
@@ -247,14 +253,20 @@ fn payload_metadata_to_json(data: PayloadMetadata) -> json.Json {
 }
 
 pub opaque type PayloadBrigade {
-  PayloadBrigade(id: uuid.Uuid, vehicle_code: String, leader_name: String)
+  PayloadBrigade(
+    id: uuid.Uuid,
+    brigade_name: String,
+    vehicle_code: String,
+    leader_name: String,
+  )
 }
 
 fn payload_brigade_list_to_json(data: List(PayloadBrigade)) -> json.Json {
   json.preprocessed_array(
     list.map(data, fn(row) {
       json.object([
-        #("id", json.string(row.vehicle_code)),
+        #("id", json.string(uuid.to_string(row.id))),
+        #("nomeEquipe", json.string(row.brigade_name)),
         #("lider", json.string(row.leader_name)),
         #("codigoViatura", json.string(row.vehicle_code)),
       ])

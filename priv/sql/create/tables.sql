@@ -106,9 +106,9 @@ ON public.brigade (leader_id);
 
 CREATE TABLE IF NOT EXISTS public.brigade_membership (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    user_id UUID NOT NULL REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
     brigade_id UUID NOT NULL REFERENCES public.brigade (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (user_id, brigade_id)
 );
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS public.occurrence_brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     occurrence_id UUID NOT NULL REFERENCES public.occurrence (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-    brigade_id UUID NOT NULL REFERENCES public.user_account (id)
+    brigade_id UUID NOT NULL REFERENCES public.brigade (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (occurrence_id, brigade_id)
 );

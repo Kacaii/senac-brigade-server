@@ -33,7 +33,7 @@ pub fn get_brigade_members_test() {
   assert resp.status == 200 as "Response should be HTTP 200 OK"
 
   let body = simulate.read_body(resp)
-  let assert Ok(members_list) =
+  let assert Ok(returned_members_list) =
     json.parse(body, {
       // UUID DECODER
       let uuid_decoder = {
@@ -62,7 +62,7 @@ pub fn get_brigade_members_test() {
       })
     })
 
-  let returned_members_set = set.from_list(members_list)
+  let returned_members_set = set.from_list(returned_members_list)
   let dummy_members_set = set.from_list(dummy_members)
 
   assert set.difference(returned_members_set, dummy_members_set)

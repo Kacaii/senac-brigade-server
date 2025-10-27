@@ -272,13 +272,13 @@ pub fn query_occurrences_by_participant(
   }
 
   "-- 󰡦  Find all occurrences a user participated in
-SELECT o.id
-FROM public.occurrence_participant AS op
-INNER JOIN public.user_account AS u
-    ON op.user_id = u.id
-INNER JOIN public.occurrence AS o
-    ON op.occurrence_id = o.id
-WHERE op.user_id = $1;
+SELECT u.id
+FROM public.user_account AS u
+INNER JOIN public.brigade_membership AS bm
+    ON u.id = bm.user_id
+INNER JOIN public.occurrence_brigade AS ob
+    ON bm.brigade_id = ob.brigade_id
+WHERE ob.occurrence_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

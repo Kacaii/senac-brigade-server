@@ -298,8 +298,11 @@ pub fn query_occurrence_participants(
   }
 
   "-- 󰀖  Find all users that participated in a occurrence
-SELECT p.user_id
-FROM public.query_occurrence_participants($1) AS p;
+SELECT DISTINCT participant.user_id
+FROM public.brigade_membership AS participant
+INNER JOIN public.occurrence_brigade AS ob
+    ON participant.brigade_id = ob.brigade_id
+WHERE ob.occurrence_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

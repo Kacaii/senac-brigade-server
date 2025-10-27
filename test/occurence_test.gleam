@@ -199,6 +199,7 @@ pub fn get_occurrences_by_applicant_test() {
 
       let occurrence_brigade_decoder = {
         use _ <- decode.field("id", uuid_decoder)
+        use _ <- decode.field("nomeEquipe", decode.string)
         use _ <- decode.field("codigoViatura", decode.string)
         use _ <- decode.field("lider", decode.string)
         decode.success(Nil)
