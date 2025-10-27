@@ -89,7 +89,6 @@ CREATE TABLE IF NOT EXISTS public.brigade (
     vehicle_code TEXT NOT NULL,
     brigade_name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
-    members_id UUID [] NOT NULL DEFAULT '{}',
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -123,7 +122,6 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
     description TEXT,
     occurrence_location FLOAT [],
     reference_point TEXT,
-    brigade_list UUID [] NOT NULL DEFAULT '{}',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     arrived_at TIMESTAMP DEFAULT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,19 +131,19 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
 ON public.occurrence (applicant_id);
 
-CREATE TABLE IF NOT EXISTS public.occurrence_brigade_member (
+CREATE TABLE IF NOT EXISTS public.occurrence_brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    user_id UUID REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
     occurrence_id UUID REFERENCES public.occurrence (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (occurrence_id, user_id)
+    briade_id UUID REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (occurrence_id, brigade_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_member_user_id
-ON public.occurrence_brigade_member (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_member_occurrence_id
 ON public.occurrence_brigade_member (occurrence_id);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_member_user_id
+ON public.occurrence_brigade_member (brigade_id);
 
 COMMIT;
