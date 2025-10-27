@@ -1,5 +1,7 @@
 BEGIN;
 
+-- 󱈤  TYPES --------------------------------------------------------------------
+
 CREATE TYPE public.user_role_enum AS ENUM (
     'admin',
     'analyst',
@@ -55,6 +57,8 @@ CREATE TYPE occurrence_priority_enum AS ENUM (
     'high'
 );
 
+-- 󰓶  TABLES -------------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS public.user_account (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     user_role USER_ROLE_ENUM NOT NULL,
@@ -71,6 +75,7 @@ CREATE TABLE IF NOT EXISTS public.user_account (
 CREATE INDEX IF NOT EXISTS idx_user_registration
 ON public.user_account (registration);
 
+
 CREATE TABLE IF NOT EXISTS public.user_notification_preference (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     user_id UUID REFERENCES public.user_account (id)
@@ -81,6 +86,7 @@ CREATE TABLE IF NOT EXISTS public.user_notification_preference (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, notification_type)
 );
+
 
 CREATE TABLE IF NOT EXISTS public.brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
@@ -97,6 +103,7 @@ CREATE TABLE IF NOT EXISTS public.brigade (
 CREATE INDEX IF NOT EXISTS idx_brigade_leader_id
 ON public.brigade (leader_id);
 
+
 CREATE TABLE IF NOT EXISTS public.brigade_membership (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     user_id UUID REFERENCES public.user_account (id)
@@ -111,6 +118,7 @@ ON public.brigade_membership (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_brigade_membership_brigade_id
 ON public.brigade_membership (brigade_id);
+
 
 CREATE TABLE IF NOT EXISTS public.occurrence (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
@@ -131,6 +139,7 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
 ON public.occurrence (applicant_id);
 
+
 CREATE TABLE IF NOT EXISTS public.occurrence_brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     occurrence_id UUID REFERENCES public.occurrence (id)
@@ -145,5 +154,21 @@ ON public.occurrence_brigade (occurrence_id);
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_brigade_id
 ON public.occurrence_brigade (brigade_id);
+
+
+CREATE TABLE IF NOT EXISTS public.occurrence_participant (
+    id UUID PRIMARY KEY DEFAULT UUIDV7(),
+    occurrence_id UUID REFERENCES public.occurrence (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    brigade_id UUID REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE (occurrence_id, brigade_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_participant_occurrence_id
+ON public.occurrence_participant (occurrence_id);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_participant_user_id
+ON public.occurrence_participant (user_id);
 
 COMMIT;
