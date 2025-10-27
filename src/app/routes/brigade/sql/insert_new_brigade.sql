@@ -8,7 +8,7 @@ INSERT INTO public.brigade AS b (
     $1,
     $2,
     $3,
-    $5
+    $4
 ) RETURNING
     b.id,
     b.created_at;

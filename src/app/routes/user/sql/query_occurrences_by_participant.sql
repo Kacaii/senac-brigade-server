@@ -1,8 +1,8 @@
 -- 󰡦  Find all occurrences a user participated in
 SELECT o.id
-FROM public.occurrence_brigade_member AS obm
+FROM public.occurrence_participant AS op
 INNER JOIN public.user_account AS u
-    ON obm.user_id = u.id
+    ON op.user_id = u.id
 INNER JOIN public.occurrence AS o
-    ON obm.occurrence_id = o.id
-WHERE obm.user_id = $1;
+    ON op.occurrence_id = o.id
+WHERE op.user_id = $1;

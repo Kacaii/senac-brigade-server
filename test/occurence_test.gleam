@@ -29,7 +29,7 @@ pub fn register_new_occurrence_test() {
     dummy.random_brigade(
       ctx:,
       leader_id: dummy_applicant_id,
-      participants: dummy_participants_id,
+      members: dummy_participants_id,
     )
 
   // REQUEST -------------------------------------------------------------------
@@ -111,7 +111,7 @@ pub fn register_new_occurrence_test() {
           as "Failed to query occurrence participants"
 
         use row <- list.map(returned.rows)
-        row.id
+        row.user_id
       })
 
     set.difference(dummy_participants_set, registered_participants_set)
@@ -140,7 +140,7 @@ pub fn get_occurrences_by_applicant_test() {
     dummy.random_brigade(
       ctx:,
       leader_id: dummy_applicant_id,
-      participants: dummy_participants_id,
+      members: dummy_participants_id,
     )
 
   // DUMMY OCCURRENCE ----------------------------------------------------------

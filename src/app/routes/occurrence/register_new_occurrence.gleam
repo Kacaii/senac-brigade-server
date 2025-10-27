@@ -97,6 +97,11 @@ fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   case err {
     AuthenticationFailed(err) -> user.handle_authentication_error(err)
     DataBaseError(err) -> database.handle_database_error(err)
+    FailedToAssignBrigade(id) ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível designar equipe: " <> uuid.to_string(id),
+      ))
 
     DataBaseReturnedEmptyRow(_) ->
       wisp.internal_server_error()
@@ -125,17 +130,31 @@ fn insert_occurrence(
       data.description,
       data.location,
       data.reference_point,
-      data.brigade_list,
     )
     |> result.map_error(DataBaseError),
   )
 
-  use row <- result.map(
+  use row <- result.try(
     list.first(returned.rows)
     |> result.map_error(DataBaseReturnedEmptyRow),
   )
+
+  use assigned_brigades <- result.map({
+    list.try_map(data.brigade_list, fn(assigned_brigade) {
+      register_brigade_participation(
+        ctx:,
+        occorrence_id: row.id,
+        brigade_id: assigned_brigade,
+      )
+    })
+  })
+
+  let assigned_brigades_json =
+    json.array(assigned_brigades, fn(assigned) {
+      uuid.to_string(assigned) |> json.string
+    })
+
   // RESPONSE ------------------------------------------------------------------
-  let brigade_list = list.map(row.brigade_list, uuid.to_string)
   let occurrence_priority =
     enum_to_priority(row.priority) |> priority.to_string_pt_br
 
@@ -143,9 +162,25 @@ fn insert_occurrence(
     #("id", uuid.to_string(row.id) |> json.string),
     #("applicant_id", uuid.to_string(row.id) |> json.string),
     #("priority", json.string(occurrence_priority)),
-    #("brigade_id", json.array(brigade_list, json.string)),
+    #("assigned_brigades", assigned_brigades_json),
     #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
   ])
+}
+
+fn register_brigade_participation(
+  ctx ctx: Context,
+  occorrence_id occorrence_id: uuid.Uuid,
+  brigade_id brigade_id: uuid.Uuid,
+) {
+  use returned <- result.try(
+    sql.assign_brigade_to_occurrence(ctx.conn, occorrence_id, brigade_id)
+    |> result.map_error(DataBaseError),
+  )
+
+  case list.first(returned.rows) {
+    Error(_) -> Error(FailedToAssignBrigade(brigade_id))
+    Ok(row) -> Ok(row.brigade_id)
+  }
 }
 
 fn priority_to_enum(priority: priority.Priority) -> sql.OccurrencePriorityEnum {
@@ -215,4 +250,5 @@ type RegisterNewOccurrenceError {
   DataBaseError(pog.QueryError)
   /// Database returned no results
   DataBaseReturnedEmptyRow(Nil)
+  FailedToAssignBrigade(uuid.Uuid)
 }

@@ -62,7 +62,7 @@ pub fn random_priority() {
 pub fn random_brigade(
   ctx ctx: web.Context,
   leader_id leader_id: uuid.Uuid,
-  participants participants: List(uuid.Uuid),
+  members members: List(uuid.Uuid),
 ) {
   let assert Ok(returned) =
     b_sql.insert_new_brigade(
@@ -70,13 +70,18 @@ pub fn random_brigade(
       leader_id,
       "BRIGADE " <> wisp.random_string(4),
       uuid.v7_string(),
-      participants,
       True,
     )
     as "Failed to create dummy brigade"
 
   let assert Ok(row) = list.first(returned.rows)
     as "Database returned no results"
+
+  let assert Ok(_) =
+    list.try_each(members, fn(id) {
+      b_sql.assign_brigade_member(ctx.conn, row.id, id)
+    })
+    as "Failed to assign members"
 
   row.id
 }
@@ -252,12 +257,17 @@ pub fn random_occurrence(
       "Description: " <> wisp.random_string(12),
       [float.random() *. 100.0, float.random() *. 100.0],
       "Next to: " <> wisp.random_string(12),
-      brigade_list,
     )
     as "Failed to generate a dummy Occurrence"
 
   let assert Ok(row) = list.first(returned.rows)
     as "Database returned no results"
+
+  let assert Ok(_) =
+    list.try_each(brigade_list, fn(id) {
+      o_sql.assign_brigade_to_occurrence(ctx.conn, row.id, id)
+    })
+    as "Failed to assign brigade to occurrence"
 
   row.id
 }

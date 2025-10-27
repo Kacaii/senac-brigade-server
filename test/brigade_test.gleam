@@ -22,7 +22,7 @@ pub fn get_brigade_members_test() {
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
-    dummy.random_brigade(ctx:, leader_id:, participants: dummy_members)
+    dummy.random_brigade(ctx:, leader_id:, members: dummy_members)
 
   // START ---------------------------------------------------------------------
 
@@ -89,7 +89,7 @@ pub fn get_all_brigades_test() {
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
-    dummy.random_brigade(ctx:, leader_id:, participants: dummy_members)
+    dummy.random_brigade(ctx:, leader_id:, members: dummy_members)
 
   // START ---------------------------------------------------------------------
   let req = simulate.browser_request(http.Get, path)

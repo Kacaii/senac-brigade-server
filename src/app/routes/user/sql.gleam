@@ -166,7 +166,7 @@ pub type QueryCrewMembersRow {
     id: Uuid,
     full_name: String,
     user_role: UserRoleEnum,
-    brigade_uuid: Uuid,
+    brigade_id: Uuid,
   )
 }
 
@@ -184,13 +184,8 @@ pub fn query_crew_members(
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use user_role <- decode.field(2, user_role_enum_decoder())
-    use brigade_uuid <- decode.field(3, uuid_decoder())
-    decode.success(QueryCrewMembersRow(
-      id:,
-      full_name:,
-      user_role:,
-      brigade_uuid:,
-    ))
+    use brigade_id <- decode.field(3, uuid_decoder())
+    decode.success(QueryCrewMembersRow(id:, full_name:, user_role:, brigade_id:))
   }
 
   "-- 󰢫  Retrieves detailed information about fellow brigade members
@@ -199,10 +194,10 @@ SELECT
     u.id,
     u.full_name,
     u.user_role,
-    cm.brigade_uuid
-FROM public.query_crew_members($1) AS cm
+    crew.brigade_id
+FROM public.query_crew_members($1) AS crew
 INNER JOIN public.user_account AS u
-    ON cm.member_uuid = u.id;
+    ON crew.member_id = u.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -278,12 +273,12 @@ pub fn query_occurrences_by_participant(
 
   "-- 󰡦  Find all occurrences a user participated in
 SELECT o.id
-FROM public.occurrence_brigade_member AS obm
+FROM public.occurrence_participant AS op
 INNER JOIN public.user_account AS u
-    ON obm.user_id = u.id
+    ON op.user_id = u.id
 INNER JOIN public.occurrence AS o
-    ON obm.occurrence_id = o.id
-WHERE obm.user_id = $1;
+    ON op.occurrence_id = o.id
+WHERE op.user_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

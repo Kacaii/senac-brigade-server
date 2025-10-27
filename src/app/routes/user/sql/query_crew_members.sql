@@ -4,7 +4,7 @@ SELECT
     u.id,
     u.full_name,
     u.user_role,
-    cm.brigade_uuid
-FROM public.query_crew_members($1) AS cm
+    crew.brigade_id
+FROM public.query_crew_members($1) AS crew
 INNER JOIN public.user_account AS u
-    ON cm.member_uuid = u.id;
+    ON crew.member_id = u.id;

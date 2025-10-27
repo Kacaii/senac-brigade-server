@@ -10,6 +10,47 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
+/// A row you get from running the `assign_brigade_to_occurrence` query
+/// defined in `./src/app/routes/occurrence/sql/assign_brigade_to_occurrence.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type AssignBrigadeToOccurrenceRow {
+  AssignBrigadeToOccurrenceRow(brigade_id: Uuid)
+}
+
+///    Assign a brigade as participant of a occurrence
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn assign_brigade_to_occurrence(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: Uuid,
+) -> Result(pog.Returned(AssignBrigadeToOccurrenceRow), pog.QueryError) {
+  let decoder = {
+    use brigade_id <- decode.field(0, uuid_decoder())
+    decode.success(AssignBrigadeToOccurrenceRow(brigade_id:))
+  }
+
+  "--    Assign a brigade as participant of a occurrence
+INSERT INTO public.occurrence_brigade AS ob
+(occurrence_id, brigade_id)
+VALUES
+(
+    $1,
+    $2
+) RETURNING brigade_id;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `delete_occurrence_by_id` query
 /// defined in `./src/app/routes/occurrence/sql/delete_occurrence_by_id.sql`.
 ///
@@ -56,7 +97,6 @@ pub type InsertNewOccurenceRow {
     id: Uuid,
     priority: OccurrencePriorityEnum,
     applicant_id: Uuid,
-    brigade_list: List(Uuid),
     created_at: Timestamp,
   )
 }
@@ -75,19 +115,16 @@ pub fn insert_new_occurence(
   arg_5: String,
   arg_6: List(Float),
   arg_7: String,
-  arg_8: List(Uuid),
 ) -> Result(pog.Returned(InsertNewOccurenceRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use priority <- decode.field(1, occurrence_priority_enum_decoder())
     use applicant_id <- decode.field(2, uuid_decoder())
-    use brigade_list <- decode.field(3, decode.list(uuid_decoder()))
-    use created_at <- decode.field(4, pog.timestamp_decoder())
+    use created_at <- decode.field(3, pog.timestamp_decoder())
     decode.success(InsertNewOccurenceRow(
       id:,
       priority:,
       applicant_id:,
-      brigade_list:,
       created_at:,
     ))
   }
@@ -100,8 +137,7 @@ INSERT INTO public.occurrence AS o (
     priority,
     description,
     occurrence_location,
-    reference_point,
-    brigade_list
+    reference_point
 ) VALUES (
     $1,
     $2,
@@ -109,14 +145,12 @@ INSERT INTO public.occurrence AS o (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 )
 RETURNING
     o.id,
     o.priority,
     o.applicant_id,
-    o.brigade_list,
     o.created_at;
 "
   |> pog.query
@@ -127,9 +161,6 @@ RETURNING
   |> pog.parameter(pog.text(arg_5))
   |> pog.parameter(pog.array(fn(value) { pog.float(value) }, arg_6))
   |> pog.parameter(pog.text(arg_7))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_8),
-  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -220,12 +251,15 @@ SELECT
     (
         SELECT JSON_AGG(JSON_BUILD_OBJECT(
             'id', b.id,
+            'brigade_name', b.brigade_name,
             'leader_full_name', leader_u.full_name,
             'vehicle_code', b.vehicle_code
-        )) FROM public.brigade AS b
+        )) FROM public.occurrence_brigade AS ob
+        INNER JOIN public.brigade AS b
+            ON ob.brigade_id = b.id
         INNER JOIN public.user_account AS leader_u
             ON b.leader_id = leader_u.id
-        WHERE b.id = ANY(o.brigade_list)
+        WHERE ob.occurrence_id = o.id
     ) AS brigade_list
 
 FROM public.occurrence AS o
@@ -246,7 +280,7 @@ WHERE o.applicant_id = $1;
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryOccurrenceParticipantsRow {
-  QueryOccurrenceParticipantsRow(id: Uuid)
+  QueryOccurrenceParticipantsRow(user_id: Uuid)
 }
 
 /// 󰀖  Find all users that participated in a occurrence
@@ -259,12 +293,12 @@ pub fn query_occurrence_participants(
   arg_1: Uuid,
 ) -> Result(pog.Returned(QueryOccurrenceParticipantsRow), pog.QueryError) {
   let decoder = {
-    use id <- decode.field(0, uuid_decoder())
-    decode.success(QueryOccurrenceParticipantsRow(id:))
+    use user_id <- decode.field(0, uuid_decoder())
+    decode.success(QueryOccurrenceParticipantsRow(user_id:))
   }
 
   "-- 󰀖  Find all users that participated in a occurrence
-SELECT p.id
+SELECT p.user_id
 FROM public.query_occurrence_participants($1) AS p;
 "
   |> pog.query

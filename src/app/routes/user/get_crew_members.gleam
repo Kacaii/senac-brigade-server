@@ -82,7 +82,7 @@ fn get_crew_members_row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
     #("id", json.string(uuid.to_string(row.id))),
     #("full_name", json.string(row.full_name)),
     #("user_role", json.string(role_name)),
-    #("brigade_id", json.string(uuid.to_string(row.brigade_uuid))),
+    #("brigade_id", json.string(uuid.to_string(row.brigade_id))),
   ])
 }
 

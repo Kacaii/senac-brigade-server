@@ -10,6 +10,45 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
+/// A row you get from running the `assign_brigade_member` query
+/// defined in `./src/app/routes/brigade/sql/assign_brigade_member.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type AssignBrigadeMemberRow {
+  AssignBrigadeMemberRow(user_id: Uuid)
+}
+
+///   Register a user as member of a team
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn assign_brigade_member(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: Uuid,
+) -> Result(pog.Returned(AssignBrigadeMemberRow), pog.QueryError) {
+  let decoder = {
+    use user_id <- decode.field(0, uuid_decoder())
+    decode.success(AssignBrigadeMemberRow(user_id:))
+  }
+
+  "--   Register a user as member of a team
+INSERT INTO public.brigade_membership AS bm
+(brigade_id, user_id)
+VALUES
+($1, $2)
+RETURNING user_id;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `delete_brigade_by_id` query
 /// defined in `./src/app/routes/brigade/sql/delete_brigade_by_id.sql`.
 ///
@@ -68,8 +107,7 @@ pub fn insert_new_brigade(
   arg_1: Uuid,
   arg_2: String,
   arg_3: String,
-  arg_4: List(Uuid),
-  arg_5: Bool,
+  arg_4: Bool,
 ) -> Result(pog.Returned(InsertNewBrigadeRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
@@ -82,14 +120,12 @@ INSERT INTO public.brigade AS b (
     leader_id,
     brigade_name,
     vehicle_code,
-    members_id,
     is_active
 ) VALUES (
     $1,
     $2,
     $3,
-    $4,
-    $5
+    $4
 ) RETURNING
     b.id,
     b.created_at;
@@ -98,10 +134,7 @@ INSERT INTO public.brigade AS b (
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.parameter(pog.text(arg_2))
   |> pog.parameter(pog.text(arg_3))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_4),
-  )
-  |> pog.parameter(pog.bool(arg_5))
+  |> pog.parameter(pog.bool(arg_4))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -243,10 +276,9 @@ SELECT
     u.full_name,
     u.user_role
 FROM public.user_account AS u
-INNER JOIN
-    public.brigade AS b
-    ON u.id = ANY(b.members_id)
-WHERE b.id = $1;
+INNER JOIN public.brigade_membership AS bm
+    ON u.id = bm.user_id
+WHERE bm.brigade_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

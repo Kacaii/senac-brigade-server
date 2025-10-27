@@ -77,12 +77,12 @@ fn try_register_brigade(
   // Their members
   use members_id <- result.try({
     use maybe_uuid <- list.try_map(form_data.members_id)
-    use user_uuid <- result.try(
+    use member_id <- result.map(
       uuid.from_string(maybe_uuid)
       |> result.replace_error(InvalidUuid(maybe_uuid)),
     )
 
-    Ok(user_uuid)
+    member_id
   })
 
   use returned <- result.try(
@@ -91,22 +91,48 @@ fn try_register_brigade(
       leader_id,
       form_data.name,
       form_data.vehicle_code,
-      members_id,
       form_data.is_active,
     )
     |> result.map_error(DataBaseError),
   )
+
   use row <- result.try(
     list.first(returned.rows)
     |> result.replace_error(DataBaseReturnedEmptyRow),
   )
 
+  use members <- result.try({
+    list.try_map(members_id, fn(member) {
+      try_register_member(ctx:, brigade: row.id, member:)
+    })
+  })
+
+  let members_json =
+    json.array(members, fn(member) { uuid.to_string(member) |> json.string })
+
   Ok(
     json.object([
       #("id", json.string(uuid.to_string(row.id))),
       #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+      #("members", members_json),
     ]),
   )
+}
+
+fn try_register_member(
+  ctx ctx: Context,
+  brigade brigade_id: uuid.Uuid,
+  member user_id: uuid.Uuid,
+) {
+  use returned <- result.try(
+    sql.assign_brigade_member(ctx.conn, brigade_id, user_id)
+    |> result.map_error(DataBaseError),
+  )
+
+  case list.first(returned.rows) {
+    Error(_) -> Error(FailedToRegisterMember(user_id))
+    Ok(row) -> Ok(row.user_id)
+  }
 }
 
 fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response {
@@ -120,6 +146,13 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
     DataBaseError(err) -> database.handle_database_error(err)
     AccessError(err) -> user.handle_access_control_error(request, err)
+    FailedToRegisterMember(user_id) ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível registrar o usuário: "
+        <> uuid.to_string(user_id)
+        <> " como membro",
+      ))
   }
 }
 
@@ -170,4 +203,5 @@ type RegisterBrigadeError {
   DataBaseError(pog.QueryError)
   DataBaseReturnedEmptyRow
   AccessError(user.AccessControlError)
+  FailedToRegisterMember(uuid.Uuid)
 }

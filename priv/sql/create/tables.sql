@@ -78,7 +78,7 @@ ON public.user_account (registration);
 
 CREATE TABLE IF NOT EXISTS public.user_notification_preference (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    user_id UUID REFERENCES public.user_account (id)
+    user_id UUID NOT NULL REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     notification_type NOTIFICATION_TYPE_ENUM NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS public.user_notification_preference (
 
 CREATE TABLE IF NOT EXISTS public.brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    leader_id UUID REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE SET NULL,
+    leader_id UUID NOT NULL REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
     vehicle_code TEXT NOT NULL,
     brigade_name TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
@@ -106,9 +106,9 @@ ON public.brigade (leader_id);
 
 CREATE TABLE IF NOT EXISTS public.brigade_membership (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    user_id UUID REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE SET NULL,
-    brigade_id UUID REFERENCES public.brigade (id)
+    user_id UUID NOT NULL REFERENCES public.user_account (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+    brigade_id UUID NOT NULL REFERENCES public.brigade (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (user_id, brigade_id)
 );
@@ -142,9 +142,9 @@ ON public.occurrence (applicant_id);
 
 CREATE TABLE IF NOT EXISTS public.occurrence_brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    occurrence_id UUID REFERENCES public.occurrence (id)
+    occurrence_id UUID NOT NULL REFERENCES public.occurrence (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-    brigade_id UUID REFERENCES public.user_account (id)
+    brigade_id UUID NOT NULL REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (occurrence_id, brigade_id)
 );
@@ -158,9 +158,9 @@ ON public.occurrence_brigade (brigade_id);
 
 CREATE TABLE IF NOT EXISTS public.occurrence_participant (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    occurrence_id UUID REFERENCES public.occurrence (id)
+    occurrence_id UUID NOT NULL REFERENCES public.occurrence (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-    user_id UUID REFERENCES public.user_account (id)
+    user_id UUID NOT NULL REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (occurrence_id, user_id)
 );
