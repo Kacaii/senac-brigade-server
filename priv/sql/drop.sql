@@ -9,27 +9,19 @@ DROP TRIGGER IF EXISTS tgr_default_notification_preferences
 ON user_account;
 DROP FUNCTION IF EXISTS public.set_default_notification_preferences;
 
-DROP TRIGGER IF EXISTS tgr_insert_brigade_membership
-ON brigade;
-DROP FUNCTION IF EXISTS public.dump_brigade_members;
-
-DROP TRIGGER IF EXISTS tgr_dump_occurrence_participants
-ON occurrence;
-DROP FUNCTION IF EXISTS public.dump_occurrence_participants;
-
 -- INDEXES ---------------------------------------------------------------------
 DROP INDEX IF EXISTS public.idx_brigade_membership_brigade_id;
 DROP INDEX IF EXISTS public.idx_brigade_membership_user_id;
 DROP INDEX IF EXISTS public.idx_occurrence_applicant_id;
 DROP INDEX IF EXISTS public.idx_user_registration;
-DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_user_id;
-DROP INDEX IF EXISTS public.idx_occurrence_brigade_member_occurrence_id;
+DROP INDEX IF EXISTS public.idx_occurrence_brigade_brigade_id;
+DROP INDEX IF EXISTS public.idx_occurrence_brigade_occurrence_id;
 DROP INDEX IF EXISTS public.idx_brigade_leader_id;
 
 -- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
-DROP TABLE IF EXISTS public.occurrence_brigade_member;
-DROP TABLE IF EXISTS public.occurrence;
+DROP TABLE IF EXISTS public.occurrence_brigade;
 DROP TABLE IF EXISTS public.brigade_membership;
+DROP TABLE IF EXISTS public.occurrence;
 DROP TABLE IF EXISTS public.brigade;
 DROP TABLE IF EXISTS public.user_notification_preference;
 DROP TABLE IF EXISTS public.user_account;
