@@ -160,9 +160,9 @@ CREATE TABLE IF NOT EXISTS public.occurrence_participant (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     occurrence_id UUID REFERENCES public.occurrence (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-    brigade_id UUID REFERENCES public.user_account (id)
+    user_id UUID REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (occurrence_id, brigade_id)
+    UNIQUE (occurrence_id, user_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_occurrence_participant_occurrence_id
