@@ -16,12 +16,15 @@ SELECT
     (
         SELECT JSON_AGG(JSON_BUILD_OBJECT(
             'id', b.id,
+            'brigade_name', b.brigade_name,
             'leader_full_name', leader_u.full_name,
             'vehicle_code', b.vehicle_code
-        )) FROM public.brigade AS b
+        )) FROM public.occurrence_brigade AS ob
+        INNER JOIN public.brigade AS b
+            ON ob.brigade_id = b.id
         INNER JOIN public.user_account AS leader_u
             ON b.leader_id = leader_u.id
-        WHERE b.id = ANY(o.brigade_list)
+        WHERE ob.occurrence_id = o.id
     ) AS brigade_list
 
 FROM public.occurrence AS o
