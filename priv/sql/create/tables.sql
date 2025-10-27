@@ -9,6 +9,52 @@ CREATE TYPE public.user_role_enum AS ENUM (
     'sargeant'
 );
 
+CREATE TYPE public.notification_type_enum AS ENUM (
+    'fire',
+    'emergency',
+    'traffic',
+    'other'
+);
+
+CREATE TYPE public.occurrence_category_enum AS ENUM (
+    'medic_emergency',
+    'fire',
+    'traffic_accident',
+    'other'
+);
+
+CREATE TYPE public.occurrence_subcategory_enum AS ENUM (
+    -- 󰋠  Medic Emergency,
+    'heart_stop',
+    'pre_hospital_care',
+    'seizure',
+    'serious_injury',
+    'intoxication',
+
+    --   Fire
+    'residential',
+    'comercial',
+    'vegetation',
+    'vehicle',
+
+    --   Traffic Accident
+    'collision',
+    'run_over',
+    'rollover',
+    'motorcycle_crash',
+
+    --   Other
+    'tree_crash',
+    'flood',
+    'injured_animal'
+);
+
+CREATE TYPE occurrence_priority_enum AS ENUM (
+    'low',
+    'medium',
+    'high'
+);
+
 CREATE TABLE IF NOT EXISTS public.user_account (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
     user_role USER_ROLE_ENUM NOT NULL,
@@ -24,13 +70,6 @@ CREATE TABLE IF NOT EXISTS public.user_account (
 
 CREATE INDEX IF NOT EXISTS idx_user_registration
 ON public.user_account (registration);
-
-CREATE TYPE public.notification_type_enum AS ENUM (
-    'fire',
-    'emergency',
-    'traffic',
-    'other'
-);
 
 CREATE TABLE IF NOT EXISTS public.user_notification_preference (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
@@ -73,45 +112,6 @@ ON public.brigade_membership (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_brigade_membership_brigade_id
 ON public.brigade_membership (brigade_id);
-
-CREATE TYPE public.occurrence_category_enum AS ENUM (
-    'medic_emergency',
-    'fire',
-    'traffic_accident',
-    'other'
-);
-
-CREATE TYPE public.occurrence_subcategory_enum AS ENUM (
-    -- 󰋠  Medic Emergency,
-    'heart_stop',
-    'pre_hospital_care',
-    'seizure',
-    'serious_injury',
-    'intoxication',
-
-    --   Fire
-    'residential',
-    'comercial',
-    'vegetation',
-    'vehicle',
-
-    --   Traffic Accident
-    'collision',
-    'run_over',
-    'rollover',
-    'motorcycle_crash',
-
-    --   Other
-    'tree_crash',
-    'flood',
-    'injured_animal'
-);
-
-CREATE TYPE occurrence_priority_enum AS ENUM (
-    'low',
-    'medium',
-    'high'
-);
 
 CREATE TABLE IF NOT EXISTS public.occurrence (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
