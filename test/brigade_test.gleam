@@ -71,9 +71,9 @@ pub fn get_brigade_members_test() {
     as "Returned list should be the same as the members list"
 
   // 󰃢  CLEANUP ---------------------------------------------------------------- 
+  dummy.clean_brigade(ctx, dummy_brigade)
   dummy.clean_user(ctx, leader_id)
   dummy.clean_user_list(ctx, dummy_members)
-  dummy.clean_brigade(ctx, dummy_brigade)
 }
 
 pub fn get_all_brigades_test() {
@@ -123,7 +123,7 @@ pub fn get_all_brigades_test() {
     as "Response should contain the dummy brigade"
 
   // 󰃢  CLEANUP ---------------------------------------------------------------- 
+  dummy.clean_brigade(ctx, dummy_brigade)
   dummy.clean_user(ctx, leader_id)
   dummy.clean_user_list(ctx, dummy_members)
-  dummy.clean_brigade(ctx, dummy_brigade)
 }
