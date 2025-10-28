@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
@@ -66,7 +66,7 @@ fn handle_error(err: UpdateProfileError) -> wisp.Response {
           wisp.set_body(resp, body)
         }
 
-        err -> database.handle_database_error(err)
+        err -> web.handle_database_error(err)
       }
     }
   }

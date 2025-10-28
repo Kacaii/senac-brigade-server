@@ -1,4 +1,3 @@
-import app/database
 import app/routes/admin/sql
 import app/routes/user/sql as user_sql
 import app/web.{type Context}
@@ -94,7 +93,7 @@ fn handle_error(err: SetupAdminError) -> wisp.Response {
         "A variável de ambiente necessária para o acesso a este endpoint se encontra ausente",
       ))
 
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 

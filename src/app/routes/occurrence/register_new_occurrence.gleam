@@ -1,7 +1,7 @@
 //// Processes occurrence registration form data, validates inputs, and creates
 //// a new occurrence record in the database.
 
-import app/database
+
 import app/routes/occurrence/category
 import app/routes/occurrence/priority
 import app/routes/occurrence/sql
@@ -96,7 +96,7 @@ fn handle_body(
 fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   case err {
     AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
     FailedToAssignBrigade(id) ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(

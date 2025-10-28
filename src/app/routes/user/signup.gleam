@@ -6,7 +6,7 @@
 //// Passwords are hashed using Argon2 before storage and all sensitive
 //// operations are logged for audit purposes.
 
-import app/database
+
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -188,7 +188,7 @@ fn handle_database_error(err: pog.QueryError) -> wisp.Response {
       wisp.set_body(resp, body)
     }
 
-    err -> database.handle_database_error(err)
+    err -> web.handle_database_error(err)
   }
 }
 

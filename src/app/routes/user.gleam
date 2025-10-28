@@ -1,4 +1,3 @@
-import app/database
 import app/routes/role
 import app/routes/user/sql
 import app/web.{type Context}
@@ -123,7 +122,7 @@ pub fn handle_authentication_error(err: AuthenticationError) {
 pub fn handle_access_control_error(req: wisp.Request, err: AccessControlError) {
   case err {
     Authentication(auth_err) -> handle_authentication_error(auth_err)
-    DataBase(db_err) -> database.handle_database_error(db_err)
+    DataBase(db_err) -> web.handle_database_error(db_err)
     RoleNotFound -> {
       // 401 Unauthorized
       let resp = wisp.response(401)

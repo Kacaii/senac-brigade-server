@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/dynamic/decode
@@ -48,7 +48,7 @@ fn handle_error(err: UpdateBrigadeStatusError) -> wisp.Response {
         "Brigada de incêndio possui UUID Inválido: " <> id,
       ))
     UuidNotFound(id) -> wisp.bad_request("Equipe não encontrada: " <> id)
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 

@@ -1,4 +1,3 @@
-import app/database
 import app/routes/admin/sql
 import app/routes/role
 import app/routes/user
@@ -85,10 +84,10 @@ fn handle_error(
               wisp.set_body(resp, body)
             }
 
-            _ -> database.handle_database_error(err)
+            _ -> web.handle_database_error(err)
           }
         }
-        err -> database.handle_database_error(err)
+        err -> web.handle_database_error(err)
       }
     }
     AccessError(err) -> user.handle_access_control_error(req, err)

@@ -1,4 +1,3 @@
-import app/database
 import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/http
@@ -38,7 +37,7 @@ fn handle_error(err: DeleteBrigadeError) -> wisp.Response {
     InvalidBrigadeUuid(id) ->
       wisp.bad_request("Equipe possui UUID inválido: " <> id)
     UuidNotFound(id) -> wisp.bad_request("Equipe não econtrada: " <> id)
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 

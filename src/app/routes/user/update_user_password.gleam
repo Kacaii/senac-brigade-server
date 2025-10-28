@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
@@ -61,7 +61,7 @@ fn handle_error(err: UpdatePasswordError) -> wisp.Response {
         "Ocorreu um erro ao encriptografar a senha do usuário",
       ))
     WrongPassword -> wisp.bad_request("Senha incorreta")
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
     MustBeDifferent ->
       wisp.bad_request("A senha nova precisa ser diferente da antiga")
   }

@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -87,7 +87,7 @@ fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response 
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
     UserNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
     AccessError(err) -> user.handle_access_control_error(req, err)
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 

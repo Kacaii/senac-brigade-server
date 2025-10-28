@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/occurrence/sql
 import app/routes/user
 import app/web.{type Context}
@@ -82,7 +82,7 @@ fn handle_error(err: DeleteOccurrenceError) -> wisp.Response {
       // 404 Bad Request
       wisp.bad_request("UUID inválido: " <> uuid_string)
     AuthenticationError(auth_err) -> user.handle_authentication_error(auth_err)
-    DataBaseError(db_err) -> database.handle_database_error(db_err)
+    DataBaseError(db_err) -> web.handle_database_error(db_err)
     OccurrenceNotFound(occ_uuid) -> {
       // 404 not found
       let resp = wisp.not_found()

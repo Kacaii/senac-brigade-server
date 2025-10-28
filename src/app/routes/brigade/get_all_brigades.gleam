@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/http
@@ -46,7 +46,7 @@ pub fn handle_request(
 
 fn handle_error(err: QueryAllBrigadesError) -> wisp.Response {
   case err {
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 

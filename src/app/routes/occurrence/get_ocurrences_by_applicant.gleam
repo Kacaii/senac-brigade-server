@@ -3,7 +3,7 @@
 //// It returns a list of occurrences (incidents/reports) that were submitted
 //// by the specified user, including detailed information about each occurrence.
 
-import app/database
+
 import app/routes/occurrence/category
 import app/routes/occurrence/priority
 import app/routes/occurrence/sql
@@ -123,7 +123,7 @@ fn handle_error(err: GetOccurrencesByApplicantError) {
   case err {
     InvalidUUID(user_id) ->
       wisp.bad_request("ID de usuário inválido: " <> user_id)
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
     BrigadeListDecodeError(_) ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(

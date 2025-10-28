@@ -1,4 +1,4 @@
-import app/database
+
 import app/routes/brigade/sql
 import app/routes/role
 import app/routes/user
@@ -144,7 +144,7 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
       ))
     InvalidUuid(user_id) ->
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
     AccessError(err) -> user.handle_access_control_error(request, err)
     FailedToRegisterMember(user_id) ->
       wisp.internal_server_error()

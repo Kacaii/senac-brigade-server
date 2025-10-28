@@ -1,4 +1,3 @@
-import app/database
 import app/routes/dashboard/sql
 import app/web.{type Context}
 import gleam/http
@@ -59,7 +58,7 @@ fn handle_error(err err: GetDashboardStatsError) -> wisp.Response {
       ))
     }
 
-    DataBaseError(err) -> database.handle_database_error(err)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 
