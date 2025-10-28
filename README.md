@@ -22,6 +22,7 @@
 | /admin/teams/{{id}}            | Remove a brigade                                            | DELETE      |
 | /user/login                    | Login with your user account                                | POST (Form) |
 | /user/profile                  | Retrieve data about the authenticated user                  | GET         |
+| /user/profile                  | Update your profile                                         | PUT(JSON)   |
 | /user/roles                    | Get a list of all available roles                           | GET         |
 | /user/{{id}}/occurrences       | Find all occurrences applied by this user                   | GET         |
 | /user/{{id}}/crew_members      | List fellow brigade members of this user                    | GET         |
