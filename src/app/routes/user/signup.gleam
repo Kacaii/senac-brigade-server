@@ -166,12 +166,26 @@ fn log_signup(signup: SignUp) -> Nil {
 fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   case err {
     pog.ConstraintViolated(_, _, constraint: "user_account_registration_key") -> {
-      "Matrícula já cadastrada. Experimente fazer login"
-      |> wisp.bad_request()
+      let resp = wisp.response(409)
+      let body = wisp.Text("Matrícula já cadastrada. Experimente fazer login")
+
+      wisp.set_body(resp, body)
     }
+
     pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
-      "Email já cadastrado. Por favor, utilize um diferente"
-      |> wisp.bad_request()
+      let resp = wisp.response(409)
+      let body =
+        wisp.Text("Email já cadastrado. Por favor, utilize um diferente")
+
+      wisp.set_body(resp, body)
+    }
+
+    pog.ConstraintViolated(_, _, constraint: "user_account_phone_key") -> {
+      let resp = wisp.response(409)
+      let body =
+        wisp.Text("Telefone já cadastrado. Por favor, utilize um diferente")
+
+      wisp.set_body(resp, body)
     }
 
     err -> database.handle_database_error(err)

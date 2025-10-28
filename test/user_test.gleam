@@ -1,7 +1,6 @@
 import app/router
 import app/routes/role
 import app/routes/user
-import app/routes/user/sql
 import app_test
 import dummy
 import gleam/dynamic/decode
@@ -50,9 +49,9 @@ pub fn login_test() {
 pub fn signup_test() {
   let ctx = app_test.global_data()
 
-  let password = wisp.random_string(10)
+  let dummy_password = wisp.random_string(10)
 
-  let available_roles = [
+  let dummy_roles = [
     role.Admin,
     role.Analyst,
     role.Captain,
@@ -62,7 +61,7 @@ pub fn signup_test() {
   ]
 
   // Try to create an user for every available user role
-  list.each(available_roles, fn(designed_role) {
+  list.each(dummy_roles, fn(designed_role) {
     let req =
       simulate.browser_request(http.Post, "/admin/signup")
       |> simulate.form_body([
@@ -70,8 +69,8 @@ pub fn signup_test() {
         #("matricula", int.random(111) |> int.to_string),
         #("telefone", int.random(9_999_999_999) |> int.to_string),
         #("email", wisp.random_string(5) <> "@email.com"),
-        #("senha", password),
-        #("confirma_senha", password),
+        #("senha", dummy_password),
+        #("confirma_senha", dummy_password),
         #("cargo", role.to_string_pt_br(designed_role)),
       ])
 
@@ -85,25 +84,79 @@ pub fn signup_test() {
 
     let body = simulate.read_body(resp)
 
-    let assert Ok(parsed_response) =
+    let assert Ok(created_user_uuid) =
       json.parse(body, {
         use id <- decode.field("id", decode.string)
-        decode.success(id)
+        case uuid.from_string(id) {
+          Error(_) -> decode.failure(uuid.v7(), "user_uuid")
+          Ok(value) -> decode.success(value)
+        }
       })
       as "Response should contain valid JSON data"
 
-    // 󰃢  CLEANUP ----------------------------------------------------------------
-    let assert Ok(created_user_uuid) = uuid.from_string(parsed_response)
-      as "JSON response should contain a valid UUID"
-
-    let assert Ok(returned) = sql.delete_user_by_id(ctx.conn, created_user_uuid)
-      as "Failed to delete user after insertion"
-
-    let assert Ok(deleted_user) = list.first(returned.rows)
-      as "Database returned no results after deleting the new user"
-
-    assert deleted_user.id == created_user_uuid as "Deleted the wrong user"
+    // 󰃢  CLEANUP --------------------------------------------------------------
+    dummy.clean_user(ctx, created_user_uuid)
   })
+
+  // REGISTRATION ALREADY TAKEN ------------------------------------------------
+  {
+    let taken_registration = "000"
+    let req =
+      simulate.browser_request(http.Post, "/admin/signup")
+      |> simulate.form_body([
+        #("nome", wisp.random_string(10)),
+        #("matricula", taken_registration),
+        #("telefone", int.random(9_999_999_999) |> int.to_string),
+        #("email", wisp.random_string(5) <> "@email.com"),
+        #("senha", dummy_password),
+        #("confirma_senha", dummy_password),
+        #("cargo", role.to_string_pt_br(role.Firefighter)),
+      ])
+
+    let with_auth = app_test.with_authorization(next: req)
+    let resp = router.handle_request(with_auth, ctx)
+    assert resp.status == 409 as "Registration should be unique"
+  }
+
+  // EMAIL ALREADY TAKEN -------------------------------------------------------
+  {
+    let taken_email = "admin@email.com"
+    let req =
+      simulate.browser_request(http.Post, "/admin/signup")
+      |> simulate.form_body([
+        #("nome", wisp.random_string(10)),
+        #("matricula", int.random(111) |> int.to_string),
+        #("telefone", int.random(9_999_999_999) |> int.to_string),
+        #("email", taken_email),
+        #("senha", dummy_password),
+        #("confirma_senha", dummy_password),
+        #("cargo", role.to_string_pt_br(role.Firefighter)),
+      ])
+
+    let with_auth = app_test.with_authorization(next: req)
+    let resp = router.handle_request(with_auth, ctx)
+    assert resp.status == 409 as "Email should be unique"
+  }
+
+  // PHONE ALREADY TAKEN -------------------------------------------------------
+  {
+    let taken_phone = "0000000000"
+    let req =
+      simulate.browser_request(http.Post, "/admin/signup")
+      |> simulate.form_body([
+        #("nome", wisp.random_string(10)),
+        #("matricula", int.random(111) |> int.to_string),
+        #("telefone", taken_phone),
+        #("email", wisp.random_string(5) <> "@email.com"),
+        #("senha", dummy_password),
+        #("confirma_senha", dummy_password),
+        #("cargo", role.to_string_pt_br(role.Firefighter)),
+      ])
+
+    let with_auth = app_test.with_authorization(next: req)
+    let resp = router.handle_request(with_auth, ctx)
+    assert resp.status == 409 as "Phone should be unique"
+  }
 }
 
 pub fn get_all_users_test() {
@@ -201,6 +254,8 @@ pub fn update_user_profile_test() {
   let resp = router.handle_request(req, ctx)
 
   // ASSERTIONS ----------------------------------------------------------------
+
+  // HAPPY PATH
   assert resp.status == 200 as "Status should be HTTP 200 OK"
   let body = simulate.read_body(resp)
 
@@ -217,6 +272,41 @@ pub fn update_user_profile_test() {
       decode.success(Nil)
     })
     as "Response should contain valid JSON"
+
+  // EMAIL ALREADY TAKEN -------------------------------------------------------
+  {
+    let taken_email = "admin@email.com"
+    let req =
+      simulate.browser_request(http.Put, path)
+      |> simulate.json_body(
+        json.object([
+          #("full_name", json.string(new_name)),
+          #("email", json.string(taken_email)),
+          #("phone", json.string(new_phone)),
+        ]),
+      )
+      |> simulate.session(login_req, login_resp)
+
+    let resp = router.handle_request(req, ctx)
+    assert resp.status == 409 as "Status should be HTTP 409"
+  }
+
+  // PHONE ALREADY TAKEN -------------------------------------------------------
+  {
+    let taken_phone = "0000000000"
+    let req =
+      simulate.browser_request(http.Put, path)
+      |> simulate.json_body(
+        json.object([
+          #("full_name", json.string(new_name)),
+          #("email", json.string(new_email)),
+          #("phone", json.string(taken_phone)),
+        ]),
+      )
+      |> simulate.session(login_req, login_resp)
+    let resp = router.handle_request(req, ctx)
+    assert resp.status == 409 as "Status should be HTTP 409"
+  }
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   dummy.clean_user(ctx, new_user)
