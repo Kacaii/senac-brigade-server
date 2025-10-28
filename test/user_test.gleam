@@ -3,6 +3,7 @@ import app/routes/role
 import app/routes/user
 import app/routes/user/sql
 import app_test
+import dummy
 import gleam/dynamic/decode
 import gleam/http
 import gleam/http/response
@@ -134,4 +135,89 @@ pub fn get_all_users_test() {
       }),
     )
     as "Response should contain valid JSON data"
+}
+
+pub fn update_user_profile_test() {
+  let ctx = app_test.global_data()
+  let login_path = "/user/login"
+  let signup_path = "/admin/signup"
+
+  // 󰚩  DUMMY ------------------------------------------------------------------
+  let dummy_password = "aluno"
+  let dummy_registration = "001"
+  let dummy_phone = "8190000000"
+  let dummy_email = "wibble@email.com"
+
+  let new_user_req =
+    simulate.browser_request(http.Post, signup_path)
+    |> simulate.form_body([
+      #("nome", wisp.random_string(10)),
+      #("matricula", dummy_registration),
+      #("telefone", dummy_phone),
+      #("email", dummy_email),
+      #("senha", dummy_password),
+      #("confirma_senha", dummy_password),
+      #("cargo", role.to_string_pt_br(role.Firefighter)),
+    ])
+
+  let with_auth = app_test.with_authorization(new_user_req)
+  let new_user_resp = router.handle_request(with_auth, ctx)
+
+  let assert Ok(new_user) =
+    json.parse(simulate.read_body(new_user_resp), {
+      use maybe_uuid <- decode.field("id", decode.string)
+      case uuid.from_string(maybe_uuid) {
+        Error(_) -> decode.failure(uuid.v7(), "user_uuid")
+        Ok(value) -> decode.success(value)
+      }
+    })
+    as "Response contain invalid JSON"
+
+  let path = "/user/profile"
+  let login_req =
+    simulate.browser_request(http.Post, login_path)
+    |> simulate.form_body([
+      #("matricula", dummy_registration),
+      #("senha", dummy_password),
+    ])
+  let login_resp = router.handle_request(login_req, ctx)
+
+  // UPDATING DUMMY ------------------------------------------------------------
+  let new_name = wisp.random_string(8)
+  let new_email = wisp.random_string(6) <> "@email.com"
+  let new_phone = int.random(11) |> int.to_string
+
+  let req =
+    simulate.browser_request(http.Put, path)
+    |> simulate.json_body(
+      json.object([
+        #("full_name", json.string(new_name)),
+        #("email", json.string(new_email)),
+        #("phone", json.string(new_phone)),
+      ]),
+    )
+    |> simulate.session(login_req, login_resp)
+
+  let resp = router.handle_request(req, ctx)
+
+  // ASSERTIONS ----------------------------------------------------------------
+  assert resp.status == 200 as "Status should be HTTP 200 OK"
+  let body = simulate.read_body(resp)
+
+  let assert Ok(_) =
+    json.parse(body, {
+      use returned_full_name <- decode.field("full_name", decode.string)
+      use returned_email <- decode.field("email", decode.string)
+      use returned_phone <- decode.field("phone", decode.string)
+
+      assert returned_full_name == new_name as "Name was not updated"
+      assert returned_email == new_email as "Email was not updated"
+      assert returned_phone == new_phone as "Phone was not updated"
+
+      decode.success(Nil)
+    })
+    as "Response should contain valid JSON"
+
+  // 󰃢  CLEANUP ----------------------------------------------------------------
+  dummy.clean_user(ctx, new_user)
 }
