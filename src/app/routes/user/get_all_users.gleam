@@ -88,7 +88,7 @@ fn row_to_json(row: sql.QueryAllUsersRow) -> json.Json {
     #("id", json.string(uuid.to_string(row.id))),
     #("full_name", json.string(row.full_name)),
     #("registration", json.string(row.registration)),
-    #("email", json.nullable(row.email, json.string)),
+    #("email", json.string(row.email)),
     #("user_role", json.string(user_role)),
   ])
 }

@@ -5,7 +5,6 @@
 ////
 
 import gleam/dynamic/decode
-import gleam/option.{type Option}
 import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
@@ -20,7 +19,7 @@ pub type AdminUpdateUserRow {
   AdminUpdateUserRow(
     id: Uuid,
     full_name: String,
-    email: Option(String),
+    email: String,
     user_role: UserRoleEnum,
     registration: String,
     is_active: Bool,
@@ -45,7 +44,7 @@ pub fn admin_update_user(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
-    use email <- decode.field(2, decode.optional(decode.string))
+    use email <- decode.field(2, decode.string)
     use user_role <- decode.field(3, user_role_enum_decoder())
     use registration <- decode.field(4, decode.string)
     use is_active <- decode.field(5, decode.bool)

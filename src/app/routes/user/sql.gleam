@@ -109,7 +109,7 @@ pub type QueryAllUsersRow {
     id: Uuid,
     full_name: String,
     registration: String,
-    email: Option(String),
+    email: String,
     user_role: UserRoleEnum,
     is_active: Bool,
   )
@@ -127,7 +127,7 @@ pub fn query_all_users(
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use registration <- decode.field(2, decode.string)
-    use email <- decode.field(3, decode.optional(decode.string))
+    use email <- decode.field(3, decode.string)
     use user_role <- decode.field(4, user_role_enum_decoder())
     use is_active <- decode.field(5, decode.bool)
     decode.success(QueryAllUsersRow(
@@ -403,7 +403,7 @@ pub type QueryUserProfileRow {
     full_name: String,
     registration: String,
     user_role: UserRoleEnum,
-    email: Option(String),
+    email: String,
     phone: Option(String),
   )
 }
@@ -422,7 +422,7 @@ pub fn query_user_profile(
     use full_name <- decode.field(1, decode.string)
     use registration <- decode.field(2, decode.string)
     use user_role <- decode.field(3, user_role_enum_decoder())
-    use email <- decode.field(4, decode.optional(decode.string))
+    use email <- decode.field(4, decode.string)
     use phone <- decode.field(5, decode.optional(decode.string))
     decode.success(QueryUserProfileRow(
       id:,
@@ -509,6 +509,55 @@ WHERE id = $1;
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
   |> pog.parameter(pog.text(arg_2))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `update_user_profile` query
+/// defined in `./src/app/routes/user/sql/update_user_profile.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UpdateUserProfileRow {
+  UpdateUserProfileRow(full_name: String, email: String, phone: Option(String))
+}
+
+///   Update an authenticated user profile
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn update_user_profile(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: String,
+  arg_3: String,
+  arg_4: String,
+) -> Result(pog.Returned(UpdateUserProfileRow), pog.QueryError) {
+  let decoder = {
+    use full_name <- decode.field(0, decode.string)
+    use email <- decode.field(1, decode.string)
+    use phone <- decode.field(2, decode.optional(decode.string))
+    decode.success(UpdateUserProfileRow(full_name:, email:, phone:))
+  }
+
+  "--   Update an authenticated user profile
+UPDATE public.user_account AS u SET
+    full_name = $2,
+    email = $3,
+    phone = $4
+WHERE u.id = $1
+RETURNING
+    u.full_name,
+    u.email,
+    u.phone;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(pog.text(arg_2))
+  |> pog.parameter(pog.text(arg_3))
+  |> pog.parameter(pog.text(arg_4))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

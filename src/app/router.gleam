@@ -28,6 +28,7 @@ import app/routes/user/get_user_profile
 import app/routes/user/login
 import app/routes/user/signup
 import app/routes/user/update_user_password
+import app/routes/user/update_user_profile
 import app/routes/user/update_user_status
 import app/web.{type Context}
 import gleam/http
@@ -82,6 +83,9 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
     http.Get, ["user", "profile"] ->
       get_user_profile.handle_request(request:, ctx:)
+
+    http.Put, ["user", "profile"] ->
+      update_user_profile.handle_request(request:, ctx:)
 
     http.Get, ["user", id, "crew_members"] ->
       get_crew_members.handle_request(request:, ctx:, id:)

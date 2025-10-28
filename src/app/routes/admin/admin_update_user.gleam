@@ -145,7 +145,7 @@ fn try_update_user(
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
     #("full_name", json.string(row.full_name)),
-    #("email", json.nullable(row.email, json.string)),
+    #("email", json.string(row.email)),
     #("user_role", json.string(role.to_string_pt_br(user_role))),
     #("registration", json.string(row.registration)),
     #("updated_at", json.float(row.updated_at |> timestamp.to_unix_seconds())),

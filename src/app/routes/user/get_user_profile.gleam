@@ -108,7 +108,7 @@ fn query_user_profile_row_to_json(
     #("full_name", json.string(full_name)),
     #("registration", json.string(registration)),
     #("user_role", json.string(user_role)),
-    #("email", json.nullable(email, json.string)),
+    #("email", json.string(email)),
     #("phone", json.nullable(phone, json.string)),
   ])
 }
