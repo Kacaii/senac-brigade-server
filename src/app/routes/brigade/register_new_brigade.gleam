@@ -1,4 +1,3 @@
-
 import app/routes/brigade/sql
 import app/routes/role
 import app/routes/user
@@ -48,7 +47,7 @@ fn handle_form_data(
   form_data form_data: RegisterBrigadeFormData,
 ) -> wisp.Response {
   case try_register_brigade(request:, ctx:, form_data:) {
-    Ok(resp) -> wisp.json_response(json.to_string(resp), 201)
+    Ok(resp) -> wisp.json_response(resp, 201)
     Error(err) -> handle_error(request:, err:)
   }
 }
@@ -57,7 +56,7 @@ fn try_register_brigade(
   request request: wisp.Request,
   ctx ctx: Context,
   form_data form_data: RegisterBrigadeFormData,
-) -> Result(json.Json, RegisterBrigadeError) {
+) -> Result(String, RegisterBrigadeError) {
   use _ <- result.try(
     user.check_role_authorization(
       request:,
@@ -110,13 +109,13 @@ fn try_register_brigade(
   let members_json =
     json.array(members, fn(member) { uuid.to_string(member) |> json.string })
 
-  Ok(
-    json.object([
-      #("id", json.string(uuid.to_string(row.id))),
-      #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
-      #("members", members_json),
-    ]),
-  )
+  json.object([
+    #("id", json.string(uuid.to_string(row.id))),
+    #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+    #("members", members_json),
+  ])
+  |> json.to_string
+  |> Ok
 }
 
 fn try_register_member(
@@ -151,7 +150,7 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
       |> wisp.set_body(wisp.Text(
         "Não foi possível registrar o usuário: "
         <> uuid.to_string(user_id)
-        <> " como membro",
+        <> " como membro da equipe",
       ))
   }
 }
