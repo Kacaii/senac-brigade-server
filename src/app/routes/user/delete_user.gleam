@@ -10,6 +10,14 @@ import pog
 import wisp
 import youid/uuid
 
+/// 󰀕  Remove an user account from the database and
+/// return their uuid as a formatted JSON response.
+///
+/// ```json
+/// {
+///   "id": "92ce4d0b-59e2-4437-bbf1-ebad7b59a9f1"
+/// }
+/// ```
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,
@@ -23,11 +31,26 @@ pub fn handle_request(
   }
 }
 
+///   Deleting an user can fail
+type DeleteUserError {
+  /// 󱙀  An error occurred while accessing the DataBase
+  DataBaseError(pog.QueryError)
+  /// 󰒡  Target user has invalid Uuid
+  InvalidUserUuid(String)
+  /// 󱋟  Errors related to authentication and authorization
+  AccessError(user.AccessControlError)
+  /// 󰀒  User was not found in the Database
+  UuidNotFound(uuid.Uuid)
+  /// 󱅞  An user should not be able to delete theirself
+  CantDeleteSelf
+}
+
 fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
   case err {
     InvalidUserUuid(invalid_uuid) ->
       wisp.bad_request("Usuário possui Uuid Inválido: " <> invalid_uuid)
-    UuidNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
+    UuidNotFound(user_uuid) ->
+      wisp.bad_request("Usuário não encontrado: " <> uuid.to_string(user_uuid))
     AccessError(err) -> user.handle_access_control_error(req, err)
     DataBaseError(err) -> web.handle_database_error(err)
     CantDeleteSelf -> wisp.bad_request("Um usuário não deve remover a si mesmo")
@@ -39,6 +62,7 @@ fn try_delete_user(
   ctx: Context,
   target_id: String,
 ) -> Result(String, DeleteUserError) {
+  // User that is going to be deleted
   use target_user_uuid <- result.try(
     uuid.from_string(target_id)
     |> result.replace_error(InvalidUserUuid(target_id)),
@@ -54,6 +78,7 @@ fn try_delete_user(
     |> result.map_error(AccessError),
   )
 
+  // Check if the authenticated user is trying to delete theirself
   case uuid.to_string(user_uuid) == target_id {
     True -> Error(CantDeleteSelf)
     False -> {
@@ -63,7 +88,7 @@ fn try_delete_user(
       )
 
       case list.first(returned.rows) {
-        Error(_) -> Error(UuidNotFound(target_id))
+        Error(_) -> Error(UuidNotFound(user_uuid))
         Ok(row) -> {
           json.object([
             #("id", json.string(uuid.to_string(row.id))),
@@ -75,12 +100,4 @@ fn try_delete_user(
       }
     }
   }
-}
-
-type DeleteUserError {
-  DataBaseError(pog.QueryError)
-  InvalidUserUuid(String)
-  AccessError(user.AccessControlError)
-  UuidNotFound(String)
-  CantDeleteSelf
 }
