@@ -1,4 +1,3 @@
-
 import app/routes/brigade/sql
 import app/web.{type Context}
 import gleam/http
@@ -40,7 +39,7 @@ pub fn handle_request(
 
   case query_database(ctx:) {
     Error(err) -> handle_error(err)
-    Ok(resp) -> wisp.json_response(json.to_string(resp), 200)
+    Ok(resp) -> wisp.json_response(resp, 200)
   }
 }
 
@@ -50,8 +49,8 @@ fn handle_error(err: QueryAllBrigadesError) -> wisp.Response {
   }
 }
 
-fn query_database(ctx ctx: Context) -> Result(json.Json, QueryAllBrigadesError) {
-  use returned <- result.map(
+fn query_database(ctx ctx: Context) -> Result(String, QueryAllBrigadesError) {
+  use returned <- result.try(
     sql.query_all_brigades(ctx.conn)
     |> result.map_error(DataBaseError),
   )
@@ -66,8 +65,12 @@ fn query_database(ctx ctx: Context) -> Result(json.Json, QueryAllBrigadesError) 
       #("is_active", json.bool(row.is_active)),
     ])
   })
+  |> json.to_string
+  |> Ok
 }
 
+/// 󰤏  Querying a brigade can fail
 type QueryAllBrigadesError {
+  /// 󱙀  An error occurred while accessing the database
   DataBaseError(pog.QueryError)
 }
