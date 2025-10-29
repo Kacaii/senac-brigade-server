@@ -60,7 +60,11 @@ pub fn main() -> Nil {
 
   // Start both HHTP Server and DataBase connection under a supervision tree ---
   let assert Ok(_) =
-    start_application_supervised(pog_config:, handler:, secret_key:)
+    start_application_supervised(
+      pog_config: pog.ssl(pog_config, pog.SslVerified),
+      handler:,
+      secret_key:,
+    )
     as "󰪋  Failed to start the application supervisor"
 
   // ⏾ 󰒲
