@@ -105,11 +105,7 @@ fn brigade_list_decoder(
 
     decode.list({
       use brigade_id <- decode.field("id", brigade_uuid_decoder)
-      use brigade_name <- decode.optional_field(
-        "brigade_name",
-        "null",
-        decode.string,
-      )
+      use brigade_name <- decode.field("brigade_name", decode.string)
       use leader_name <- decode.field("leader_full_name", decode.string)
       use vehicle_code <- decode.field("vehicle_code", decode.string)
 

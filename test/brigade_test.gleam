@@ -111,7 +111,7 @@ pub fn get_all_brigades_test() {
         }
 
         use brigade_uuid <- decode.field("id", uuid_decoder)
-        use _ <- decode.optional_field("brigade_name", "null", decode.string)
+        use _ <- decode.field("brigade_name", decode.string)
         use _ <- decode.optional_field("leader_name", "wibble", decode.string)
         use _ <- decode.field("is_active", decode.bool)
         decode.success(brigade_uuid)

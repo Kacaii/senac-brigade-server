@@ -59,7 +59,7 @@ fn delete_from_database(
 
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
-    #("brigade_name", json.nullable(row.brigade_name, json.string)),
+    #("brigade_name", json.string(row.brigade_name)),
   ])
 }
 

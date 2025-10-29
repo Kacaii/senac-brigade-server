@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS public.brigade (
     leader_id UUID NOT NULL REFERENCES public.user_account (id)
     ON UPDATE CASCADE ON DELETE CASCADE,
     vehicle_code TEXT NOT NULL,
-    brigade_name TEXT DEFAULT NULL,
+    brigade_name TEXT NOT NULL,
     description TEXT DEFAULT NULL,
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

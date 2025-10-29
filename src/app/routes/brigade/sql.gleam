@@ -56,7 +56,7 @@ RETURNING user_id;
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type DeleteBrigadeByIdRow {
-  DeleteBrigadeByIdRow(id: Uuid, brigade_name: Option(String))
+  DeleteBrigadeByIdRow(id: Uuid, brigade_name: String)
 }
 
 ///   Remove a brigade from the DataBase
@@ -70,7 +70,7 @@ pub fn delete_brigade_by_id(
 ) -> Result(pog.Returned(DeleteBrigadeByIdRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use brigade_name <- decode.field(1, decode.optional(decode.string))
+    use brigade_name <- decode.field(1, decode.string)
     decode.success(DeleteBrigadeByIdRow(id:, brigade_name:))
   }
 
@@ -148,7 +148,7 @@ INSERT INTO public.brigade AS b (
 pub type QueryAllBrigadesRow {
   QueryAllBrigadesRow(
     id: Uuid,
-    brigade_name: Option(String),
+    brigade_name: String,
     leader_name: Option(String),
     is_active: Bool,
   )
@@ -164,7 +164,7 @@ pub fn query_all_brigades(
 ) -> Result(pog.Returned(QueryAllBrigadesRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use brigade_name <- decode.field(1, decode.optional(decode.string))
+    use brigade_name <- decode.field(1, decode.string)
     use leader_name <- decode.field(2, decode.optional(decode.string))
     use is_active <- decode.field(3, decode.bool)
     decode.success(QueryAllBrigadesRow(
@@ -199,7 +199,7 @@ LEFT JOIN public.user_account AS u
 pub type QueryBrigadeByIdRow {
   QueryBrigadeByIdRow(
     id: Uuid,
-    brigade_name: Option(String),
+    brigade_name: String,
     leader_name: Uuid,
     is_active: Bool,
   )
@@ -216,7 +216,7 @@ pub fn query_brigade_by_id(
 ) -> Result(pog.Returned(QueryBrigadeByIdRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use brigade_name <- decode.field(1, decode.optional(decode.string))
+    use brigade_name <- decode.field(1, decode.string)
     use leader_name <- decode.field(2, uuid_decoder())
     use is_active <- decode.field(3, decode.bool)
     decode.success(QueryBrigadeByIdRow(

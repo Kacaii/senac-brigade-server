@@ -60,7 +60,7 @@ fn query_database(ctx ctx: Context) -> Result(String, QueryAllBrigadesError) {
     use row <- list.map(returned.rows)
     json.object([
       #("id", json.string(uuid.to_string(row.id))),
-      #("brigade_name", json.nullable(row.brigade_name, json.string)),
+      #("brigade_name", json.string(row.brigade_name)),
       #("leader_name", json.nullable(row.leader_name, json.string)),
       #("is_active", json.bool(row.is_active)),
     ])
