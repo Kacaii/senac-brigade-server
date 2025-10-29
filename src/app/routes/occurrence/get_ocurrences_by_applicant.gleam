@@ -3,7 +3,6 @@
 //// It returns a list of occurrences (incidents/reports) that were submitted
 //// by the specified user, including detailed information about each occurrence.
 
-
 import app/routes/occurrence/category
 import app/routes/occurrence/priority
 import app/routes/occurrence/sql
@@ -29,12 +28,15 @@ pub fn handle_request(
   use <- wisp.require_method(request, http.Get)
 
   case query_occurrences(ctx:, user_id:) {
-    Ok(data) -> wisp.json_response(json.to_string(data), 200)
+    Ok(resp) -> wisp.json_response(resp, 200)
     Error(err) -> handle_error(err)
   }
 }
 
-fn query_occurrences(ctx ctx: Context, user_id user_id: String) {
+fn query_occurrences(
+  ctx ctx: Context,
+  user_id user_id: String,
+) -> Result(String, GetOccurrencesByApplicantError) {
   use user_uuid <- result.try(
     uuid.from_string(user_id)
     |> result.replace_error(InvalidUUID(user_id)),
@@ -55,7 +57,7 @@ fn query_occurrences(ctx ctx: Context, user_id user_id: String) {
     )
 
     Payload(
-      id: row.applicant_id,
+      id: row.id,
       status: case row.resolved_at {
         option.None -> "Em andamento"
         option.Some(_) -> "Finalizada"
@@ -83,12 +85,14 @@ fn query_occurrences(ctx ctx: Context, user_id user_id: String) {
   }
 
   case payload_result {
-    Ok(value) -> Ok(json.preprocessed_array(value))
+    Ok(value) -> Ok(json.preprocessed_array(value) |> json.to_string)
     Error(value) -> Error(value)
   }
 }
 
-fn brigade_list_decoder(data: String) {
+fn brigade_list_decoder(
+  data: String,
+) -> Result(List(PayloadBrigade), json.DecodeError) {
   json.parse(data, {
     // UUID Decoder
     let brigade_uuid_decoder = {
@@ -119,7 +123,7 @@ fn brigade_list_decoder(data: String) {
   })
 }
 
-fn handle_error(err: GetOccurrencesByApplicantError) {
+fn handle_error(err: GetOccurrencesByApplicantError) -> wisp.Response {
   case err {
     InvalidUUID(user_id) ->
       wisp.bad_request("ID de usuário inválido: " <> user_id)
@@ -132,7 +136,7 @@ fn handle_error(err: GetOccurrencesByApplicantError) {
   }
 }
 
-fn enum_to_priority(enum: sql.OccurrencePriorityEnum) {
+fn enum_to_priority(enum: sql.OccurrencePriorityEnum) -> priority.Priority {
   case enum {
     sql.High -> priority.High
     sql.Low -> priority.Low
@@ -149,27 +153,37 @@ fn enum_to_category(enum: sql.OccurrenceCategoryEnum) -> category.Category {
   }
 }
 
-/// Represents possible errors that can occur during the search
-/// including invalid UUID formats for applicant
+/// Querying the occurrence list can fail
 type GetOccurrencesByApplicantError {
-  /// The provided applicant ID is not a valid UUID format
+  /// The applicant has invalid UUID
   InvalidUUID(String)
-  /// An Error occurred when querying the database
+  /// An error occurred when querying the database
   DataBaseError(pog.QueryError)
+  /// An error occurred while decoding the brigade list
   BrigadeListDecodeError(json.DecodeError)
 }
 
 // PAYLOAD -------------------------------------------------------------------------------------------------------------
 
+/// Data retrieved from the database
 pub type Payload {
   Payload(
+    /// Occurrence UUID
     id: uuid.Uuid,
+    /// Occurrence status
     status: String,
+    /// Occurrence priority
     priority: priority.Priority,
+    /// Details about the occurrence
     call: PayloadCall,
+    /// Occurrence coordenates
     occurrence_location: option.Option(List(Float)),
+    /// Timestamps related
     timestamp: PayloadTimestamp,
+    /// Details about the applicant
     metadata: PayloadMetadata,
+    /// List containing details about the brigades associated
+    /// with the occurrence
     brigade_list: List(PayloadBrigade),
   )
 }
@@ -192,10 +206,14 @@ fn payload_to_json(data: Payload) -> json.Json {
   ])
 }
 
+/// Details about the occurrence
 pub opaque type PayloadCall {
   PayloadCall(
+    /// Category assigned to the occurrence
     category: category.Category,
+    /// Details about the occurrence
     details: option.Option(String),
+    /// Name of the occurrence applicant
     applicant_name: String,
   )
 }
@@ -208,10 +226,14 @@ fn payload_call_to_json(data: PayloadCall) -> json.Json {
   ])
 }
 
+/// Timestamps related to the occurrence
 pub opaque type PayloadTimestamp {
   PayloadTimestamp(
+    /// When the occurrence was created
     created_at: timestamp.Timestamp,
+    /// When a team arrived at the occurrence place
     arrival_in_place: option.Option(timestamp.Timestamp),
+    /// When the occurrence was resolved
     resolved_at: option.Option(timestamp.Timestamp),
   )
 }
@@ -236,10 +258,14 @@ fn payload_timestamp_to_json(data: PayloadTimestamp) -> json.Json {
   ])
 }
 
+/// Details about the applicant
 pub opaque type PayloadMetadata {
   PayloadMetadata(
+    /// UUID of the user that created the occurrence
     applicant_id: uuid.Uuid,
+    /// Registration of the user that created the occurrence
     applicant_registration: String,
+    /// Name of the user that created the occurrence
     applicant_name: String,
   )
 }
@@ -252,11 +278,17 @@ fn payload_metadata_to_json(data: PayloadMetadata) -> json.Json {
   ])
 }
 
+/// List containing details about the brigades associated
+/// with the occurrence
 pub opaque type PayloadBrigade {
   PayloadBrigade(
+    /// Brigade UUID
     id: uuid.Uuid,
+    /// Name of the brigade
     brigade_name: String,
+    /// Vehicle code designated to that brigade
     vehicle_code: String,
+    /// Name of the leader from that brigade
     leader_name: String,
   )
 }
