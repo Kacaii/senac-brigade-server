@@ -139,6 +139,9 @@ CREATE TABLE IF NOT EXISTS public.occurrence (
 CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
 ON public.occurrence (applicant_id);
 
+CREATE INDEX IF NOT EXISTS idx_occurrence_created_at
+ON public.occurrence (created_at);
+
 
 CREATE TABLE IF NOT EXISTS public.occurrence_brigade (
     id UUID PRIMARY KEY DEFAULT UUIDV7(),
