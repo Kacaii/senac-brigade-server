@@ -1,4 +1,3 @@
-
 import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
@@ -11,6 +10,18 @@ import pog
 import wisp
 import youid/uuid
 
+/// 󰚰  Allows an user to update their basic information like name, email and
+/// phone number, then return the updated values as JSON.
+///
+/// ## Response
+///
+/// ```json
+/// {
+///   "full_name": "Ninguém da Silva",
+///   "email": "email.novo@email.com",
+///   "phone": "9811111111"
+/// }
+/// ```
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,
