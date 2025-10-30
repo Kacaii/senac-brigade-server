@@ -39,10 +39,11 @@ pub fn assign_brigade_to_occurrence(
 INSERT INTO public.occurrence_brigade AS ob
 (occurrence_id, brigade_id)
 VALUES
-(
-    $1,
-    $2
-) RETURNING brigade_id;
+($1, $2)
+ON CONFLICT
+(occurrence_id, brigade_id)
+DO NOTHING
+RETURNING brigade_id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
