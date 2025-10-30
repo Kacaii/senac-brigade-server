@@ -28,6 +28,18 @@ pub fn handle_request(request: wisp.Request, context: Context) -> wisp.Response 
   }
 }
 
+///   Gathering the role list can fail
+type GetRoleListError {
+  /// 󱘺  An error occurred while querying the DataBase
+  DataBaseError(pog.QueryError)
+}
+
+fn handle_error(err: GetRoleListError) -> wisp.Response {
+  case err {
+    DataBaseError(err) -> web.handle_database_error(err)
+  }
+}
+
 /// 󰆼  Queries the database to collect all available role names
 fn query_user_roles(context: Context) -> Result(json.Json, GetRoleListError) {
   use returned <- result.try(
@@ -35,18 +47,17 @@ fn query_user_roles(context: Context) -> Result(json.Json, GetRoleListError) {
     |> result.map_error(DataBaseError),
   )
 
-  let available_roles = {
-    use row <- list.map(returned.rows)
-    let available_role =
+  let available_roles =
+    {
+      use row <- list.map(returned.rows)
       row.available_role
       |> enum_to_role()
       |> role.to_string_pt_br()
+      |> json.string
+    }
+    |> json.preprocessed_array
 
-    json.string(available_role)
-  }
-
-  // 
-  Ok(json.preprocessed_array(available_roles))
+  Ok(available_roles)
 }
 
 fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
@@ -58,21 +69,4 @@ fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
     sql.Firefighter -> role.Firefighter
     sql.Sargeant -> role.Sargeant
   }
-}
-
-type GetRoleListError {
-  DataBaseError(pog.QueryError)
-}
-
-fn handle_error(err: GetRoleListError) -> wisp.Response {
-  let err_msg = case err {
-    DataBaseError(pog.ConnectionUnavailable) ->
-      "Conexão com o Banco de Dados não disponível"
-    DataBaseError(pog.QueryTimeout) ->
-      "O Banco de Dados demorou muito para responder"
-    _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(err_msg))
 }
