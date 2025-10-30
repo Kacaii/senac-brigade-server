@@ -18,14 +18,14 @@ import youid/uuid
 ///   {
 ///     "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
 ///     "full_name": "Pedro Anthony",
-///     "registration": "000",
+///     "registration": "026",
 ///     "email": "pedro@email.com",
 ///     "user_role": "Bombeiro"
 ///   },
 ///   {
 ///     "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
-///     "full_name": "Josias Ribeiro",
-///     "registration": "001",
+///     "full_name": "Josias José",
+///     "registration": "876",
 ///     "email": "jojo@email.com",
 ///     "user_role": "Desenvolvedor"
 ///    }
@@ -37,10 +37,21 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
+  // 󰡦  Find available users
   case try_query_database(req, ctx) {
+    // 󰨮  Handle possible errors
     Error(err) -> handle_error(req, err)
+    //   Send the data to the client
     Ok(resp) -> wisp.json_response(json.to_string(resp), 200)
   }
+}
+
+/// 󰀖  Gathering the user list can fail
+type GetAllUsersError {
+  ///   Errors related to user authentication / authorization
+  AccessError(user.AccessControlError)
+  /// 󱙀  An error occurred while querying the DataBase
+  DataBaseError(pog.QueryError)
 }
 
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
@@ -101,9 +112,4 @@ fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
     sql.Firefighter -> role.Firefighter
     sql.Sargeant -> role.Sargeant
   }
-}
-
-type GetAllUsersError {
-  AccessError(user.AccessControlError)
-  DataBaseError(pog.QueryError)
 }
