@@ -119,8 +119,8 @@ pub fn static_directory() -> String {
   priv_directory <> "/static"
 }
 
+/// Generate a default admin account if the user_account table is empty
 pub fn setup_admin(ctx: web.Context) {
-  // Check if the database is empty
   let assert Ok(returned) = admin_sql.count_total_users(ctx.conn)
   let assert Ok(row) = list.first(returned.rows)
 
