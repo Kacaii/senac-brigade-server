@@ -42,7 +42,7 @@ pub fn handle_request(
     // 󰨮  Handle possible errors
     Error(err) -> handle_error(req, err)
     //   Send the data to the client
-    Ok(resp) -> wisp.json_response(json.to_string(resp), 200)
+    Ok(body) -> wisp.json_response(body, 200)
   }
 }
 
@@ -64,7 +64,7 @@ fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
 fn try_query_database(
   req: wisp.Request,
   ctx: Context,
-) -> Result(json.Json, GetAllUsersError) {
+) -> Result(String, GetAllUsersError) {
   use _ <- result.try(
     user.check_role_authorization(
       request: req,
@@ -75,19 +75,20 @@ fn try_query_database(
     |> result.map_error(AccessError),
   )
 
-  use returned <- result.map(
-    sql.query_all_users(ctx.conn)
+  use returned <- result.try(
+    sql.get_complete_user_profiles(ctx.conn)
     |> result.map_error(DataBaseError),
   )
 
-  //   Array containing all users
   json.preprocessed_array({
     use row <- list.map(returned.rows)
     row_to_json(row)
   })
+  |> json.to_string
+  |> Ok
 }
 
-fn row_to_json(row: sql.QueryAllUsersRow) -> json.Json {
+fn row_to_json(row: sql.GetCompleteUserProfilesRow) -> json.Json {
   let user_role = {
     row.user_role
     |> enum_to_role()

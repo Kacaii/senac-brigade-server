@@ -22,7 +22,7 @@ import app/routes/occurrence/get_ocurrences_by_applicant
 import app/routes/occurrence/register_new_occurrence
 import app/routes/role/get_role_list
 import app/routes/user/delete_user
-import app/routes/user/get_all_users
+import app/routes/user/get_all_user_profiles
 import app/routes/user/get_crew_members
 import app/routes/user/get_user_profile
 import app/routes/user/login
@@ -51,7 +51,8 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
 
     http.Post, ["admin", "signup"] -> signup.handle_request(request:, ctx:)
 
-    http.Get, ["admin", "users"] -> get_all_users.handle_request(request:, ctx:)
+    http.Get, ["admin", "users"] ->
+      get_all_user_profiles.handle_request(request:, ctx:)
 
     http.Put, ["admin", "users", id] ->
       admin_update_user.handle_request(request:, ctx:, id:)

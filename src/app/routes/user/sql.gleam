@@ -45,6 +45,63 @@ RETURNING u.id, u.full_name;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `get_complete_user_profiles` query
+/// defined in `./src/app/routes/user/sql/get_complete_user_profiles.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type GetCompleteUserProfilesRow {
+  GetCompleteUserProfilesRow(
+    id: Uuid,
+    full_name: String,
+    registration: String,
+    email: String,
+    user_role: UserRoleEnum,
+    is_active: Bool,
+  )
+}
+
+/// 󰀖  Find all users on the database
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn get_complete_user_profiles(
+  db: pog.Connection,
+) -> Result(pog.Returned(GetCompleteUserProfilesRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use full_name <- decode.field(1, decode.string)
+    use registration <- decode.field(2, decode.string)
+    use email <- decode.field(3, decode.string)
+    use user_role <- decode.field(4, user_role_enum_decoder())
+    use is_active <- decode.field(5, decode.bool)
+    decode.success(GetCompleteUserProfilesRow(
+      id:,
+      full_name:,
+      registration:,
+      email:,
+      user_role:,
+      is_active:,
+    ))
+  }
+
+  "-- 󰀖  Find all users on the database
+SELECT
+    u.id,
+    u.full_name,
+    u.registration,
+    u.email,
+    u.user_role,
+    u.is_active
+FROM public.user_account AS u;
+"
+  |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `insert_new_user` query
 /// defined in `./src/app/routes/user/sql/insert_new_user.sql`.
 ///
@@ -94,63 +151,6 @@ RETURNING u.id;
   |> pog.parameter(pog.text(arg_4))
   |> pog.parameter(pog.text(arg_5))
   |> pog.parameter(user_role_enum_encoder(arg_6))
-  |> pog.returning(decoder)
-  |> pog.execute(db)
-}
-
-/// A row you get from running the `query_all_users` query
-/// defined in `./src/app/routes/user/sql/query_all_users.sql`.
-///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
-/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub type QueryAllUsersRow {
-  QueryAllUsersRow(
-    id: Uuid,
-    full_name: String,
-    registration: String,
-    email: String,
-    user_role: UserRoleEnum,
-    is_active: Bool,
-  )
-}
-
-/// 󰀖  Find all users on the database
-///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
-/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
-///
-pub fn query_all_users(
-  db: pog.Connection,
-) -> Result(pog.Returned(QueryAllUsersRow), pog.QueryError) {
-  let decoder = {
-    use id <- decode.field(0, uuid_decoder())
-    use full_name <- decode.field(1, decode.string)
-    use registration <- decode.field(2, decode.string)
-    use email <- decode.field(3, decode.string)
-    use user_role <- decode.field(4, user_role_enum_decoder())
-    use is_active <- decode.field(5, decode.bool)
-    decode.success(QueryAllUsersRow(
-      id:,
-      full_name:,
-      registration:,
-      email:,
-      user_role:,
-      is_active:,
-    ))
-  }
-
-  "-- 󰀖  Find all users on the database
-SELECT
-    u.id,
-    u.full_name,
-    u.registration,
-    u.email,
-    u.user_role,
-    u.is_active
-FROM public.user_account AS u;
-"
-  |> pog.query
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
