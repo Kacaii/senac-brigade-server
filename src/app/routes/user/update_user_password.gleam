@@ -1,4 +1,3 @@
-
 import app/routes/user
 import app/routes/user/sql
 import app/web.{type Context}
@@ -30,8 +29,14 @@ pub fn handle_request(
     |> form.run()
 
   case form_result {
-    Error(_) -> wisp.bad_request("Formulário inválido")
     Ok(form_data) -> handle_form_data(request:, ctx:, form_data:)
+    Error(_) -> {
+      let resp = wisp.unprocessable_content()
+
+      "Formulário inválido"
+      |> wisp.Text
+      |> wisp.set_body(resp, _)
+    }
   }
 }
 
@@ -42,24 +47,33 @@ fn handle_form_data(
 ) -> wisp.Response {
   case update_user_password(request:, ctx:, form_data:) {
     Error(err) -> handle_error(err)
-    Ok(_) ->
-      wisp.ok() |> wisp.set_body(wisp.Text("Senha atualizada com sucesso!"))
+    Ok(_) -> {
+      let resp = wisp.ok()
+
+      "Senha atualizada com sucesso!"
+      |> wisp.Text
+      |> wisp.set_body(resp, _)
+    }
   }
 }
 
 fn handle_error(err: UpdatePasswordError) -> wisp.Response {
   case err {
-    AuthenticationError(err) -> user.handle_authentication_error(err)
-    FailedToQueryCurrentPassword ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível consultar a senha do usuário",
-      ))
-    HashError ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Ocorreu um erro ao encriptografar a senha do usuário",
-      ))
+    AccessError(err) -> user.handle_authentication_error(err)
+    UserNotFound(id) -> {
+      let resp = wisp.not_found()
+      let body = "Usuário não encontrado: " <> uuid.to_string(id)
+
+      wisp.Text(body)
+      |> wisp.set_body(resp, _)
+    }
+    HashError -> {
+      let resp = wisp.internal_server_error()
+
+      "Ocorreu um erro ao encriptografar a senha do usuário"
+      |> wisp.Text
+      |> wisp.set_body(resp, _)
+    }
     WrongPassword -> wisp.bad_request("Senha incorreta")
     DataBaseError(err) -> web.handle_database_error(err)
     MustBeDifferent ->
@@ -71,10 +85,10 @@ fn update_user_password(
   request request: wisp.Request,
   ctx ctx: Context,
   form_data form_data: UpdatePasswordForm,
-) -> Result(pog.Returned(Nil), UpdatePasswordError) {
+) -> Result(Nil, UpdatePasswordError) {
   use user_uuid <- result.try(
     user.auth_user_from_cookie(request:, cookie_name: user.uuid_cookie_name)
-    |> result.map_error(AuthenticationError),
+    |> result.map_error(AccessError),
   )
 
   // Fetch the password hash from the DataBase
@@ -93,7 +107,8 @@ fn update_user_password(
   )
 
   case match_current_password, match_new_password {
-    // User typed correct password and the new one is different from the stored hash
+    // 1.  User typed correct password 
+    // 2.  The new password is different from the stored hash 
     True, False -> {
       // 󱔼  Hash the password first before updating
       use hashed_password <- result.try(
@@ -103,7 +118,7 @@ fn update_user_password(
       )
 
       // 󰚰  Update their password
-      use returned <- result.try(
+      use _ <- result.try(
         sql.update_user_password(
           ctx.conn,
           user_uuid,
@@ -114,7 +129,7 @@ fn update_user_password(
 
       //   All done!
       log_password_update(user_uuid)
-      Ok(returned)
+      Ok(Nil)
     }
 
     // User typed wrong password
@@ -136,7 +151,7 @@ fn query_user_password(
 
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(FailedToQueryCurrentPassword),
+    |> result.replace_error(UserNotFound(user_uuid)),
   )
 
   // 󱔼  Return the hashed password
@@ -172,12 +187,19 @@ type UpdatePasswordForm {
   UpdatePasswordForm(current_password: String, new_password: String)
 }
 
+///   Updating an user's password can fail
 type UpdatePasswordError {
-  AuthenticationError(user.AuthenticationError)
-  FailedToQueryCurrentPassword
+  ///   Authentication failed
+  AccessError(user.AuthenticationError)
+  ///   User was not found in the database
+  UserNotFound(uuid.Uuid)
+  /// 󱙀  Failed to access the DataBase
   DataBaseError(pog.QueryError)
+  ///   User typed the wrong password
   WrongPassword
+  ///   Failed to hash the user's password
   HashError
+  ///   New password must be different from the old one
   MustBeDifferent
 }
 
