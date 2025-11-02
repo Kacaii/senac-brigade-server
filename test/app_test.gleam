@@ -9,7 +9,7 @@ import pog
 import wisp
 import wisp/simulate
 
-pub const n_tests = 10
+pub const n_tests = 25
 
 pub fn main() -> Nil {
   gleeunit.main()
