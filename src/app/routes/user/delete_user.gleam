@@ -35,12 +35,12 @@ pub fn handle_request(
 type DeleteUserError {
   /// 󱙀  An error occurred while accessing the DataBase
   DataBaseError(pog.QueryError)
-  /// 󰒡  Target user has invalid Uuid
+  /// 󰘨  Target user has invalid Uuid
   InvalidUserUuid(String)
   /// 󱋟  Errors related to authentication and authorization
   AccessError(user.AccessControlError)
   /// 󰀒  User was not found in the Database
-  UuidNotFound(uuid.Uuid)
+  UserNotFound(uuid.Uuid)
   /// 󱅞  An user should not be able to delete theirself
   CantDeleteSelf
 }
@@ -49,7 +49,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
   case err {
     InvalidUserUuid(invalid_uuid) ->
       wisp.bad_request("Usuário possui Uuid Inválido: " <> invalid_uuid)
-    UuidNotFound(user_uuid) ->
+    UserNotFound(user_uuid) ->
       wisp.bad_request("Usuário não encontrado: " <> uuid.to_string(user_uuid))
     AccessError(err) -> user.handle_access_control_error(req, err)
     DataBaseError(err) -> web.handle_database_error(err)
@@ -88,7 +88,7 @@ fn try_delete_user(
       )
 
       case list.first(returned.rows) {
-        Error(_) -> Error(UuidNotFound(user_uuid))
+        Error(_) -> Error(UserNotFound(user_uuid))
         Ok(row) -> {
           json.object([
             #("id", json.string(uuid.to_string(row.id))),
