@@ -34,7 +34,8 @@ import app/web.{type Context}
 import gleam/http
 import wisp
 
-/// Handle the incoming HTTP Requests
+/// 󱂇  Main request router - matches HTTP methods and paths to appropriate handlers
+/// All routes pass through middleware first for common processing
 pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
   use request <- web.middleware(request: request, context: ctx)
 
@@ -103,14 +104,14 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
       register_new_occurrence.handle_request(request:, ctx:)
 
     http.Delete, ["occurrence", id] ->
-      delete_occurrence.handle_request(request, ctx, id)
+      delete_occurrence.handle_request(request:, ctx:, id:)
 
     // 󰢫  Brigade routes -------------------------------------------------------
     http.Get, ["brigade", id, "members"] ->
       get_brigade_members.handle_request(request:, ctx:, id:)
 
     //   Role routes ----------------------------------------------------------
-    http.Get, ["user", "roles"] -> get_role_list.handle_request(request, ctx)
+    http.Get, ["user", "roles"] -> get_role_list.handle_request(request:, ctx:)
 
     // Fallback routes ---------------------------------------------------------
     _, [] -> wisp.ok() |> wisp.html_body("<h2>🌠</h2>")

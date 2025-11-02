@@ -16,11 +16,14 @@ import wisp
 /// {["desenvolvedor", "bombeiro", "capitão", "analista"]}
 /// ```
 ///
-pub fn handle_request(request: wisp.Request, context: Context) -> wisp.Response {
+pub fn handle_request(
+  request request: wisp.Request,
+  ctx ctx: Context,
+) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
   // 󰡦  Find available roles
-  case query_user_roles(context) {
+  case query_user_roles(ctx) {
     // Send data back to the Client
     Ok(role_list) -> wisp.json_response(json.to_string(role_list), 200)
     // Handle possible errors

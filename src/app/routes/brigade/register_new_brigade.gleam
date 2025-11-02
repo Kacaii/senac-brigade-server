@@ -44,7 +44,7 @@ pub fn handle_request(
 fn handle_form_data(
   request request: wisp.Request,
   ctx ctx: Context,
-  form_data form_data: RegisterBrigadeFormData,
+  form_data form_data: RequestBody,
 ) -> wisp.Response {
   case try_register_brigade(request:, ctx:, form_data:) {
     Ok(resp) -> wisp.json_response(resp, 201)
@@ -55,7 +55,7 @@ fn handle_form_data(
 fn try_register_brigade(
   request request: wisp.Request,
   ctx ctx: Context,
-  form_data form_data: RegisterBrigadeFormData,
+  form_data form_data: RequestBody,
 ) -> Result(String, RegisterBrigadeError) {
   use _ <- result.try(
     user.check_role_authorization(
@@ -156,7 +156,7 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
 }
 
 /// 󱐁  Form that decodes the `RegisterBrigadeFormData` type
-fn register_brigade_form() -> form.Form(RegisterBrigadeFormData) {
+fn register_brigade_form() -> form.Form(RequestBody) {
   form.new({
     use leader_id <- form.field("lider_id", {
       form.parse_string |> form.check_not_empty()
@@ -177,7 +177,7 @@ fn register_brigade_form() -> form.Form(RegisterBrigadeFormData) {
     )
     use is_active <- form.field("ativo", { form.parse_checkbox })
 
-    form.success(RegisterBrigadeFormData(
+    form.success(RequestBody(
       leader_id:,
       name:,
       vehicle_code:,
@@ -187,8 +187,8 @@ fn register_brigade_form() -> form.Form(RegisterBrigadeFormData) {
   })
 }
 
-type RegisterBrigadeFormData {
-  RegisterBrigadeFormData(
+type RequestBody {
+  RequestBody(
     leader_id: String,
     name: String,
     vehicle_code: String,
