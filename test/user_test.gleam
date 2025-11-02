@@ -16,6 +16,7 @@ import youid/uuid
 
 pub fn login_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
   let req =
     simulate.browser_request(http.Post, "/user/login")
@@ -48,55 +49,46 @@ pub fn login_test() {
 
 pub fn signup_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
+  // START ---------------------------------------------------------------------
   let dummy_password = wisp.random_string(10)
 
-  let dummy_roles = [
-    role.Admin,
-    role.Analyst,
-    role.Captain,
-    role.Developer,
-    role.Firefighter,
-    role.Sargeant,
-  ]
-
   // Try to create an user for every available user role
-  list.each(dummy_roles, fn(designed_role) {
-    let req =
-      simulate.browser_request(http.Post, "/admin/signup")
-      |> simulate.form_body([
-        #("nome", wisp.random_string(10)),
-        #("matricula", int.random(111) |> int.to_string),
-        #("telefone", int.random(9_999_999_999) |> int.to_string),
-        #("email", wisp.random_string(5) <> "@email.com"),
-        #("senha", dummy_password),
-        #("confirma_senha", dummy_password),
-        #("cargo", role.to_string_pt_br(designed_role)),
-      ])
+  let req =
+    simulate.browser_request(http.Post, "/admin/signup")
+    |> simulate.form_body([
+      #("nome", wisp.random_string(10)),
+      #("matricula", int.random(111) |> int.to_string),
+      #("telefone", int.random(9_999_999_999) |> int.to_string),
+      #("email", wisp.random_string(5) <> "@email.com"),
+      #("senha", dummy_password),
+      #("confirma_senha", dummy_password),
+      #("cargo", role.to_string_pt_br(dummy.random_role())),
+    ])
 
-    let resp = router.handle_request(req, ctx)
-    assert resp.status == 401 as "Endpoint access should be restricted"
+  let resp = router.handle_request(req, ctx)
+  assert resp.status == 401 as "Endpoint access should be restricted"
 
-    //   AUTH -------------------------------------------------------------------
-    let with_auth = app_test.with_authorization(next: req)
-    let resp = router.handle_request(with_auth, ctx)
-    assert resp.status == 201 as "Response should be 201 Created"
+  //   AUTH -------------------------------------------------------------------
+  let with_auth = app_test.with_authorization(next: req)
+  let resp = router.handle_request(with_auth, ctx)
+  assert resp.status == 201 as "Response should be 201 Created"
 
-    let body = simulate.read_body(resp)
+  let body = simulate.read_body(resp)
 
-    let assert Ok(created_user_uuid) =
-      json.parse(body, {
-        use id <- decode.field("id", decode.string)
-        case uuid.from_string(id) {
-          Error(_) -> decode.failure(uuid.v7(), "user_uuid")
-          Ok(value) -> decode.success(value)
-        }
-      })
-      as "Response should contain valid JSON data"
+  let assert Ok(created_user) =
+    json.parse(body, {
+      use id <- decode.field("id", decode.string)
+      case uuid.from_string(id) {
+        Error(_) -> decode.failure(uuid.v7(), "user_uuid")
+        Ok(value) -> decode.success(value)
+      }
+    })
+    as "Response should contain valid JSON data"
 
-    // 󰃢  CLEANUP --------------------------------------------------------------
-    dummy.clean_user(ctx, created_user_uuid)
-  })
+  // 󰃢  CLEANUP ----------------------------------------------------------------
+  dummy.clean_user(ctx, created_user)
 
   // REGISTRATION ALREADY TAKEN ------------------------------------------------
   {
@@ -192,6 +184,7 @@ pub fn get_all_users_test() {
 
 pub fn update_user_profile_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
   let login_path = "/user/login"
   let signup_path = "/admin/signup"
 

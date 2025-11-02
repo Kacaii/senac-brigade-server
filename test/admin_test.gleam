@@ -13,6 +13,7 @@ import youid/uuid
 
 pub fn admin_update_user_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USER ----------------------------------------------------------------
   let dummy_user_id = dummy.random_user(ctx)
@@ -99,6 +100,7 @@ pub fn admin_update_user_test() {
 
 pub fn update_user_status_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
   let dummy_user = dummy.random_user(ctx)
   let path = "/admin/users/" <> uuid.to_string(dummy_user) <> "/status"

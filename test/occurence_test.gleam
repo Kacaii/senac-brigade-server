@@ -17,6 +17,7 @@ import youid/uuid
 
 pub fn register_new_occurrence_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USERS -----------------------------------------------------------
   let dummy_applicant_id = dummy.random_user(ctx)
@@ -128,6 +129,7 @@ pub fn register_new_occurrence_test() {
 
 pub fn get_occurrences_by_applicant_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USERS -----------------------------------------------------------
   let dummy_applicant_id = dummy.random_user(ctx)
@@ -234,6 +236,7 @@ pub fn get_occurrences_by_applicant_test() {
 
 pub fn delete_occurrence_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY
   let dummy_applicant = dummy.random_user(ctx)

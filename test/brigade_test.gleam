@@ -12,8 +12,9 @@ import youid/uuid
 
 pub fn get_brigade_members_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
 
-  // 󰚩  DUMMY ------------------------------------------------------------------
+  //   DUMMY LEADER -----------------------------------------------------------
   let leader_id = dummy.random_user(ctx)
 
   // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
@@ -70,7 +71,7 @@ pub fn get_brigade_members_test() {
     == []
     as "Returned list should be the same as the members list"
 
-  // 󰃢  CLEANUP ---------------------------------------------------------------- 
+  // 󰃢  CLEANUP ----------------------------------------------------------------
   dummy.clean_brigade(ctx, dummy_brigade)
   dummy.clean_user(ctx, leader_id)
   dummy.clean_user_list(ctx, dummy_members)
@@ -78,14 +79,15 @@ pub fn get_brigade_members_test() {
 
 pub fn get_all_brigades_test() {
   let ctx = app_test.global_data()
+  use _ <- list.each(list.range(1, app_test.n_tests))
   let path = "/admin/teams"
 
-  // 󰚩  DUMMY ------------------------------------------------------------------
+  //   DUMMY LEADER -----------------------------------------------------------
   let leader_id = dummy.random_user(ctx)
 
   // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
   let dummy_members =
-    list.map(list.range(0, 9), fn(_) { dummy.random_user(ctx) })
+    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx) })
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
@@ -122,7 +124,7 @@ pub fn get_all_brigades_test() {
   assert list.contains(returned_list, dummy_brigade)
     as "Response should contain the dummy brigade"
 
-  // 󰃢  CLEANUP ---------------------------------------------------------------- 
+  // 󰃢  CLEANUP ---------------------------------------------------------------
   dummy.clean_brigade(ctx, dummy_brigade)
   dummy.clean_user(ctx, leader_id)
   dummy.clean_user_list(ctx, dummy_members)
