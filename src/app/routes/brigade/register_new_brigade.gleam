@@ -74,7 +74,7 @@ fn try_register_brigade(
   )
 
   // Their members
-  use members_id <- result.try({
+  use members <- result.try({
     use maybe_uuid <- list.try_map(form_data.members_id)
     use member_id <- result.map(
       uuid.from_string(maybe_uuid)
@@ -97,17 +97,19 @@ fn try_register_brigade(
 
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(DataBaseReturnedEmptyRow),
+    |> result.replace_error(BrigadeNotFound),
   )
 
-  use members <- result.try({
-    list.try_map(members_id, fn(member) {
-      try_register_member(ctx:, brigade: row.id, member:)
-    })
-  })
+  use assigned_members <- result.try(try_assign_members(
+    ctx:,
+    to: row.id,
+    assign: members,
+  ))
 
   let members_json =
-    json.array(members, fn(member) { uuid.to_string(member) |> json.string })
+    json.array(assigned_members, fn(member) {
+      uuid.to_string(member) |> json.string
+    })
 
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
@@ -118,25 +120,27 @@ fn try_register_brigade(
   |> Ok
 }
 
-fn try_register_member(
+fn try_assign_members(
   ctx ctx: Context,
-  brigade brigade_id: uuid.Uuid,
-  member user_id: uuid.Uuid,
-) {
-  use returned <- result.try(
-    sql.assign_brigade_member(ctx.conn, brigade_id, user_id)
+  assign members: List(uuid.Uuid),
+  to brigade: uuid.Uuid,
+) -> Result(List(uuid.Uuid), RegisterBrigadeError) {
+  use returned <- result.map(
+    sql.assign_brigade_members(ctx.conn, brigade, members)
     |> result.map_error(DataBaseError),
   )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(FailedToRegisterMember(user_id))
-    Ok(row) -> Ok(row.user_id)
+  let assigned_members = {
+    use row <- list.map(returned.rows)
+    row.inserted_user_id
   }
+
+  assigned_members
 }
 
 fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response {
   case err {
-    DataBaseReturnedEmptyRow ->
+    BrigadeNotFound ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
         "O Banco de Dados não retornou informações sobre a nova equipe após a inserção",
@@ -200,7 +204,7 @@ type RequestBody {
 type RegisterBrigadeError {
   InvalidUuid(String)
   DataBaseError(pog.QueryError)
-  DataBaseReturnedEmptyRow
+  BrigadeNotFound
   AccessError(user.AccessControlError)
   FailedToRegisterMember(uuid.Uuid)
 }

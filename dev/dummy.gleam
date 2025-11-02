@@ -78,24 +78,16 @@ pub fn random_brigade(
   let assert Ok(inserted_brigade_row) = list.first(returned.rows)
     as "Database returned no results after creating new Brigade"
 
-  let assigments =
-    list.map(dummy_members, fn(member_id) {
-      //
-      let assert Ok(returned) =
-        b_sql.assign_brigade_member(
-          ctx.conn,
-          inserted_brigade_row.id,
-          member_id,
-        )
-        as "Failed to assign Brigade Member"
-      //
-      let assert Ok(id) = list.first(returned.rows)
-        as "No results after assigning brigade member"
+  let assert Ok(assigments) =
+    b_sql.assign_brigade_members(
+      ctx.conn,
+      inserted_brigade_row.id,
+      dummy_members,
+    )
+    as "Failed to assign dummy members to a brigade"
 
-      id
-    })
-
-  let assigned_members = list.map(assigments, fn(value) { value.user_id })
+  let assigned_members =
+    list.map(assigments.rows, fn(row) { row.inserted_user_id })
 
   let assigned_members_set = set.from_list(assigned_members)
   let dummy_members_set = set.from_list(dummy_members)

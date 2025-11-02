@@ -10,44 +10,40 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `assign_brigade_member` query
-/// defined in `./src/app/routes/brigade/sql/assign_brigade_member.sql`.
+/// A row you get from running the `assign_brigade_members` query
+/// defined in `./src/app/routes/brigade/sql/assign_brigade_members.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type AssignBrigadeMemberRow {
-  AssignBrigadeMemberRow(user_id: Uuid)
+pub type AssignBrigadeMembersRow {
+  AssignBrigadeMembersRow(inserted_user_id: Uuid)
 }
 
-///   Register a user as member of a team
+///   Assign a list of members to a brigade
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn assign_brigade_member(
+pub fn assign_brigade_members(
   db: pog.Connection,
   arg_1: Uuid,
-  arg_2: Uuid,
-) -> Result(pog.Returned(AssignBrigadeMemberRow), pog.QueryError) {
+  arg_2: List(Uuid),
+) -> Result(pog.Returned(AssignBrigadeMembersRow), pog.QueryError) {
   let decoder = {
-    use user_id <- decode.field(0, uuid_decoder())
-    decode.success(AssignBrigadeMemberRow(user_id:))
+    use inserted_user_id <- decode.field(0, uuid_decoder())
+    decode.success(AssignBrigadeMembersRow(inserted_user_id:))
   }
 
-  "--   Register a user as member of a team
-INSERT INTO public.brigade_membership AS bm
-(brigade_id, user_id)
-VALUES
-($1, $2)
-ON CONFLICT
-(brigade_id, user_id)
-DO NOTHING
-RETURNING user_id;
+  "--   Assign a list of members to a brigade
+SELECT b.inserted_user_id
+FROM public.assign_brigade_members($1, $2) AS b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
