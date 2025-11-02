@@ -45,15 +45,32 @@ pub fn handle_request(
   use <- wisp.require_method(request, http.Get)
 
   case query_brigade_members(ctx, brigade_id) {
-    Ok(members_list) -> wisp.json_response(json.to_string(members_list), 200)
+    Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_error(err)
+  }
+}
+
+/// Represents possible errors that can occur when retrieving brigade members
+/// from the database
+type GetBrigadeMembersError {
+  /// 󱔼  The provided brigade ID is not a valid UUID format
+  InvalidUUID(String)
+  /// 󱙀  An error occurred while accessing the database
+  DataBaseError(pog.QueryError)
+}
+
+fn handle_error(err: GetBrigadeMembersError) -> wisp.Response {
+  case err {
+    InvalidUUID(id) ->
+      wisp.bad_request("ID de Brigada de Incêndio inválido:" <> id)
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 
 fn query_brigade_members(
   ctx: Context,
   brigade_id: String,
-) -> Result(json.Json, GetBrigadeMembersError) {
+) -> Result(String, GetBrigadeMembersError) {
   use brigade_uuid <- result.try(
     uuid.from_string(brigade_id)
     |> result.replace_error(InvalidUUID(brigade_id)),
@@ -64,66 +81,26 @@ fn query_brigade_members(
     |> result.map_error(DataBaseError),
   )
 
-  let members_list = {
+  // Building response body
+  json.preprocessed_array({
     use row <- list.map(returned.rows)
-    get_brigade_members_row_to_json(row)
-  }
-
-  Ok(json.preprocessed_array(members_list))
-}
-
-fn get_brigade_members_row_to_json(
-  get_brigade_members_row: sql.QueryBrigadeMembersRow,
-) -> json.Json {
-  let sql.QueryBrigadeMembersRow(id:, full_name:, user_role:) =
-    get_brigade_members_row
-
-  let user_role =
-    user_role
-    |> enum_to_role()
-    |> role.to_string_pt_br()
-
-  json.object([
-    #("id", json.string(uuid.to_string(id))),
-    #("full_name", json.string(full_name)),
-    #("user_role", json.string(user_role)),
-  ])
-}
-
-fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
-  case user_role {
-    sql.Admin -> role.Admin
-    sql.Analyst -> role.Analyst
-    sql.Captain -> role.Captain
-    sql.Developer -> role.Developer
-    sql.Firefighter -> role.Firefighter
-    sql.Sargeant -> role.Sargeant
-  }
-}
-
-fn handle_error(err: GetBrigadeMembersError) -> wisp.Response {
-  case err {
-    InvalidUUID(brigade_id) ->
-      wisp.bad_request("ID de Brigada de Incêndio inválido:" <> brigade_id)
-    DataBaseError(db_err) -> {
-      let err_msg = case db_err {
-        pog.ConnectionUnavailable ->
-          "Conexão com o Banco de Dados não disponível"
-        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-        _ -> "Ocorreu um erro ao realizar a consulta no Banco de Dados"
+    let user_role =
+      case row.user_role {
+        sql.Admin -> role.Admin
+        sql.Analyst -> role.Analyst
+        sql.Captain -> role.Captain
+        sql.Developer -> role.Developer
+        sql.Firefighter -> role.Firefighter
+        sql.Sargeant -> role.Sargeant
       }
+      |> role.to_string_pt_br()
 
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_msg))
-    }
-  }
-}
-
-/// Represents possible errors that can occur when retrieving brigade members
-/// from the database
-type GetBrigadeMembersError {
-  /// The provided brigade ID is not a valid UUID format
-  InvalidUUID(String)
-  /// An error occurred while accessing the database to retrieve brigade members
-  DataBaseError(pog.QueryError)
+    json.object([
+      #("id", json.string(uuid.to_string(row.id))),
+      #("full_name", json.string(row.full_name)),
+      #("user_role", json.string(user_role)),
+    ])
+  })
+  |> json.to_string
+  |> Ok
 }
