@@ -285,6 +285,44 @@ WHERE bm.brigade_id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `replace_brigade_members` query
+/// defined in `./src/app/routes/brigade/sql/replace_brigade_members.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ReplaceBrigadeMembersRow {
+  ReplaceBrigadeMembersRow(inserted_user_id: Uuid)
+}
+
+///   Replace all brigade members
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn replace_brigade_members(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: List(Uuid),
+) -> Result(pog.Returned(ReplaceBrigadeMembersRow), pog.QueryError) {
+  let decoder = {
+    use inserted_user_id <- decode.field(0, uuid_decoder())
+    decode.success(ReplaceBrigadeMembersRow(inserted_user_id:))
+  }
+
+  "--   Replace all brigade members
+SELECT b.inserted_user_id
+FROM public.replace_brigade_members($1, $2) AS b;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `update_brigade_status` query
 /// defined in `./src/app/routes/brigade/sql/update_brigade_status.sql`.
 ///
