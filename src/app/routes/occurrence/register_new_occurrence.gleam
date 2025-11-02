@@ -148,7 +148,6 @@ fn insert_occurrence(
   ctx ctx: Context,
   body body: RegisterOccurrenceBody,
 ) -> Result(String, RegisterNewOccurrenceError) {
-  //   User
   use applicant_uuid <- result.try(
     user.auth_user_from_cookie(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AuthenticationFailed),
@@ -173,15 +172,11 @@ fn insert_occurrence(
     Ok(row) -> Ok(row)
   })
 
-  use assigned_brigades <- result.map({
-    list.try_map(body.brigade_list, fn(assigned_brigade) {
-      register_brigade_participation(
-        ctx:,
-        occorrence_id: row.id,
-        brigade_id: assigned_brigade,
-      )
-    })
-  })
+  use assigned_brigades <- result.try(try_assign_brigades(
+    ctx:,
+    assign: body.brigade_list,
+    to: row.id,
+  ))
 
   let assigned_brigades_json =
     json.array(assigned_brigades, fn(assigned) {
@@ -201,22 +196,25 @@ fn insert_occurrence(
     #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
   ])
   |> json.to_string
+  |> Ok
 }
 
-fn register_brigade_participation(
+fn try_assign_brigades(
   ctx ctx: Context,
-  occorrence_id occorrence_id: uuid.Uuid,
-  brigade_id brigade_id: uuid.Uuid,
-) {
+  assign brigades: List(uuid.Uuid),
+  to occorrence: uuid.Uuid,
+) -> Result(List(uuid.Uuid), RegisterNewOccurrenceError) {
   use returned <- result.try(
-    sql.assign_brigade_to_occurrence(ctx.conn, occorrence_id, brigade_id)
+    sql.assign_brigades_to_occurrence(ctx.conn, occorrence, brigades)
     |> result.map_error(DataBaseError),
   )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(FailedToAssignBrigade(brigade_id))
-    Ok(row) -> Ok(row.brigade_id)
+  let assigned_brigades = {
+    use row <- list.map(returned.rows)
+    row.inserted_brigade_id
   }
+
+  Ok(assigned_brigades)
 }
 
 fn priority_to_enum(priority: priority.Priority) -> sql.OccurrencePriorityEnum {

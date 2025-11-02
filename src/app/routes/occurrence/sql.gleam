@@ -10,44 +10,40 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `assign_brigade_to_occurrence` query
-/// defined in `./src/app/routes/occurrence/sql/assign_brigade_to_occurrence.sql`.
+/// A row you get from running the `assign_brigades_to_occurrence` query
+/// defined in `./src/app/routes/occurrence/sql/assign_brigades_to_occurrence.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.4.2 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type AssignBrigadeToOccurrenceRow {
-  AssignBrigadeToOccurrenceRow(brigade_id: Uuid)
+pub type AssignBrigadesToOccurrenceRow {
+  AssignBrigadesToOccurrenceRow(inserted_brigade_id: Uuid)
 }
 
-///    Assign a brigade as participant of a occurrence
+///    Assign as list of brigades as participants of a occurrence
 ///
 /// > 🐿️ This function was generated automatically using v4.4.2 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn assign_brigade_to_occurrence(
+pub fn assign_brigades_to_occurrence(
   db: pog.Connection,
   arg_1: Uuid,
-  arg_2: Uuid,
-) -> Result(pog.Returned(AssignBrigadeToOccurrenceRow), pog.QueryError) {
+  arg_2: List(Uuid),
+) -> Result(pog.Returned(AssignBrigadesToOccurrenceRow), pog.QueryError) {
   let decoder = {
-    use brigade_id <- decode.field(0, uuid_decoder())
-    decode.success(AssignBrigadeToOccurrenceRow(brigade_id:))
+    use inserted_brigade_id <- decode.field(0, uuid_decoder())
+    decode.success(AssignBrigadesToOccurrenceRow(inserted_brigade_id:))
   }
 
-  "--    Assign a brigade as participant of a occurrence
-INSERT INTO public.occurrence_brigade AS ob
-(occurrence_id, brigade_id)
-VALUES
-($1, $2)
-ON CONFLICT
-(occurrence_id, brigade_id)
-DO NOTHING
-RETURNING brigade_id;
+  "--    Assign as list of brigades as participants of a occurrence
+SELECT ob.inserted_brigade_id
+FROM public.assign_occurrence_brigades($1, $2) AS ob;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.text(uuid.to_string(arg_2)))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -378,6 +374,44 @@ FROM public.occurrence AS o
 WHERE o.created_at >= (NOW() - '1 day'::INTERVAL);
 "
   |> pog.query
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `replace_occurrence_brigades` query
+/// defined in `./src/app/routes/occurrence/sql/replace_occurrence_brigades.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ReplaceOccurrenceBrigadesRow {
+  ReplaceOccurrenceBrigadesRow(inserted_brigade_id: Uuid)
+}
+
+///   Replace all assigned brigades
+///
+/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn replace_occurrence_brigades(
+  db: pog.Connection,
+  arg_1: Uuid,
+  arg_2: List(Uuid),
+) -> Result(pog.Returned(ReplaceOccurrenceBrigadesRow), pog.QueryError) {
+  let decoder = {
+    use inserted_brigade_id <- decode.field(0, uuid_decoder())
+    decode.success(ReplaceOccurrenceBrigadesRow(inserted_brigade_id:))
+  }
+
+  "--   Replace all assigned brigades
+SELECT o.inserted_brigade_id
+FROM public.assign_occurrence_brigades($1, $2) AS o;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }

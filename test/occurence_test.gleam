@@ -238,11 +238,7 @@ pub fn delete_occurrence_test() {
   // DUMMY
   let dummy_applicant = dummy.random_user(ctx)
   let dummy_occurrence =
-    dummy.random_occurrence(
-      ctx,
-      applicant_id: dummy_applicant,
-      brigade_list: [],
-    )
+    dummy.random_occurrence(ctx, applicant_id: dummy_applicant, assign: [])
 
   let path = "/occurrence/" <> uuid.to_string(dummy_occurrence)
   let req = simulate.request(http.Delete, path)

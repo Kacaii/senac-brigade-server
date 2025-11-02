@@ -235,7 +235,7 @@ pub fn clean_user_list(ctx: web.Context, dummy: List(uuid.Uuid)) {
 pub fn random_occurrence(
   ctx: web.Context,
   applicant_id applicant_id: uuid.Uuid,
-  brigade_list brigade_list: List(uuid.Uuid),
+  assign dummy_brigade_list: List(uuid.Uuid),
 ) -> uuid.Uuid {
   let dummy_category = case random_category() {
     category.Fire -> o_sql.Fire
@@ -282,16 +282,35 @@ pub fn random_occurrence(
     )
     as "Failed to generate a dummy Occurrence"
 
-  let assert Ok(row) = list.first(returned.rows)
+  let assert Ok(created_occurrence_row) = list.first(returned.rows)
     as "Database returned no results"
 
-  let assert Ok(_) =
-    list.try_each(brigade_list, fn(id) {
-      o_sql.assign_brigade_to_occurrence(ctx.conn, row.id, id)
-    })
-    as "Failed to assign brigade to occurrence"
+  let assert Ok(assigned_brigades_row) =
+    o_sql.assign_brigades_to_occurrence(
+      ctx.conn,
+      created_occurrence_row.id,
+      dummy_brigade_list,
+    )
 
-  row.id
+  let dummy_brigades_set = set.from_list(dummy_brigade_list)
+  let assigned_brigades_set =
+    set.from_list({
+      let rows = assigned_brigades_row.rows
+      use row <- list.map(rows)
+      row.inserted_brigade_id
+    })
+
+  assert set.difference(assigned_brigades_set, dummy_brigades_set)
+    |> set.to_list()
+    == []
+    as "Assigned brigades contain unexpected items"
+
+  assert set.difference(dummy_brigades_set, assigned_brigades_set)
+    |> set.to_list()
+    == []
+    as "Some brigades were not assigned"
+
+  created_occurrence_row.id
 }
 
 /// Panic on failure
