@@ -3,6 +3,7 @@ BEGIN;
 -- DROP ------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS public.query_crew_members;
 DROP FUNCTION IF EXISTS public.assign_brigade_members;
+DROP FUNCTION IF EXISTS public.replace_brigade_members;
 
 -- CREATE ----------------------------------------------------------------------
 
@@ -43,6 +44,27 @@ BEGIN
     ON CONFLICT (brigade_id, user_id)
     DO NOTHING
     RETURNING user_id;
+END;
+$$;
+
+
+-- 󰮆  Replace assigned members from a brigade
+CREATE OR REPLACE FUNCTION public.replace_brigade_members(
+    p_brigade_id UUID,
+    p_members_id UUID []
+)
+RETURNS TABLE (inserted_user_id UUID)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    --   Remove all current members
+    DELETE FROM public.brigade_membership AS bm
+    WHERE bm.brigade_id = p_brigade_id;
+
+    --  Assign the new ones
+    RETURN QUERY
+    SELECT b.inserted_user_id
+    FROM public.assign_brigade_members(p_brigade_id, p_members_id) AS b;
 END;
 $$;
 
