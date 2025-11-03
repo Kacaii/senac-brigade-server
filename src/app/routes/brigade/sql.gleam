@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/brigade/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.2 of
+//// > 🐿️ This module was generated automatically using v4.5.0 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -13,7 +13,7 @@ import youid/uuid.{type Uuid}
 /// A row you get from running the `assign_brigade_members` query
 /// defined in `./src/app/routes/brigade/sql/assign_brigade_members.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type AssignBrigadeMembersRow {
@@ -22,7 +22,7 @@ pub type AssignBrigadeMembersRow {
 
 ///   Assign a list of members to a brigade
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn assign_brigade_members(
@@ -51,7 +51,7 @@ FROM public.assign_brigade_members($1, $2) AS b;
 /// A row you get from running the `delete_brigade_by_id` query
 /// defined in `./src/app/routes/brigade/sql/delete_brigade_by_id.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type DeleteBrigadeByIdRow {
@@ -60,7 +60,7 @@ pub type DeleteBrigadeByIdRow {
 
 ///   Remove a brigade from the DataBase
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn delete_brigade_by_id(
@@ -89,7 +89,7 @@ RETURNING
 /// A row you get from running the `insert_new_brigade` query
 /// defined in `./src/app/routes/brigade/sql/insert_new_brigade.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type InsertNewBrigadeRow {
@@ -98,7 +98,7 @@ pub type InsertNewBrigadeRow {
 
 ///   Register a new brigade into the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn insert_new_brigade(
@@ -141,7 +141,7 @@ INSERT INTO public.brigade AS b (
 /// A row you get from running the `query_all_brigades` query
 /// defined in `./src/app/routes/brigade/sql/query_all_brigades.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryAllBrigadesRow {
@@ -155,7 +155,7 @@ pub type QueryAllBrigadesRow {
 
 /// 󱉯  Find all registered brigades
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_all_brigades(
@@ -192,7 +192,7 @@ LEFT JOIN public.user_account AS u
 /// A row you get from running the `query_brigade_by_id` query
 /// defined in `./src/app/routes/brigade/sql/query_brigade_by_id.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryBrigadeByIdRow {
@@ -206,7 +206,7 @@ pub type QueryBrigadeByIdRow {
 
 /// 󰡦  Find details about a specific brigade
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_brigade_by_id(
@@ -246,7 +246,7 @@ WHERE b.id = $1;
 /// A row you get from running the `query_brigade_members` query
 /// defined in `./src/app/routes/brigade/sql/query_brigade_members.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryBrigadeMembersRow {
@@ -255,7 +255,7 @@ pub type QueryBrigadeMembersRow {
 
 ///   Find all members of a brigade
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_brigade_members(
@@ -288,7 +288,7 @@ WHERE bm.brigade_id = $1;
 /// A row you get from running the `replace_brigade_members` query
 /// defined in `./src/app/routes/brigade/sql/replace_brigade_members.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type ReplaceBrigadeMembersRow {
@@ -297,7 +297,7 @@ pub type ReplaceBrigadeMembersRow {
 
 ///   Replace all brigade members
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn replace_brigade_members(
@@ -326,7 +326,7 @@ FROM public.replace_brigade_members($1, $2) AS b;
 /// A row you get from running the `update_brigade_status` query
 /// defined in `./src/app/routes/brigade/sql/update_brigade_status.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UpdateBrigadeStatusRow {
@@ -335,7 +335,7 @@ pub type UpdateBrigadeStatusRow {
 
 ///   Set the brigade is_active status to ON or OFF
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn update_brigade_status(
@@ -372,7 +372,7 @@ RETURNING
 
 /// Corresponds to the Postgres `user_role_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UserRoleEnum {

@@ -1,6 +1,7 @@
 import app/router
 import app/routes/role
 import app/routes/user/sql as u_sql
+import app_dev/sql as dev_sql
 import app_test
 import dummy
 import gleam/dynamic/decode
@@ -132,5 +133,5 @@ pub fn update_user_status_test() {
       decode.success(Nil)
     })
 
-  dummy.clean_user(ctx, dummy_user)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }

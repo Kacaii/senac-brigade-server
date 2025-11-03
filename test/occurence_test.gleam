@@ -3,6 +3,7 @@ import app/routes/occurrence/category
 import app/routes/occurrence/priority
 import app/routes/occurrence/sql as o_sql
 import app/routes/occurrence/subcategory
+import app_dev/sql as dev_sql
 import app_test
 import dummy
 import gleam/dynamic/decode
@@ -121,10 +122,9 @@ pub fn register_new_occurrence_test() {
     as "Users were not registered as participants"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  dummy.clean_occurrence(ctx, dummy_occurrence_id)
-  dummy.clean_brigade(ctx, dummy_brigade_id)
-  dummy.clean_user(ctx, dummy_applicant_id)
-  dummy.clean_user_list(ctx, dummy_participants_id)
+  let assert Ok(_) = dev_sql.truncate_occurrence(ctx.conn)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }
 
 pub fn get_occurrences_by_applicant_test() {
@@ -146,7 +146,7 @@ pub fn get_occurrences_by_applicant_test() {
     )
 
   // DUMMY OCCURRENCE ----------------------------------------------------------
-  let dummy_occurrence_id =
+  let dummy_occurrence =
     dummy.random_occurrence(ctx, dummy_applicant_id, [dummy_brigade_id])
 
   let path = "/user/" <> uuid.to_string(dummy_applicant_id) <> "/occurrences"
@@ -223,15 +223,18 @@ pub fn get_occurrences_by_applicant_test() {
           "equipes",
           decode.list(occurrence_brigade_decoder),
         )
-        decode.success(id)
+
+        assert id == dummy_occurrence
+          as "Occurence uuid should be the same as the dummy one"
+
+        decode.success(Nil)
       })
     })
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  dummy.clean_occurrence(ctx, dummy_occurrence_id)
-  dummy.clean_brigade(ctx, dummy_brigade_id)
-  dummy.clean_user(ctx, dummy_applicant_id)
-  dummy.clean_user_list(ctx, dummy_participants_id)
+  let assert Ok(_) = dev_sql.truncate_occurrence(ctx.conn)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }
 
 pub fn delete_occurrence_test() {
@@ -272,6 +275,6 @@ pub fn delete_occurrence_test() {
   assert deleted_occurrence == dummy_occurrence
     as "Deleted the wrong Occurrence"
 
-  // 󰃢  CLEANUP ----------------------------------------------------- ----------
-  dummy.clean_user(ctx, dummy_applicant)
+  // 󰃢  CLEANUP ----------------------------------------------------------------
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }

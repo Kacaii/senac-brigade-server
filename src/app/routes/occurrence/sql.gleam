@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/occurrence/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.2 of
+//// > 🐿️ This module was generated automatically using v4.5.0 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -13,7 +13,7 @@ import youid/uuid.{type Uuid}
 /// A row you get from running the `assign_brigades_to_occurrence` query
 /// defined in `./src/app/routes/occurrence/sql/assign_brigades_to_occurrence.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type AssignBrigadesToOccurrenceRow {
@@ -22,7 +22,7 @@ pub type AssignBrigadesToOccurrenceRow {
 
 ///    Assign as list of brigades as participants of a occurrence
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn assign_brigades_to_occurrence(
@@ -51,7 +51,7 @@ FROM public.assign_occurrence_brigades($1, $2) AS ob;
 /// A row you get from running the `delete_occurrence_by_id` query
 /// defined in `./src/app/routes/occurrence/sql/delete_occurrence_by_id.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type DeleteOccurrenceByIdRow {
@@ -60,7 +60,7 @@ pub type DeleteOccurrenceByIdRow {
 
 ///   Remove an occurrence from the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn delete_occurrence_by_id(
@@ -86,7 +86,7 @@ RETURNING o.id;
 /// A row you get from running the `insert_new_occurence` query
 /// defined in `./src/app/routes/occurrence/sql/insert_new_occurence.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type InsertNewOccurenceRow {
@@ -100,7 +100,7 @@ pub type InsertNewOccurenceRow {
 
 ///   Inserts a new occurrence into the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn insert_new_occurence(
@@ -165,7 +165,7 @@ RETURNING
 /// A row you get from running the `query_occurences_by_applicant` query
 /// defined in `./src/app/routes/occurrence/sql/query_occurences_by_applicant.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryOccurencesByApplicantRow {
@@ -188,7 +188,7 @@ pub type QueryOccurencesByApplicantRow {
 ///   Retrieves all occurrences associated with a user,
 /// including detailed category information and resolution status.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_occurences_by_applicant(
@@ -273,7 +273,7 @@ WHERE o.applicant_id = $1;
 /// A row you get from running the `query_occurrence_participants` query
 /// defined in `./src/app/routes/occurrence/sql/query_occurrence_participants.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryOccurrenceParticipantsRow {
@@ -282,7 +282,7 @@ pub type QueryOccurrenceParticipantsRow {
 
 /// 󰀖  Find all users that participated in a occurrence
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_occurrence_participants(
@@ -310,7 +310,7 @@ WHERE ob.occurrence_id = $1;
 /// A row you get from running the `query_recent_occurrences` query
 /// defined in `./src/app/routes/occurrence/sql/query_recent_occurrences.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryRecentOccurrencesRow {
@@ -327,7 +327,7 @@ pub type QueryRecentOccurrencesRow {
 
 ///   Find all occurrences from the last 24 hours
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_recent_occurrences(
@@ -381,7 +381,7 @@ WHERE o.created_at >= (NOW() - '1 day'::INTERVAL);
 /// A row you get from running the `replace_occurrence_brigades` query
 /// defined in `./src/app/routes/occurrence/sql/replace_occurrence_brigades.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type ReplaceOccurrenceBrigadesRow {
@@ -390,7 +390,7 @@ pub type ReplaceOccurrenceBrigadesRow {
 
 ///   Replace all assigned brigades
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn replace_occurrence_brigades(
@@ -420,7 +420,7 @@ FROM public.assign_occurrence_brigades($1, $2) AS o;
 
 /// Corresponds to the Postgres `occurrence_category_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type OccurrenceCategoryEnum {
@@ -451,7 +451,7 @@ fn occurrence_category_enum_encoder(occurrence_category_enum) -> pog.Value {
   |> pog.text
 }/// Corresponds to the Postgres `occurrence_priority_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type OccurrencePriorityEnum {
@@ -479,7 +479,7 @@ fn occurrence_priority_enum_encoder(occurrence_priority_enum) -> pog.Value {
   |> pog.text
 }/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type OccurrenceSubcategoryEnum {

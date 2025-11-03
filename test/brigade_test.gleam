@@ -1,5 +1,6 @@
 import app/router
 import app/routes/role
+import app_dev/sql as dev_sql
 import app_test
 import dummy
 import gleam/dynamic/decode
@@ -72,9 +73,8 @@ pub fn get_brigade_members_test() {
     as "Returned list should be the same as the members list"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  dummy.clean_brigade(ctx, dummy_brigade)
-  dummy.clean_user(ctx, leader_id)
-  dummy.clean_user_list(ctx, dummy_members)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }
 
 pub fn get_all_brigades_test() {
@@ -125,7 +125,6 @@ pub fn get_all_brigades_test() {
     as "Response should contain the dummy brigade"
 
   // 󰃢  CLEANUP ---------------------------------------------------------------
-  dummy.clean_brigade(ctx, dummy_brigade)
-  dummy.clean_user(ctx, leader_id)
-  dummy.clean_user_list(ctx, dummy_members)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }

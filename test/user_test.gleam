@@ -1,6 +1,7 @@
 import app/router
 import app/routes/role
 import app/routes/user
+import app_dev/sql as dev_sql
 import app_test
 import dummy
 import gleam/dynamic/decode
@@ -77,7 +78,7 @@ pub fn signup_test() {
 
   let body = simulate.read_body(resp)
 
-  let assert Ok(created_user) =
+  let assert Ok(_) =
     json.parse(body, {
       use id <- decode.field("id", decode.string)
       case uuid.from_string(id) {
@@ -88,7 +89,7 @@ pub fn signup_test() {
     as "Response should contain valid JSON data"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  dummy.clean_user(ctx, created_user)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 
   // REGISTRATION ALREADY TAKEN ------------------------------------------------
   {
@@ -209,7 +210,7 @@ pub fn update_user_profile_test() {
   let with_auth = app_test.with_authorization(new_user_req)
   let new_user_resp = router.handle_request(with_auth, ctx)
 
-  let assert Ok(new_user) =
+  let assert Ok(_) =
     json.parse(simulate.read_body(new_user_resp), {
       use maybe_uuid <- decode.field("id", decode.string)
       case uuid.from_string(maybe_uuid) {
@@ -302,5 +303,5 @@ pub fn update_user_profile_test() {
   }
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  dummy.clean_user(ctx, new_user)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
 }

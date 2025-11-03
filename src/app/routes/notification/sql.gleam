@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/notification/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.2 of
+//// > 🐿️ This module was generated automatically using v4.5.0 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -11,7 +11,7 @@ import youid/uuid.{type Uuid}
 /// A row you get from running the `query_notification_preferences` query
 /// defined in `./src/app/routes/notification/sql/query_notification_preferences.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryNotificationPreferencesRow {
@@ -23,7 +23,7 @@ pub type QueryNotificationPreferencesRow {
 
 ///   Find the notification preferences for an user
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_notification_preferences(
@@ -51,7 +51,7 @@ WHERE np.user_id = $1;
 
 ///   Update user notification preference
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn update_notification_preferences(
@@ -83,7 +83,7 @@ WHERE
 
 /// Corresponds to the Postgres `notification_type_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type NotificationTypeEnum {

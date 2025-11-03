@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/routes/user/sql`.
-//// > 🐿️ This module was generated automatically using v4.4.2 of
+//// > 🐿️ This module was generated automatically using v4.5.0 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -12,7 +12,7 @@ import youid/uuid.{type Uuid}
 /// A row you get from running the `delete_user_by_id` query
 /// defined in `./src/app/routes/user/sql/delete_user_by_id.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type DeleteUserByIdRow {
@@ -21,7 +21,7 @@ pub type DeleteUserByIdRow {
 
 ///   Remove and user from the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn delete_user_by_id(
@@ -48,7 +48,7 @@ RETURNING u.id, u.full_name;
 /// A row you get from running the `get_complete_user_profiles` query
 /// defined in `./src/app/routes/user/sql/get_complete_user_profiles.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type GetCompleteUserProfilesRow {
@@ -64,7 +64,7 @@ pub type GetCompleteUserProfilesRow {
 
 /// 󰀖  Find all users on the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn get_complete_user_profiles(
@@ -105,7 +105,7 @@ FROM public.user_account AS u;
 /// A row you get from running the `insert_new_user` query
 /// defined in `./src/app/routes/user/sql/insert_new_user.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type InsertNewUserRow {
@@ -114,7 +114,7 @@ pub type InsertNewUserRow {
 
 ///   Inserts a new user into the database
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn insert_new_user(
@@ -158,7 +158,7 @@ RETURNING u.id;
 /// A row you get from running the `query_crew_members` query
 /// defined in `./src/app/routes/user/sql/query_crew_members.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryCrewMembersRow {
@@ -173,7 +173,7 @@ pub type QueryCrewMembersRow {
 /// 󰢫  Retrieves detailed information about fellow brigade members
 /// for a given user, including their names and role details.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_crew_members(
@@ -208,7 +208,7 @@ INNER JOIN public.user_account AS u
 /// A row you get from running the `query_login_token` query
 /// defined in `./src/app/routes/user/sql/query_login_token.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryLoginTokenRow {
@@ -218,7 +218,7 @@ pub type QueryLoginTokenRow {
 ///   Retrieves a user's ID and password hash from their registration
 /// number for authentication purposes.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_login_token(
@@ -250,7 +250,7 @@ WHERE u.registration = $1;
 /// A row you get from running the `query_occurrences_by_participant` query
 /// defined in `./src/app/routes/user/sql/query_occurrences_by_participant.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryOccurrencesByParticipantRow {
@@ -259,7 +259,7 @@ pub type QueryOccurrencesByParticipantRow {
 
 /// 󰡦  Find all occurrences a user participated in
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_occurrences_by_participant(
@@ -289,7 +289,7 @@ WHERE ob.occurrence_id = $1;
 /// A row you get from running the `query_user_id_by_registration` query
 /// defined in `./src/app/routes/user/sql/query_user_id_by_registration.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserIdByRegistrationRow {
@@ -298,7 +298,7 @@ pub type QueryUserIdByRegistrationRow {
 
 ///   Retrieves a user's ID from their registration number.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_id_by_registration(
@@ -324,7 +324,7 @@ WHERE u.registration = $1;
 /// A row you get from running the `query_user_name` query
 /// defined in `./src/app/routes/user/sql/query_user_name.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserNameRow {
@@ -333,7 +333,7 @@ pub type QueryUserNameRow {
 
 ///   Retrieves a user's full name by their user ID.
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_name(
@@ -359,7 +359,7 @@ WHERE u.id = $1;
 /// A row you get from running the `query_user_password` query
 /// defined in `./src/app/routes/user/sql/query_user_password.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserPasswordRow {
@@ -368,7 +368,7 @@ pub type QueryUserPasswordRow {
 
 ///   Find the password hash from an user
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_password(
@@ -394,7 +394,7 @@ WHERE u.id = $1;
 /// A row you get from running the `query_user_profile` query
 /// defined in `./src/app/routes/user/sql/query_user_profile.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserProfileRow {
@@ -410,7 +410,7 @@ pub type QueryUserProfileRow {
 
 /// 󰀖  Find basic information about an user account
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_profile(
@@ -454,7 +454,7 @@ WHERE u.id = $1;
 /// A row you get from running the `query_user_role` query
 /// defined in `./src/app/routes/user/sql/query_user_role.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryUserRoleRow {
@@ -463,7 +463,7 @@ pub type QueryUserRoleRow {
 
 /// 󰀖  Find user access level
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_user_role(
@@ -489,7 +489,7 @@ WHERE u.id = $1;
 
 ///   Set an new value to the password of an user
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn update_user_password(
@@ -516,7 +516,7 @@ WHERE id = $1;
 /// A row you get from running the `update_user_profile` query
 /// defined in `./src/app/routes/user/sql/update_user_profile.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UpdateUserProfileRow {
@@ -525,7 +525,7 @@ pub type UpdateUserProfileRow {
 
 ///   Update an authenticated user profile
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn update_user_profile(
@@ -565,7 +565,7 @@ RETURNING
 /// A row you get from running the `update_user_status` query
 /// defined in `./src/app/routes/user/sql/update_user_status.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UpdateUserStatusRow {
@@ -574,7 +574,7 @@ pub type UpdateUserStatusRow {
 
 /// 󰚰  Update an user `is_active` field
 ///
-/// > 🐿️ This function was generated automatically using v4.4.2 of
+/// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn update_user_status(
@@ -607,7 +607,7 @@ RETURNING u.id, u.is_active;
 
 /// Corresponds to the Postgres `user_role_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.4.2 of the
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UserRoleEnum {
