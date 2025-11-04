@@ -1,4 +1,3 @@
-
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
@@ -33,13 +32,24 @@ pub fn handle_request(
 
   case decode.run(json_data, body_decoder()) {
     Error(err) -> web.handle_decode_error(err)
-    Ok(is_active) -> {
+    Ok(is_active) ->
       case try_update_user_status(req:, ctx:, user_id:, is_active:) {
         Error(err) -> handle_error(req, err)
         Ok(resp) -> wisp.json_response(resp, 200)
       }
-    }
   }
+}
+
+///   Updating an user status can fail
+type UpdateUserStatusError {
+  ///   Error related to authentication / authorization
+  AccessError(user.AccessControlError)
+  ///   User not found in the DataBase
+  UserNotFound(String)
+  /// 󱔼  UUID is not valid
+  InvalidUuid(String)
+  /// 󱘱  Failed to query the DataBase
+  DataBaseError(pog.QueryError)
 }
 
 fn try_update_user_status(
@@ -82,23 +92,22 @@ fn try_update_user_status(
 
 fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response {
   case err {
+    AccessError(err) -> user.handle_access_control_error(req, err)
+    DataBaseError(err) -> web.handle_database_error(err)
     InvalidUuid(user_id) ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
-    UserNotFound(id) -> wisp.bad_request("Usuário não encontrado: " <> id)
-    AccessError(err) -> user.handle_access_control_error(req, err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    UserNotFound(id) -> {
+      let resp = wisp.not_found()
+      let body = "Usuário não encontrado: " <> id
+
+      wisp.Text(body)
+      |> wisp.set_body(resp, _)
+    }
   }
 }
 
 fn body_decoder() -> decode.Decoder(Bool) {
   use is_active <- decode.field("status", decode.bool)
   decode.success(is_active)
-}
-
-type UpdateUserStatusError {
-  AccessError(user.AccessControlError)
-  UserNotFound(String)
-  InvalidUuid(String)
-  DataBaseError(pog.QueryError)
 }
