@@ -60,11 +60,7 @@ pub fn main() -> Nil {
 
   // Start both HHTP Server and DataBase connection under a supervision tree ---
   let assert Ok(_) =
-    start_application_supervised(
-      pog_config: pog.ssl(pog_config, pog.SslVerified),
-      handler:,
-      secret_key:,
-    )
+    start_application_supervised(pog_config:, handler:, secret_key:)
     as "󰪋  Failed to start the application supervisor"
 
   // ⏾ 󰒲
@@ -108,7 +104,18 @@ pub fn read_connection_uri(
   // Remember to set the enviroment variable before running the app
   use postgres_url <- result.try(envoy.get("DATABASE_URL"))
 
-  pog.url_config(name, postgres_url)
+  case envoy.get("SSL_ENABLED") {
+    // Disable SSL when not in production
+    Error(_) -> pog.url_config(name, postgres_url)
+    Ok(env) -> {
+      // Parse config
+      use config <- result.map(pog.url_config(name, postgres_url))
+      pog.ssl(config, case env {
+        "true" -> pog.SslDisabled
+        _ -> pog.SslVerified
+      })
+    }
+  }
 }
 
 /// Access to static files

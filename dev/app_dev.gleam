@@ -50,6 +50,7 @@ fn dummy_data(ctx: web.Context) {
     list.shuffle(dummy_brigades)
     |> list.sized_chunk(n_occurences / n_brigades)
 
+  io.println(" 󱐁  Registrando ocorrências..")
   let dummy_occurrences =
     list.map(list.range(1, n_occurences), fn(_) {
       let assert Ok(applicant_id) = list.first(list.sample(dummy_users, 1))
