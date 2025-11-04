@@ -8,9 +8,14 @@ import gleam/io
 import gleam/list
 import pog
 
+/// Number of generated user accounts
+const n_user_accounts = 450
+
+/// Number of generated brigades
 const n_brigades = 30
 
-const n_user_accounts = 450
+/// Number of generated brigades
+const n_occurences = 200
 
 pub fn main() -> Nil {
   let ctx = setup_context()
@@ -35,15 +40,26 @@ fn dummy_data(ctx: web.Context) {
     list.shuffle(dummy_users)
     |> list.sized_chunk(n_user_accounts / n_brigades)
 
-  let teams =
+  let dummy_brigades =
     list.map(assigned_members, fn(team) {
       let assert Ok(leader) = list.first(team)
       dummy.random_brigade(ctx, leader, team)
     })
 
+  let assigned_brigades =
+    list.shuffle(dummy_brigades)
+    |> list.sized_chunk(n_occurences / n_brigades)
+
+  let dummy_occurrences =
+    list.map(list.range(1, n_occurences), fn(_) {
+      let assert Ok(applicant_id) = list.first(list.sample(dummy_users, 1))
+      let assert Ok(assign) = list.first(list.sample(assigned_brigades, 1))
+      dummy.random_occurrence(ctx, applicant_id:, assign:)
+    })
+
   // ALL DONE ------------------------------------------------------------------
-  let n_created_teams_str =
-    teams
+  let n_created_brigades_str =
+    dummy_brigades
     |> list.length
     |> int.to_string
 
@@ -52,9 +68,15 @@ fn dummy_data(ctx: web.Context) {
     |> list.length
     |> int.to_string
 
+  let n_created_occ_str =
+    dummy_occurrences
+    |> list.length
+    |> int.to_string
+
   io.println("   Prontinho!")
   io.println("Total de " <> n_created_users_str <> " usuários criados.  ")
-  io.println("Total de " <> n_created_teams_str <> " equipes criadas.  ")
+  io.println("Total de " <> n_created_brigades_str <> " equipes criadas.  ")
+  io.println("Total de " <> n_created_occ_str <> " ocorrências criadas.  ")
 }
 
 fn setup_context() {
