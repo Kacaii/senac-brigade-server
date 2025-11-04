@@ -63,6 +63,12 @@ prod:
 setup_admin:
     gleam dev -- admin
 
+#   Insert mock data
+[group('  gleam')]
+[group('  dev')]
+dummy:
+    gleam dev -- dummy
+
 [group('  dev')]
 clean_users:
     psql $DATABASE_URL -c "delete from user_account where registration != '000';"
