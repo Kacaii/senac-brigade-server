@@ -12,7 +12,7 @@ import wisp
 import wisp/simulate
 import youid/uuid
 
-pub fn register_new_brigade() {
+pub fn register_new_brigade_test() {
   let path = "/admin/teams"
   let ctx = app_test.global_data()
   use _ <- list.each(list.range(1, app_test.n_tests))
@@ -38,10 +38,16 @@ pub fn register_new_brigade() {
       ]),
     )
 
+  // REGULAR REQUEST
   let resp = router.handle_request(req, ctx)
   assert resp.status == 401 as "Endpoint restricted to Admin users"
 
+  // AS ADMIN
+  let with_auth = app_test.with_authorization(req)
+  let resp = router.handle_request(with_auth, ctx)
+
   let body = simulate.read_body(resp)
+
   let assert Ok(_) =
     json.parse(body, {
       let uuid_decoder = {
@@ -57,16 +63,14 @@ pub fn register_new_brigade() {
         decode.success(members)
       }
 
-      use leader_id <- decode.field("lider", uuid_decoder)
-      use members <- decode.field("members", members_decoder)
+      use _ <- decode.field("id", uuid_decoder)
       use _ <- decode.field("created_at", decode.float)
+      use members <- decode.field("members", members_decoder)
 
       let members_set = set.from_list(members)
       let dummy_members_set = set.from_list(dummy_members)
 
       // ASSERTIONS ------------------------------------------------------------
-      assert leader_id == dummy_leader as "Wrong leader"
-
       assert set.difference(members_set, dummy_members_set) |> set.to_list()
         == []
         as "Returned members contain unexpected users"
@@ -76,6 +80,7 @@ pub fn register_new_brigade() {
 
       decode.success(Nil)
     })
+    as "Response should contain valid JSON"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)

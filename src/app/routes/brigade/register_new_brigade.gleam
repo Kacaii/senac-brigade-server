@@ -2,7 +2,8 @@ import app/routes/brigade/sql
 import app/routes/role
 import app/routes/user
 import app/web.{type Context}
-import formal/form
+import gleam/dynamic/decode
+import gleam/http
 import gleam/json
 import gleam/list
 import gleam/result
@@ -20,33 +21,62 @@ import youid/uuid
 /// ```json
 /// {
 ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-///   "date": 1759790156.0
+///   "created_at": 1759790156.0
+///   "members": [
+///     "99acee85-3c8c-4ad6-9c91-2bda49b1b833",
+///     "89d95896-eafd-4701-9e13-20adcb56c81e",
+///     "7de2d080-a7fa-4307-a824-b696c09d08da"
+///   ]
 /// }
 /// ```
 pub fn handle_request(
   request request: wisp.Request,
   ctx ctx: Context,
 ) -> wisp.Response {
-  use form_data <- wisp.require_form(request)
+  use <- wisp.require_method(request, http.Post)
+  use body <- wisp.require_json(request)
 
-  let form_result =
-    register_brigade_form()
-    |> form.add_values(form_data.values)
-    |> form.run()
-  case form_result {
-    Ok(form_data) -> handle_form_data(request:, ctx:, form_data:)
-    Error(_) ->
-      wisp.unprocessable_content()
-      |> wisp.set_body(wisp.Text("Formulário inválido"))
+  case decode.run(body, body_decoder()) {
+    Ok(body) -> handle_body(request:, ctx:, body:)
+    Error(err) -> web.handle_decode_error(err)
   }
 }
 
-fn handle_form_data(
+fn body_decoder() {
+  let uuid_decoder = {
+    use maybe_uuid <- decode.then(decode.string)
+    case uuid.from_string(maybe_uuid) {
+      Error(_) -> decode.failure(uuid.v7(), "uuid")
+      Ok(value) -> decode.success(value)
+    }
+  }
+
+  let members_decoder = {
+    use members <- decode.then(decode.list(of: uuid_decoder))
+    decode.success(members)
+  }
+
+  use leader_id <- decode.field("liderId", uuid_decoder)
+  use name <- decode.field("nome", decode.string)
+  use vehicle_code <- decode.field("codigoViatura", decode.string)
+  use is_active <- decode.field("ativo", decode.bool)
+  use members_id <- decode.field("membros", members_decoder)
+
+  decode.success(RequestBody(
+    leader_id:,
+    name:,
+    vehicle_code:,
+    members_id:,
+    is_active:,
+  ))
+}
+
+fn handle_body(
   request request: wisp.Request,
   ctx ctx: Context,
-  form_data form_data: RequestBody,
+  body body: RequestBody,
 ) -> wisp.Response {
-  case try_register_brigade(request:, ctx:, form_data:) {
+  case try_register_brigade(request:, ctx:, body:) {
     Ok(resp) -> wisp.json_response(resp, 201)
     Error(err) -> handle_error(request:, err:)
   }
@@ -55,7 +85,7 @@ fn handle_form_data(
 fn try_register_brigade(
   request request: wisp.Request,
   ctx ctx: Context,
-  form_data form_data: RequestBody,
+  body body: RequestBody,
 ) -> Result(String, RegisterBrigadeError) {
   use _ <- result.try(
     user.check_role_authorization(
@@ -67,30 +97,13 @@ fn try_register_brigade(
     |> result.map_error(AccessError),
   )
 
-  // Leader of that brigade
-  use leader_id <- result.try(
-    uuid.from_string(form_data.leader_id)
-    |> result.replace_error(InvalidUuid(form_data.leader_id)),
-  )
-
-  // Their members
-  use members <- result.try({
-    use maybe_uuid <- list.try_map(form_data.members_id)
-    use member_id <- result.map(
-      uuid.from_string(maybe_uuid)
-      |> result.replace_error(InvalidUuid(maybe_uuid)),
-    )
-
-    member_id
-  })
-
   use returned <- result.try(
     sql.insert_new_brigade(
       ctx.conn,
-      leader_id,
-      form_data.name,
-      form_data.vehicle_code,
-      form_data.is_active,
+      body.leader_id,
+      body.name,
+      body.vehicle_code,
+      body.is_active,
     )
     |> result.map_error(DataBaseError),
   )
@@ -103,7 +116,7 @@ fn try_register_brigade(
   use assigned_members <- result.try(try_assign_members(
     ctx:,
     to: row.id,
-    assign: members,
+    assign: body.members_id,
   ))
 
   let members_json =
@@ -141,7 +154,7 @@ fn try_assign_members(
 fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response {
   case err {
     BrigadeNotFound ->
-      wisp.internal_server_error()
+      wisp.not_found()
       |> wisp.set_body(wisp.Text(
         "O Banco de Dados não retornou informações sobre a nova equipe após a inserção",
       ))
@@ -159,44 +172,12 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
   }
 }
 
-/// 󱐁  Form that decodes the `RegisterBrigadeFormData` type
-fn register_brigade_form() -> form.Form(RequestBody) {
-  form.new({
-    use leader_id <- form.field("lider_id", {
-      form.parse_string |> form.check_not_empty()
-    })
-
-    use name <- form.field("nome", {
-      form.parse_string |> form.check_not_empty()
-    })
-
-    use members_id <- form.field("membros", {
-      form.parse_list(form.parse_string)
-    })
-
-    use vehicle_code <- form.field(
-      "codigoViatura",
-      form.parse_string
-        |> form.check_not_empty(),
-    )
-    use is_active <- form.field("ativo", { form.parse_checkbox })
-
-    form.success(RequestBody(
-      leader_id:,
-      name:,
-      vehicle_code:,
-      members_id:,
-      is_active:,
-    ))
-  })
-}
-
 type RequestBody {
   RequestBody(
-    leader_id: String,
+    leader_id: uuid.Uuid,
     name: String,
     vehicle_code: String,
-    members_id: List(String),
+    members_id: List(uuid.Uuid),
     is_active: Bool,
   )
 }
