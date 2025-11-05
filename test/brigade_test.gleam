@@ -21,10 +21,11 @@ pub fn register_new_brigade_test() {
   let dummy_leader = dummy.random_user(ctx.conn)
   let dummy_members =
     list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.conn) })
-  let dummy_members_json =
-    json.array(dummy_members, fn(member) { json.string(uuid.to_string(member)) })
 
   // START ---------------------------------------------------------------------
+
+  let dummy_members_json =
+    json.array(dummy_members, fn(member) { json.string(uuid.to_string(member)) })
 
   let req =
     simulate.browser_request(http.Post, path)
@@ -44,8 +45,12 @@ pub fn register_new_brigade_test() {
 
   // AS ADMIN
   let with_auth = app_test.with_authorization(req)
-  let resp = router.handle_request(with_auth, ctx)
 
+  // AUTHORIZED REQUEST
+  let resp = router.handle_request(with_auth, ctx)
+  assert resp.status == 201 as "Response sould be HTTP 201 CREATED"
+
+  // READ BODY -----------------------------------------------------------------
   let body = simulate.read_body(resp)
 
   let assert Ok(_) =

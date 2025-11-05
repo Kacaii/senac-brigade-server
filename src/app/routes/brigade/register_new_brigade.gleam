@@ -77,7 +77,7 @@ fn handle_body(
   body body: RequestBody,
 ) -> wisp.Response {
   case try_register_brigade(request:, ctx:, body:) {
-    Ok(resp) -> wisp.json_response(resp, 201)
+    Ok(body) -> wisp.json_response(body, 201)
     Error(err) -> handle_error(request:, err:)
   }
 }
