@@ -21,15 +21,15 @@ pub fn register_new_occurrence_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USERS -----------------------------------------------------------
-  let dummy_applicant_id = dummy.random_user(ctx)
+  let dummy_applicant_id = dummy.random_user(ctx.conn)
   let dummy_participants_id = {
-    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx) })
+    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx.conn) })
   }
 
   // DUMMY BRIGADE -------------------------------------------------------------
   let dummy_brigade_id =
     dummy.random_brigade(
-      ctx:,
+      conn: ctx.conn,
       leader_id: dummy_applicant_id,
       members: dummy_participants_id,
     )
@@ -132,22 +132,22 @@ pub fn get_occurrences_by_applicant_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USERS -----------------------------------------------------------
-  let dummy_applicant_id = dummy.random_user(ctx)
+  let dummy_applicant_id = dummy.random_user(ctx.conn)
   let dummy_participants_id = {
-    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx) })
+    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx.conn) })
   }
 
   // DUMMY BRIGADE -------------------------------------------------------------
   let dummy_brigade_id =
     dummy.random_brigade(
-      ctx:,
+      conn: ctx.conn,
       leader_id: dummy_applicant_id,
       members: dummy_participants_id,
     )
 
   // DUMMY OCCURRENCE ----------------------------------------------------------
   let dummy_occurrence =
-    dummy.random_occurrence(ctx, dummy_applicant_id, [dummy_brigade_id])
+    dummy.random_occurrence(ctx.conn, dummy_applicant_id, [dummy_brigade_id])
 
   let path = "/user/" <> uuid.to_string(dummy_applicant_id) <> "/occurrences"
   let req = simulate.browser_request(http.Get, path)
@@ -242,9 +242,9 @@ pub fn delete_occurrence_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY
-  let dummy_applicant = dummy.random_user(ctx)
+  let dummy_applicant = dummy.random_user(ctx.conn)
   let dummy_occurrence =
-    dummy.random_occurrence(ctx, applicant_id: dummy_applicant, assign: [])
+    dummy.random_occurrence(ctx.conn, applicant_id: dummy_applicant, assign: [])
 
   let path = "/occurrence/" <> uuid.to_string(dummy_occurrence)
   let req = simulate.request(http.Delete, path)

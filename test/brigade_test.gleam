@@ -16,15 +16,15 @@ pub fn get_brigade_members_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   //   DUMMY LEADER -----------------------------------------------------------
-  let leader_id = dummy.random_user(ctx)
+  let leader_id = dummy.random_user(ctx.conn)
 
   // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
   let dummy_members =
-    list.map(list.range(0, 9), fn(_) { dummy.random_user(ctx) })
+    list.map(list.range(0, 9), fn(_) { dummy.random_user(ctx.conn) })
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
-    dummy.random_brigade(ctx:, leader_id:, members: dummy_members)
+    dummy.random_brigade(conn: ctx.conn, leader_id:, members: dummy_members)
 
   // START ---------------------------------------------------------------------
 
@@ -83,15 +83,15 @@ pub fn get_all_brigades_test() {
   let path = "/admin/teams"
 
   //   DUMMY LEADER -----------------------------------------------------------
-  let leader_id = dummy.random_user(ctx)
+  let leader_id = dummy.random_user(ctx.conn)
 
   // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
   let dummy_members =
-    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx) })
+    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.conn) })
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
-    dummy.random_brigade(ctx:, leader_id:, members: dummy_members)
+    dummy.random_brigade(conn: ctx.conn, leader_id:, members: dummy_members)
 
   // START ---------------------------------------------------------------------
   let req = simulate.browser_request(http.Get, path)

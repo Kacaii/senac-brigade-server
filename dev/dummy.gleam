@@ -7,12 +7,12 @@ import app/routes/occurrence/sql as o_sql
 import app/routes/occurrence/subcategory
 import app/routes/role
 import app/routes/user/sql as u_sql
-import app/web
 import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
 import gleam/set
+import pog
 import wisp
 import youid/uuid
 
@@ -61,13 +61,13 @@ pub fn random_priority() {
 
 /// Panics on failure
 pub fn random_brigade(
-  ctx ctx: web.Context,
+  conn conn: pog.Connection,
   leader_id leader_id: uuid.Uuid,
   members dummy_members: List(uuid.Uuid),
 ) {
   let assert Ok(returned) =
     b_sql.insert_new_brigade(
-      ctx.conn,
+      conn,
       leader_id,
       "BRIGADE " <> wisp.random_string(4),
       "VEHICLE " <> wisp.random_string(3),
@@ -79,11 +79,7 @@ pub fn random_brigade(
     as "Database returned no results after creating new Brigade"
 
   let assert Ok(assigments) =
-    b_sql.assign_brigade_members(
-      ctx.conn,
-      inserted_brigade_row.id,
-      dummy_members,
-    )
+    b_sql.assign_brigade_members(conn, inserted_brigade_row.id, dummy_members)
     as "Failed to assign dummy members to a brigade"
 
   let assigned_members =
@@ -106,9 +102,9 @@ pub fn random_brigade(
 }
 
 /// Panic on failure
-pub fn clean_brigade(ctx: web.Context, dummy: uuid.Uuid) {
+pub fn clean_brigade(conn: pog.Connection, dummy: uuid.Uuid) {
   let cleanup_brigade_id = {
-    let assert Ok(returned) = b_sql.delete_brigade_by_id(ctx.conn, dummy)
+    let assert Ok(returned) = b_sql.delete_brigade_by_id(conn, dummy)
       as "Failed to delete dummy brigade"
 
     let assert Ok(row) = list.first(returned.rows)
@@ -175,7 +171,7 @@ pub fn random_subcategory() {
 }
 
 /// Panics on failure
-pub fn random_user(ctx: web.Context) -> uuid.Uuid {
+pub fn random_user(conn: pog.Connection) -> uuid.Uuid {
   let r_role = random_role()
   let role_to_enum = fn(role: role.Role) {
     case role {
@@ -190,7 +186,7 @@ pub fn random_user(ctx: web.Context) -> uuid.Uuid {
 
   let assert Ok(returned) =
     u_sql.insert_new_user(
-      ctx.conn,
+      conn,
       "USER " <> wisp.random_string(6),
       "M " <> wisp.random_string(6),
       uuid.v7_string(),
@@ -205,9 +201,9 @@ pub fn random_user(ctx: web.Context) -> uuid.Uuid {
 }
 
 /// Panic on failure
-pub fn clean_user(ctx: web.Context, dummy: uuid.Uuid) {
+pub fn clean_user(conn: pog.Connection, dummy: uuid.Uuid) {
   let assert Ok(cleanup_applicant) = {
-    let assert Ok(returned) = u_sql.delete_user_by_id(ctx.conn, dummy)
+    let assert Ok(returned) = u_sql.delete_user_by_id(conn, dummy)
       as "Failed to cleanup dummy user"
 
     list.first(returned.rows)
@@ -217,10 +213,10 @@ pub fn clean_user(ctx: web.Context, dummy: uuid.Uuid) {
 }
 
 /// Panic on failure
-pub fn clean_user_list(ctx: web.Context, dummy: List(uuid.Uuid)) {
+pub fn clean_user_list(conn: pog.Connection, dummy: List(uuid.Uuid)) {
   let cleanup_participants = {
     use participant <- list.map(dummy)
-    let assert Ok(returned) = u_sql.delete_user_by_id(ctx.conn, participant)
+    let assert Ok(returned) = u_sql.delete_user_by_id(conn, participant)
       as "Failed to delete participant"
     let assert Ok(row) = list.first(returned.rows)
       as "Database returned no results"
@@ -233,7 +229,7 @@ pub fn clean_user_list(ctx: web.Context, dummy: List(uuid.Uuid)) {
 
 /// Panic on failure
 pub fn random_occurrence(
-  ctx: web.Context,
+  conn conn: pog.Connection,
   applicant_id applicant_id: uuid.Uuid,
   assign dummy_brigade_list: List(uuid.Uuid),
 ) -> uuid.Uuid {
@@ -271,7 +267,7 @@ pub fn random_occurrence(
 
   let assert Ok(returned) =
     o_sql.insert_new_occurence(
-      ctx.conn,
+      conn,
       applicant_id,
       dummy_category,
       dummy_subcategory,
@@ -287,7 +283,7 @@ pub fn random_occurrence(
 
   let assert Ok(assigned_brigades_row) =
     o_sql.assign_brigades_to_occurrence(
-      ctx.conn,
+      conn,
       created_occurrence_row.id,
       dummy_brigade_list,
     )
@@ -314,9 +310,9 @@ pub fn random_occurrence(
 }
 
 /// Panic on failure
-pub fn clean_occurrence(ctx: web.Context, dummy: uuid.Uuid) {
+pub fn clean_occurrence(conn: pog.Connection, dummy: uuid.Uuid) {
   let assert Ok(cleanup_occurrence) = {
-    let assert Ok(returned) = o_sql.delete_occurrence_by_id(ctx.conn, dummy)
+    let assert Ok(returned) = o_sql.delete_occurrence_by_id(conn, dummy)
       as "Failed to cleanup dummy occurrence"
     list.first(returned.rows)
   }

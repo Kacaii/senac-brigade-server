@@ -31,7 +31,9 @@ fn dummy_data(ctx: web.Context) {
   io.println("   Inserindo usuários..")
 
   let dummy_users =
-    list.map(list.range(1, n_user_accounts), fn(_) { dummy.random_user(ctx) })
+    list.map(list.range(1, n_user_accounts), fn(_) {
+      dummy.random_user(ctx.conn)
+    })
 
   // BRIGADES ------------------------------------------------------------------
   io.println("   Formando equipes..")
@@ -43,7 +45,7 @@ fn dummy_data(ctx: web.Context) {
   let dummy_brigades =
     list.map(assigned_members, fn(team) {
       let assert Ok(leader) = list.first(team)
-      dummy.random_brigade(ctx, leader, team)
+      dummy.random_brigade(ctx.conn, leader, team)
     })
 
   let assigned_brigades =
@@ -55,7 +57,7 @@ fn dummy_data(ctx: web.Context) {
     list.map(list.range(1, n_occurences), fn(_) {
       let assert Ok(applicant_id) = list.first(list.sample(dummy_users, 1))
       let assert Ok(assign) = list.first(list.sample(assigned_brigades, 1))
-      dummy.random_occurrence(ctx, applicant_id:, assign:)
+      dummy.random_occurrence(conn: ctx.conn, applicant_id:, assign:)
     })
 
   // ALL DONE ------------------------------------------------------------------
