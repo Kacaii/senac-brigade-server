@@ -19,10 +19,13 @@
 
 import app/router
 import app/routes/admin/sql as admin_sql
+import app/socket
 import app/web.{Context}
 import envoy
 import gleam/erlang/process
 import gleam/http
+import gleam/http/request
+import gleam/http/response
 import gleam/io
 import gleam/json
 import gleam/list
@@ -48,7 +51,8 @@ pub fn main() -> Nil {
   // Pass the application context to the router
   let ctx = Context(static_directory: static_directory(), conn:)
 
-  let handler = router.handle_request(_, ctx)
+  let wisp_handler = router.handle_request(_, ctx)
+  let ws_handler = socket.handle_request(_, ctx)
 
   // Secret key used for signing and encryption
   let assert Ok(secret_key) = read_cookie_token()
@@ -60,7 +64,12 @@ pub fn main() -> Nil {
 
   // Start both HHTP Server and DataBase connection under a supervision tree ---
   let assert Ok(_) =
-    start_application_supervised(pog_config:, handler:, secret_key:)
+    start_application_supervised(
+      pog_config:,
+      wisp_handler:,
+      ws_handler:,
+      secret_key:,
+    )
     as "󰪋  Failed to start the application supervisor"
 
   // ⏾ 󰒲
@@ -76,16 +85,26 @@ fn read_cookie_token() -> Result(String, Nil) {
 /// 󰪋  Start the application supervisor
 pub fn start_application_supervised(
   pog_config pog_config: pog.Config,
-  handler handler: fn(wisp.Request) -> wisp.Response,
+  wisp_handler wisp_handler: fn(wisp.Request) -> wisp.Response,
+  ws_handler ws_handler: fn(request.Request(mist.Connection)) ->
+    response.Response(mist.ResponseData),
   secret_key secret_key: String,
 ) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
   // Adding Pog to the supervision tree
   let pog_pool_child = pog.supervised(pog_config)
 
+  // Webserver handler
+  let webserver_handler = fn(req) {
+    case wisp.path_segments(req) {
+      ["ws"] -> ws_handler(req)
+      _ -> wisp_mist.handler(wisp_handler, secret_key)(req)
+    }
+  }
+
   // Adding Mist to the supervision tree
   let mist_pool_child = {
-    wisp_mist.handler(handler, secret_key)
-    |> mist.new()
+    webserver_handler
+    |> mist.new
     |> mist.bind("0.0.0.0")
     |> mist.port(8000)
   }
