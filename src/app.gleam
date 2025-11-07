@@ -32,6 +32,7 @@ import gleam/list
 import gleam/otp/actor
 import gleam/otp/static_supervisor as supervisor
 import gleam/result
+import group_registry
 import mist
 import pog
 import wisp
@@ -42,6 +43,9 @@ import wisp/wisp_mist
 pub fn main() -> Nil {
   web.configure_logger()
 
+  // 󰩵  Setup process registry for pubsub
+  let registry_name = process.new_name("registry")
+
   //   Setup the postgresql database connection -------------------------------
   let db_process_name = process.new_name("db_conn")
 
@@ -49,7 +53,7 @@ pub fn main() -> Nil {
   let conn = pog.named_connection(db_process_name)
 
   // Pass the application context to the router
-  let ctx = Context(static_directory: static_directory(), conn:)
+  let ctx = Context(static_directory: static_directory(), conn:, registry_name:)
 
   let wisp_handler = router.handle_request(_, ctx)
   let ws_handler = socket.handle_request(_, ctx)
@@ -69,6 +73,7 @@ pub fn main() -> Nil {
       wisp_handler:,
       ws_handler:,
       secret_key:,
+      registry_name:,
     )
     as "󰪋  Failed to start the application supervisor"
 
@@ -89,6 +94,7 @@ pub fn start_application_supervised(
   ws_handler ws_handler: fn(request.Request(mist.Connection)) ->
     response.Response(mist.ResponseData),
   secret_key secret_key: String,
+  registry_name registry_name: process.Name(_),
 ) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
   // Adding Pog to the supervision tree
   let pog_pool_child = pog.supervised(pog_config)
@@ -112,6 +118,7 @@ pub fn start_application_supervised(
   supervisor.new(supervisor.OneForOne)
   |> supervisor.add(pog_pool_child)
   |> supervisor.add(mist.supervised(mist_pool_child))
+  |> supervisor.add(group_registry.supervised(registry_name))
   |> supervisor.start
 }
 

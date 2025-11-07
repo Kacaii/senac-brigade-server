@@ -84,10 +84,11 @@ fn dummy_data(ctx: web.Context) {
 
 fn setup_context() {
   let db_process_name = process.new_name("db_conn")
+  let registry_name = process.new_name("registry")
   let assert Ok(config) = app.read_connection_uri(db_process_name)
 
   let conn = pog.named_connection(db_process_name)
   let assert Ok(_) = pog.start(config)
 
-  web.Context(static_directory: app.static_directory(), conn:)
+  web.Context(static_directory: app.static_directory(), conn:, registry_name:)
 }

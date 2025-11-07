@@ -17,17 +17,23 @@
 
 import cors_builder as cors
 import gleam/dynamic/decode
+import gleam/erlang/process
 import gleam/http
 import gleam/json
 import gleam/string
 import glight
+import group_registry
 import pog
 import wisp
 
 /// Holds any additional data that the request handlers need in addition to the request:
 /// Like API Keys, configurations,  database connections, and others
 pub type Context {
-  Context(static_directory: String, conn: pog.Connection)
+  Context(
+    static_directory: String,
+    conn: pog.Connection,
+    registry_name: process.Name(group_registry.Message(Nil)),
+  )
 }
 
 /// Middleware that runs before every request.
