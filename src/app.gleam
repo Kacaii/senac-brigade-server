@@ -3,52 +3,40 @@
 //// This module is the main entry point for the application. It is responsible for:
 //// - Configuring the application's dependencies (database, HTTP server)
 //// - Reading necessary environment variables
-//// - Starting the supervision tree that manages the application's processes
-////
-//// ## Environment Variables
-//// - `DATABASE_URL`: The connection URI for the PostgreSQL database
-//// - `COOKIE_TOKEN`: The secret key used for signing and encrypting cookies
 ////
 //// ## Architecture
 //// The application uses a supervisor to manage two main processes:
 //// 1. A PostgreSQL database connection pool using Pog
 //// 2. An HTTP server using Mist (with Wisp handling the web layer)
-////
-//// The supervision strategy is `OneForOne`, meaning if either process fails,
-//// only that specific process will be restarted, leaving the other unaffected.
 
 import app/router
 import app/routes/admin/sql as admin_sql
 import app/socket
+import app/supervision_tree
 import app/web.{Context}
 import envoy
 import gleam/erlang/process
 import gleam/http
-import gleam/http/request
-import gleam/http/response
 import gleam/io
 import gleam/json
 import gleam/list
-import gleam/otp/actor
-import gleam/otp/static_supervisor as supervisor
 import gleam/result
-import group_registry
-import mist
 import pog
 import wisp
 import wisp/simulate
-import wisp/wisp_mist
 
 /// Application entry
 pub fn main() -> Nil {
   web.configure_logger()
 
-  // 󰩵  Setup process registry for pubsub
+  // NAMES ---------------------------------------------------------------------
+  // 󰩵  Setup registry process name
   let registry_name = process.new_name("registry")
 
-  //   Setup the postgresql database connection -------------------------------
+  //   Setup the connection process name
   let db_process_name = process.new_name("db_conn")
 
+  // DATABASE POOL -------------------------------------------------------------
   //   Database connection
   let conn = pog.named_connection(db_process_name)
 
@@ -58,7 +46,8 @@ pub fn main() -> Nil {
   let wisp_handler = router.handle_request(_, ctx)
   let ws_handler = socket.handle_request(_, ctx)
 
-  // Secret key used for signing and encryption
+  // SECRET KEYS ---------------------------------------------------------------
+  // Used for signing and encryption
   let assert Ok(secret_key) = read_cookie_token()
     as "  Failed to read the cookie secret key"
 
@@ -66,9 +55,9 @@ pub fn main() -> Nil {
   let assert Ok(pog_config) = read_connection_uri(db_process_name)
     as "  Failed to read DataBase connection URI"
 
-  // Start both HHTP Server and DataBase connection under a supervision tree ---
+  // Start all essential processes under a supervision tree
   let assert Ok(_) =
-    start_application_supervised(
+    supervision_tree.start(
       pog_config:,
       wisp_handler:,
       ws_handler:,
@@ -85,41 +74,6 @@ pub fn main() -> Nil {
 fn read_cookie_token() -> Result(String, Nil) {
   use cookie_token <- result.try(envoy.get("COOKIE_TOKEN"))
   Ok(cookie_token)
-}
-
-/// 󰪋  Start the application supervisor
-pub fn start_application_supervised(
-  pog_config pog_config: pog.Config,
-  wisp_handler wisp_handler: fn(wisp.Request) -> wisp.Response,
-  ws_handler ws_handler: fn(request.Request(mist.Connection)) ->
-    response.Response(mist.ResponseData),
-  secret_key secret_key: String,
-  registry_name registry_name: process.Name(_),
-) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
-  // Adding Pog to the supervision tree
-  let pog_pool_child = pog.supervised(pog_config)
-
-  // Webserver handler
-  let webserver_handler = fn(req) {
-    case wisp.path_segments(req) {
-      ["ws"] -> ws_handler(req)
-      _ -> wisp_mist.handler(wisp_handler, secret_key)(req)
-    }
-  }
-
-  // Adding Mist to the supervision tree
-  let mist_pool_child = {
-    webserver_handler
-    |> mist.new
-    |> mist.bind("0.0.0.0")
-    |> mist.port(8000)
-  }
-
-  supervisor.new(supervisor.OneForOne)
-  |> supervisor.add(pog_pool_child)
-  |> supervisor.add(mist.supervised(mist_pool_child))
-  |> supervisor.add(group_registry.supervised(registry_name))
-  |> supervisor.start
 }
 
 ///   Read the `DATABASE_URL` environment variable and then
