@@ -21,7 +21,7 @@ pub fn start(
   // Handler for the web server
   let webserver_handler = fn(req) {
     case wisp.path_segments(req) {
-      ["ws", _] -> ws_handler(req)
+      ["ws"] | ["ws", _] -> ws_handler(req)
       _ -> wisp_mist.handler(wisp_handler, secret_key)(req)
     }
   }

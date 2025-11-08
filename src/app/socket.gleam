@@ -6,7 +6,7 @@ import gleam/option
 import group_registry
 import mist
 
-const ws_group_name = "ws_group"
+const topic = "default"
 
 /// 󱘖  Stabilishes a websocket connection with the client
 pub fn handle_request(
@@ -28,10 +28,10 @@ pub fn handle_request(
 fn ws_on_init(
   conn _conn: mist.WebsocketConnection,
   ctx _ctx: Context,
-  registry registry: group_registry.GroupRegistry(Nil),
-) -> #(Nil, option.Option(process.Selector(Nil))) {
+  registry registry: group_registry.GroupRegistry(context.ServerMessage),
+) -> #(Nil, option.Option(process.Selector(context.ServerMessage))) {
   let self = process.self()
-  let group_subject = group_registry.join(registry, ws_group_name, self)
+  let group_subject = group_registry.join(registry, topic, self)
 
   let selector =
     process.new_selector()
@@ -43,22 +43,45 @@ fn ws_on_init(
 fn ws_on_close(
   state _state: Nil,
   ctx _ctx: Context,
-  registry registry: group_registry.GroupRegistry(Nil),
+  registry registry: group_registry.GroupRegistry(context.ServerMessage),
 ) -> Nil {
-  group_registry.leave(registry, ws_group_name, [process.self()])
+  group_registry.leave(registry, topic, [process.self()])
 }
 
 fn ws_handler(
   state state: Nil,
-  msg msg: mist.WebsocketMessage(Nil),
-  ws_conn _ws_conn: mist.WebsocketConnection,
+  msg msg: mist.WebsocketMessage(context.ServerMessage),
+  ws_conn conn: mist.WebsocketConnection,
   ctx _ctx: Context,
-  registry _registry: group_registry.GroupRegistry(Nil),
-) -> mist.Next(Nil, Nil) {
+  registry _registry: group_registry.GroupRegistry(context.ServerMessage),
+) -> mist.Next(Nil, context.ServerMessage) {
   case msg {
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
-    mist.Custom(_) -> mist.continue(state)
+    mist.Custom(msg) -> handle_custom_msg(state, msg, conn)
     mist.Closed | mist.Shutdown -> mist.stop()
+  }
+}
+
+fn handle_custom_msg(
+  state: Nil,
+  msg: context.ServerMessage,
+  conn: mist.WebsocketConnection,
+) -> mist.Next(Nil, context.ServerMessage) {
+  case msg {
+    context.Broadcast(message) -> {
+      let msg_result = mist.send_text_frame(conn, message)
+      case msg_result {
+        Error(_) -> mist.stop_abnormal("Failed to broadcast message")
+        Ok(_) -> mist.continue(state)
+      }
+    }
+    context.Ping -> {
+      let msg_result = mist.send_text_frame(conn, "  Pong")
+      case msg_result {
+        Error(_) -> mist.stop_abnormal("Failed to reply with pong")
+        Ok(_) -> mist.continue(state)
+      }
+    }
   }
 }

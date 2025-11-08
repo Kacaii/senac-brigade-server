@@ -27,6 +27,7 @@ pub fn handle_request(
   case query_user_roles(ctx) {
     // Send data back to the Client
     Ok(role_list) -> wisp.json_response(json.to_string(role_list), 200)
+
     // Handle possible errors
     Error(err) -> handle_error(err)
   }

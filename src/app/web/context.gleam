@@ -8,6 +8,11 @@ pub type Context {
   Context(
     static_directory: String,
     conn: pog.Connection,
-    registry_name: process.Name(group_registry.Message(Nil)),
+    registry_name: process.Name(group_registry.Message(ServerMessage)),
   )
+}
+
+pub type ServerMessage {
+  Broadcast(String)
+  Ping
 }
