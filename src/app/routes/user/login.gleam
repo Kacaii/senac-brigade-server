@@ -5,7 +5,7 @@
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
-import app/web.{type Context}
+import app/web/context.{type Context}
 import argus
 import formal/form
 import gleam/json

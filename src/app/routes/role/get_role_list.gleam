@@ -1,6 +1,7 @@
 import app/routes/role
 import app/routes/role/sql
-import app/web.{type Context}
+import app/web
+import app/web/context.{type Context}
 import gleam/http
 import gleam/json
 import gleam/list

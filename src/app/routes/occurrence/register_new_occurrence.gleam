@@ -6,7 +6,8 @@ import app/routes/occurrence/priority
 import app/routes/occurrence/sql
 import app/routes/occurrence/subcategory
 import app/routes/user
-import app/web.{type Context}
+import app/web
+import app/web/context.{type Context}
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json

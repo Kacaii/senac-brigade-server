@@ -1,5 +1,5 @@
 import app
-import app/web
+import app/web/context.{type Context, Context}
 import argv
 import dummy
 import gleam/erlang/process
@@ -27,7 +27,7 @@ pub fn main() -> Nil {
   }
 }
 
-fn dummy_data(ctx: web.Context) {
+fn dummy_data(ctx: Context) {
   io.println("   Inserindo usuários..")
 
   let dummy_users =
@@ -90,5 +90,5 @@ fn setup_context() {
   let conn = pog.named_connection(db_process_name)
   let assert Ok(_) = pog.start(config)
 
-  web.Context(static_directory: app.static_directory(), conn:, registry_name:)
+  Context(static_directory: app.static_directory(), conn:, registry_name:)
 }

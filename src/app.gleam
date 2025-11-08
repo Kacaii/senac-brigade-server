@@ -13,7 +13,8 @@ import app/router
 import app/routes/admin/sql as admin_sql
 import app/socket
 import app/supervision_tree
-import app/web.{Context}
+import app/web
+import app/web/context.{type Context, Context}
 import envoy
 import gleam/erlang/process
 import gleam/http
@@ -103,7 +104,7 @@ pub fn static_directory() -> String {
 }
 
 /// Generate a default admin account if the user_account table is empty
-pub fn setup_admin(ctx: web.Context) {
+pub fn setup_admin(ctx: Context) {
   let assert Ok(returned) = admin_sql.count_total_users(ctx.conn)
   let assert Ok(row) = list.first(returned.rows)
 

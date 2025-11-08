@@ -1,7 +1,7 @@
 import app/routes/notification
 import app/routes/notification/sql
 import app/routes/user
-import app/web.{type Context}
+import app/web/context.{type Context}
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/http

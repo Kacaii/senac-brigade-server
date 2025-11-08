@@ -1,6 +1,7 @@
 import app/routes/admin/sql
 import app/routes/user/sql as user_sql
-import app/web.{type Context}
+import app/web
+import app/web/context.{type Context}
 import argus
 import envoy
 import gleam/dynamic/decode

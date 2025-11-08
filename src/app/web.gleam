@@ -15,32 +15,21 @@
 //// - CORS headers
 //// - Static file serving from `/static` path
 
+import app/web/context
 import cors_builder as cors
 import gleam/dynamic/decode
-import gleam/erlang/process
 import gleam/http
 import gleam/json
 import gleam/string
 import glight
-import group_registry
 import pog
 import wisp
-
-/// Holds any additional data that the request handlers need in addition to the request:
-/// Like API Keys, configurations,  database connections, and others
-pub type Context {
-  Context(
-    static_directory: String,
-    conn: pog.Connection,
-    registry_name: process.Name(group_registry.Message(Nil)),
-  )
-}
 
 /// Middleware that runs before every request.
 /// It sets up the request, and then calls the next handler.
 pub fn middleware(
   request req: wisp.Request,
-  context ctx: Context,
+  context ctx: context.Context,
   next handle_request: fn(wisp.Request) -> wisp.Response,
 ) -> wisp.Response {
   let request = wisp.method_override(req)

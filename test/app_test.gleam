@@ -1,6 +1,6 @@
 import app
 import app/router
-import app/web
+import app/web/context.{type Context, Context}
 import gleam/erlang/process
 import gleam/http
 import gleeunit
@@ -16,7 +16,7 @@ pub fn main() -> Nil {
 }
 
 /// Global context data used in unit tests
-pub fn global_data() -> web.Context {
+pub fn global_data() -> Context {
   global_value.create_with_unique_name("global_context", fn() {
     let db_process_name = process.new_name("db_conn")
     let registry_name = process.new_name("registry")
@@ -25,7 +25,7 @@ pub fn global_data() -> web.Context {
     let conn = pog.named_connection(db_process_name)
     let assert Ok(_) = pog.start(config)
 
-    web.Context(static_directory: app.static_directory(), conn:, registry_name:)
+    Context(static_directory: app.static_directory(), conn:, registry_name:)
   })
 }
 

@@ -5,7 +5,8 @@
 
 import app/routes/brigade/sql
 import app/routes/role
-import app/web.{type Context}
+import app/web
+import app/web/context.{type Context}
 import gleam/http
 import gleam/json
 import gleam/list

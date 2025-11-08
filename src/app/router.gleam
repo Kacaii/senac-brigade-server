@@ -30,7 +30,8 @@ import app/routes/user/signup
 import app/routes/user/update_user_password
 import app/routes/user/update_user_profile
 import app/routes/user/update_user_status
-import app/web.{type Context}
+import app/web
+import app/web/context.{type Context}
 import gleam/http
 import wisp
 

@@ -1,6 +1,6 @@
-
 import app/routes/brigade/sql
-import app/web.{type Context}
+import app/web
+import app/web/context.{type Context}
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json

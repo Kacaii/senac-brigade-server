@@ -1,4 +1,4 @@
-import app/web.{type Context}
+import app/web/context.{type Context}
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
@@ -42,7 +42,7 @@ fn ws_on_init(
 
 fn ws_on_close(
   state _state: Nil,
-  ctx _ctx: web.Context,
+  ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(Nil),
 ) -> Nil {
   group_registry.leave(registry, ws_group_name, [process.self()])
@@ -52,7 +52,7 @@ fn ws_handler(
   state state: Nil,
   msg msg: mist.WebsocketMessage(Nil),
   ws_conn _ws_conn: mist.WebsocketConnection,
-  ctx _ctx: web.Context,
+  ctx _ctx: Context,
   registry _registry: group_registry.GroupRegistry(Nil),
 ) -> mist.Next(Nil, Nil) {
   case msg {
