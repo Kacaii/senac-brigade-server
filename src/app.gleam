@@ -41,20 +41,25 @@ pub fn main() -> Nil {
   //   Database connection
   let conn = pog.named_connection(db_process_name)
 
-  // Pass the application context to the router
-  let ctx = Context(static_directory: static_directory(), conn:, registry_name:)
-
-  let wisp_handler = router.handle_request(_, ctx)
-  let ws_handler = socket.handle_request(_, ctx)
-
   // SECRET KEYS ---------------------------------------------------------------
   // Used for signing and encryption
-  let assert Ok(secret_key) = read_cookie_token()
+  let assert Ok(secret_key_base) = read_cookie_token()
     as "  Failed to read the cookie secret key"
 
   // Postgresql connection URI
   let assert Ok(pog_config) = read_connection_uri(db_process_name)
     as "  Failed to read DataBase connection URI"
+  // Pass the application context to the router
+  let ctx =
+    Context(
+      static_directory: static_directory(),
+      conn:,
+      registry_name:,
+      secret_key_base:,
+    )
+
+  let wisp_handler = router.handle_request(_, ctx)
+  let ws_handler = socket.handle_request(_, ctx)
 
   // Start all essential processes under a supervision tree
   let assert Ok(_) =
@@ -62,7 +67,7 @@ pub fn main() -> Nil {
       pog_config:,
       wisp_handler:,
       ws_handler:,
-      secret_key:,
+      secret_key_base:,
       registry_name:,
     )
     as "󰪋  Failed to start the application supervisor"
@@ -72,7 +77,7 @@ pub fn main() -> Nil {
 }
 
 ///   Read the `COOKIE_TOKEN` enviroment variable
-fn read_cookie_token() -> Result(String, Nil) {
+pub fn read_cookie_token() -> Result(String, Nil) {
   use cookie_token <- result.try(envoy.get("COOKIE_TOKEN"))
   Ok(cookie_token)
 }

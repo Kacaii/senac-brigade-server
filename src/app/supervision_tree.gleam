@@ -15,14 +15,14 @@ pub fn start(
   wisp_handler wisp_handler: fn(wisp.Request) -> wisp.Response,
   ws_handler ws_handler: fn(request.Request(mist.Connection)) ->
     response.Response(mist.ResponseData),
-  secret_key secret_key: String,
+  secret_key_base secret_key_base: String,
   registry_name registry_name: process.Name(_),
 ) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
   // Handler for the web server
   let webserver_handler = fn(req) {
     case wisp.path_segments(req) {
       ["ws"] | ["ws", _] -> ws_handler(req)
-      _ -> wisp_mist.handler(wisp_handler, secret_key)(req)
+      _ -> wisp_mist.handler(wisp_handler, secret_key_base)(req)
     }
   }
 

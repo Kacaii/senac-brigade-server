@@ -8,6 +8,7 @@ pub type Context {
   Context(
     static_directory: String,
     conn: pog.Connection,
+    secret_key_base: String,
     registry_name: process.Name(group_registry.Message(ServerMessage)),
   )
 }

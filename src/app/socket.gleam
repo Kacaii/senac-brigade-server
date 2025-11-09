@@ -1,6 +1,5 @@
 import app/routes/user
 import app/web/context.{type Context}
-import envoy
 import gleam/bit_array
 import gleam/crypto
 import gleam/erlang/process
@@ -17,14 +16,15 @@ const group_topic = "active_users"
 
 pub fn extract_uuid_mist(
   req: request.Request(mist.Connection),
+  ctx: Context,
 ) -> Result(uuid.Uuid, Nil) {
   let cookies = request.get_cookies(req)
+  let salt = <<ctx.secret_key_base:utf8>>
 
-  use key <- result.try(list.key_find(cookies, user.uuid_cookie_name))
-  use salt <- result.try(envoy.get("COOKIE_TOKEN"))
-  use decrypted <- result.try(crypto.verify_signed_message(key, <<salt:utf8>>))
-  use maybe_uuid <- result.try(bit_array.to_string(decrypted))
-  use user_uuid <- result.try(uuid.from_string(maybe_uuid))
+  use hashed_uuid <- result.try(list.key_find(cookies, user.uuid_cookie_name))
+  use decrypted <- result.try(crypto.verify_signed_message(hashed_uuid, salt))
+  use maybe_uuid_str <- result.try(bit_array.to_string(decrypted))
+  use user_uuid <- result.try(uuid.from_string(maybe_uuid_str))
   Ok(user_uuid)
 }
 
@@ -48,12 +48,12 @@ pub fn handle_request(
 fn ws_on_init(
   conn _conn: mist.WebsocketConnection,
   req req: request.Request(mist.Connection),
-  ctx _ctx: Context,
+  ctx ctx: Context,
   registry registry: group_registry.GroupRegistry(context.ServerMessage),
 ) -> #(Nil, option.Option(process.Selector(context.ServerMessage))) {
   let self = process.self()
   let group_subject = group_registry.join(registry, group_topic, self)
-  let maybe_uuid = extract_uuid_mist(req)
+  let maybe_uuid = extract_uuid_mist(req, ctx)
 
   let selector = case maybe_uuid {
     // Subcribe to just the group subject
