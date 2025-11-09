@@ -153,8 +153,8 @@ fn try_assign_members(
 
   // Notify assignments
   let registry = group_registry.get_registry(ctx.registry_name)
-  list.each(assigned_members, fn(uuid) {
-    brigade.notify_member_assignment(uuid, brigade_id, registry)
+  list.each(assigned_members, fn(user_uuid) {
+    brigade.notify_user_assigned_to_brigade(user_uuid, brigade_id, registry)
   })
 
   assigned_members
