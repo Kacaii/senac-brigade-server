@@ -150,7 +150,7 @@ fn insert_occurrence(
   body body: RegisterOccurrenceBody,
 ) -> Result(String, RegisterNewOccurrenceError) {
   use applicant_uuid <- result.try(
-    user.auth_user_from_cookie(request:, cookie_name: user.uuid_cookie_name)
+    user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AuthenticationFailed),
   )
 

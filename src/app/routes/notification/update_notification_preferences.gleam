@@ -97,7 +97,7 @@ fn update_preferences(
   preferences: NotificationPreferences,
 ) -> Result(List(pog.Returned(Nil)), UpdateNotificationPreferencesError) {
   use user_uuid <- result.try(
-    user.auth_user_from_cookie(request: req, cookie_name: user.uuid_cookie_name)
+    user.extract_uuid(request: req, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AuthenticationFailed),
   )
 

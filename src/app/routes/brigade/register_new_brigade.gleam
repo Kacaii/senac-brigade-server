@@ -1,3 +1,4 @@
+import app/routes/brigade
 import app/routes/brigade/sql
 import app/routes/role
 import app/routes/user
@@ -9,6 +10,7 @@ import gleam/json
 import gleam/list
 import gleam/result
 import gleam/time/timestamp
+import group_registry
 import pog
 import wisp
 import youid/uuid
@@ -137,10 +139,10 @@ fn try_register_brigade(
 fn try_assign_members(
   ctx ctx: Context,
   assign members: List(uuid.Uuid),
-  to brigade: uuid.Uuid,
+  to brigade_id: uuid.Uuid,
 ) -> Result(List(uuid.Uuid), RegisterBrigadeError) {
   use returned <- result.map(
-    sql.assign_brigade_members(ctx.conn, brigade, members)
+    sql.assign_brigade_members(ctx.conn, brigade_id, members)
     |> result.map_error(DataBaseError),
   )
 
@@ -148,6 +150,12 @@ fn try_assign_members(
     use row <- list.map(returned.rows)
     row.inserted_user_id
   }
+
+  // Notify assignments
+  let registry = group_registry.get_registry(ctx.registry_name)
+  list.each(assigned_members, fn(uuid) {
+    brigade.notify_member_assignment(uuid, brigade_id, registry)
+  })
 
   assigned_members
 }

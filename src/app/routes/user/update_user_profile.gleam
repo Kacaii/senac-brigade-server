@@ -90,7 +90,7 @@ fn try_update_user(
   body: RequestBody,
 ) -> Result(String, UpdateProfileError) {
   use maybe_id <- result.try(
-    user.auth_user_from_cookie(req, user.uuid_cookie_name)
+    user.extract_uuid(req, user.uuid_cookie_name)
     |> result.map_error(AccessError),
   )
 

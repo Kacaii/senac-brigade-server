@@ -68,7 +68,7 @@ fn handle_error(err: GetUserProfileError) {
 
 pub fn query_user_data(context: Context, request: wisp.Request) {
   use user_id <- result.try(
-    user.auth_user_from_cookie(request:, cookie_name: user.uuid_cookie_name)
+    user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessControl),
   )
 

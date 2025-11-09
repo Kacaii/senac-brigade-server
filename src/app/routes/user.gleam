@@ -62,7 +62,7 @@ pub fn get_user_role(
 }
 
 ///   Extracts the user UUID from the request's Cookie
-pub fn auth_user_from_cookie(
+pub fn extract_uuid(
   request request: wisp.Request,
   cookie_name cookie_name: String,
 ) -> Result(uuid.Uuid, AuthenticationError) {
@@ -89,7 +89,7 @@ pub fn check_role_authorization(
 ) -> Result(#(uuid.Uuid, role.Role), AccessControlError) {
   //   Indentify who is sending the request -----------------------------------
   use user_uuid <- result.try(
-    auth_user_from_cookie(request:, cookie_name:)
+    extract_uuid(request:, cookie_name:)
     |> result.map_error(Authentication),
   )
 

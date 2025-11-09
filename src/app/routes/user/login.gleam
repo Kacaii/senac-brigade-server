@@ -8,6 +8,7 @@ import app/routes/user/sql
 import app/web/context.{type Context}
 import argus
 import formal/form
+import gleam/http/response
 import gleam/json
 import gleam/list
 import gleam/result
@@ -68,7 +69,7 @@ fn handle_login(
   ctx ctx: Context,
   login_data login_data: LogIn,
   cookie_name cookie_name: String,
-) {
+) -> response.Response(wisp.Body) {
   let login_result = query_login_token(login: login_data, ctx:)
   case login_result {
     Ok(#(json_data, user_uuid)) -> {

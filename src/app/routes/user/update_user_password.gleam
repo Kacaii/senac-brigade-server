@@ -88,7 +88,7 @@ fn update_user_password(
   form_data form_data: UpdatePasswordForm,
 ) -> Result(Nil, UpdatePasswordError) {
   use user_uuid <- result.try(
-    user.auth_user_from_cookie(request:, cookie_name: user.uuid_cookie_name)
+    user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessError),
   )
 

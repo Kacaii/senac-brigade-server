@@ -57,7 +57,7 @@ fn try_delete_occurrence(
 
   use _user_uuid <- result.try(
     // Armazenamos o UUID do usuário caso precisemos para autorização
-    user.auth_user_from_cookie(request: req, cookie_name: user.uuid_cookie_name)
+    user.extract_uuid(request: req, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AuthenticationError),
   )
 
