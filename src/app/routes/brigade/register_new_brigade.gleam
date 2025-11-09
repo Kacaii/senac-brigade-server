@@ -153,9 +153,7 @@ fn try_assign_members(
 
   //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
-  list.each(assigned_members, fn(user_uuid) {
-    brigade.notify_user_assigned(user_uuid, brigade_id, registry)
-  })
+  brigade.broadcast_assignments(assigned_members:, to: brigade_id, registry:)
 
   assigned_members
 }

@@ -229,13 +229,11 @@ fn try_assign_brigades(
 
   //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
-  list.each(assigned_users, fn(assigned_user) {
-    occurrence.notify_user_assignment(
-      assigned: assigned_user,
-      to: occurrence_id,
-      registry:,
-    )
-  })
+  occurrence.broadcast_assignments(
+    assigned_users:,
+    to: occurrence_id,
+    registry:,
+  )
 
   Ok(assigned_brigades)
 }
