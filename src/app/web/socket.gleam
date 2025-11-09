@@ -43,8 +43,12 @@ pub fn handle_request(
   }
 }
 
-type ConnectionState {
-  ConnectionState(user_uuid: uuid.Uuid)
+///   Current state of the websocket connection
+type State {
+  State(
+    ///   User connected to this socket
+    user_uuid: uuid.Uuid,
+  )
 }
 
 fn handle_connection(
@@ -69,7 +73,7 @@ fn ws_on_init(
   ctx _ctx: Context,
   user_uuid user_uuid: uuid.Uuid,
   registry registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> #(ConnectionState, option.Option(process.Selector(msg.ServerMessage))) {
+) -> #(State, option.Option(process.Selector(msg.ServerMessage))) {
   let self = process.self()
   let group_subject = group_registry.join(registry, group_topic, self)
 
@@ -81,11 +85,11 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
-  #(ConnectionState(user_uuid:), option.Some(selector))
+  #(State(user_uuid:), option.Some(selector))
 }
 
 fn ws_on_close(
-  state _state: ConnectionState,
+  state _state: State,
   ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> Nil {
@@ -93,12 +97,12 @@ fn ws_on_close(
 }
 
 fn ws_handler(
-  state state: ConnectionState,
+  state state: State,
   msg msg: mist.WebsocketMessage(msg.ServerMessage),
   ws_conn conn: mist.WebsocketConnection,
   ctx _ctx: Context,
   registry _registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> mist.Next(ConnectionState, msg.ServerMessage) {
+) -> mist.Next(State, msg.ServerMessage) {
   case msg {
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
@@ -108,10 +112,10 @@ fn ws_handler(
 }
 
 fn handle_custom_msg(
-  state: ConnectionState,
+  state: State,
   msg: msg.ServerMessage,
   conn: mist.WebsocketConnection,
-) -> mist.Next(ConnectionState, msg.ServerMessage) {
+) -> mist.Next(State, msg.ServerMessage) {
   case msg {
     msg.Ping -> {
       let msg_result = mist.send_text_frame(conn, "  Pong")
