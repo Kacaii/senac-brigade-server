@@ -1,5 +1,6 @@
 import app/routes/user
 import app/web/context.{type Context}
+import app/web/socket/message as msg
 import gleam/bit_array
 import gleam/bytes_tree
 import gleam/crypto
@@ -50,7 +51,7 @@ fn handle_connection(
   req: request.Request(mist.Connection),
   ctx: Context,
   user_uuid: uuid.Uuid,
-  registry: group_registry.GroupRegistry(context.ServerMessage),
+  registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> response.Response(mist.ResponseData) {
   mist.websocket(
     request: req,
@@ -67,8 +68,8 @@ fn ws_on_init(
   req _req: request.Request(mist.Connection),
   ctx _ctx: Context,
   user_uuid user_uuid: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(context.ServerMessage),
-) -> #(ConnectionState, option.Option(process.Selector(context.ServerMessage))) {
+  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+) -> #(ConnectionState, option.Option(process.Selector(msg.ServerMessage))) {
   let self = process.self()
   let group_subject = group_registry.join(registry, group_topic, self)
 
@@ -86,18 +87,18 @@ fn ws_on_init(
 fn ws_on_close(
   state _state: ConnectionState,
   ctx _ctx: Context,
-  registry registry: group_registry.GroupRegistry(context.ServerMessage),
+  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> Nil {
   group_registry.leave(registry, group_topic, [process.self()])
 }
 
 fn ws_handler(
   state state: ConnectionState,
-  msg msg: mist.WebsocketMessage(context.ServerMessage),
+  msg msg: mist.WebsocketMessage(msg.ServerMessage),
   ws_conn conn: mist.WebsocketConnection,
   ctx _ctx: Context,
-  registry _registry: group_registry.GroupRegistry(context.ServerMessage),
-) -> mist.Next(ConnectionState, context.ServerMessage) {
+  registry _registry: group_registry.GroupRegistry(msg.ServerMessage),
+) -> mist.Next(ConnectionState, msg.ServerMessage) {
   case msg {
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
@@ -108,11 +109,11 @@ fn ws_handler(
 
 fn handle_custom_msg(
   state: ConnectionState,
-  msg: context.ServerMessage,
+  msg: msg.ServerMessage,
   conn: mist.WebsocketConnection,
-) -> mist.Next(ConnectionState, context.ServerMessage) {
+) -> mist.Next(ConnectionState, msg.ServerMessage) {
   case msg {
-    context.Ping -> {
+    msg.Ping -> {
       let msg_result = mist.send_text_frame(conn, "  Pong")
       case msg_result {
         Error(_) -> mist.stop_abnormal("Failed to reply with pong")
@@ -120,7 +121,7 @@ fn handle_custom_msg(
       }
     }
 
-    context.Broadcast(message) -> {
+    msg.Broadcast(message) -> {
       let msg_result = mist.send_text_frame(conn, message)
       case msg_result {
         Error(_) -> mist.stop_abnormal("Failed to broadcast message")
@@ -128,7 +129,7 @@ fn handle_custom_msg(
       }
     }
 
-    context.UserAssignedToBrigade(user_id:, brigade_id:) -> {
+    msg.UserAssignedToBrigade(user_id:, brigade_id:) -> {
       // Build notification
       let data_type_json = "assigned_to_brigade" |> json.string
       let user_id_json = uuid.to_string(user_id) |> json.string
@@ -149,7 +150,8 @@ fn handle_custom_msg(
         Ok(_) -> mist.continue(state)
       }
     }
-    context.UserAssignedToOccurrence(user_id:, occurrence_id:) -> {
+
+    msg.UserAssignedToOccurrence(user_id:, occurrence_id:) -> {
       // Build notification
       let data_type_json = "assigned_to_occurrence" |> json.string
       let user_id_json = uuid.to_string(user_id) |> json.string
@@ -176,16 +178,16 @@ fn handle_custom_msg(
 fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
   case err {
     InvalidUuid(id) ->
-      build_response("Usuário possui Uuid inválido: " <> id, 401)
+      build_error_response("Usuário possui Uuid inválido: " <> id, 401)
     InvalidSignature ->
-      build_response("Falha ao desencriptografar o token de acesso", 401)
+      build_error_response("Falha ao desencriptografar o token de acesso", 401)
     InvalidUtf8 ->
-      build_response("Token de acesso possui formato inválido", 422)
-    MissingCookie -> build_response("Cookie de autorização ausente", 401)
+      build_error_response("Token de acesso possui formato inválido", 404)
+    MissingCookie -> build_error_response("Cookie de autorização ausente", 401)
   }
 }
 
-fn build_response(
+fn build_error_response(
   error_msg: String,
   status: Int,
 ) -> response.Response(mist.ResponseData) {
