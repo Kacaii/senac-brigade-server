@@ -55,7 +55,7 @@ erDiagram
         TIMESTAMP updated_at
     }
 
-    notification_preference ||--|{ user_account : belongs
+    notification_preference ||--|{ user_account : preference
     notification_preference {
         UUID id PK
         UUID user_id FK
@@ -65,7 +65,7 @@ erDiagram
         TIMESTAMP updated_at
     }
 
-    brigade |o--o| user_account : leader_of
+    brigade }o--|{ user_account : leader_of
     brigade {
         UUID id PK
         UUID leader_id FK
@@ -77,15 +77,15 @@ erDiagram
         TIMESTAMP updated_at
     }
 
-    brigade_membership }o--o{ user_account : is_member_of
-    brigade_membership }o--o{ brigade : is_part_of
+    brigade_membership }|--|{ user_account : is_member_of
+    brigade_membership }|--|{ brigade : is_part_of
     brigade_membership {
         UUID id PK
         UUID user_id FK
-        UUID group_id FK
+        UUID brigade_id FK
     }
 
-    occurrence }|--|| user_account : submit
+    occurrence }o--|{ user_account : submit
     occurrence {
         UUID id PK
         UUID applicant_id FK
@@ -94,17 +94,16 @@ erDiagram
         TEXT description
         POINT location
         TEXT reference_point
-        UUID[] brigade_list
         TIMESTAMP created_at
         TIMESTAMP updated_at
         TIMESTAMP resolved_at
     }
 
-    occurrence_brigade_member }o--o{ user_account : participant
-    occurrence_brigade_member }o--o{ brigade : participates_of
-    occurrence_brigade_member {
-        UUID id
-        UUID user_id
-        UUID brigade_id
+    occurrence_brigade }|--|{ brigade : assigned_to
+    occurrence_brigade }|--|{ occurrence : assigned
+    occurrence_brigade {
+      UUID id PK
+      UUID occurrence_id FK
+      UUID brigade_id FK
     }
 ```
