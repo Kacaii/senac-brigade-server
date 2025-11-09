@@ -11,10 +11,10 @@
 
 import app/router
 import app/routes/admin/sql as admin_sql
-import app/socket
 import app/supervision_tree
 import app/web
 import app/web/context.{type Context, Context}
+import app/web_socket
 import envoy
 import gleam/erlang/process
 import gleam/http
@@ -59,7 +59,7 @@ pub fn main() -> Nil {
     )
 
   let wisp_handler = router.handle_request(_, ctx)
-  let ws_handler = socket.handle_request(_, ctx)
+  let ws_handler = web_socket.handle_request(_, ctx)
 
   // Start all essential processes under a supervision tree
   let assert Ok(_) =
