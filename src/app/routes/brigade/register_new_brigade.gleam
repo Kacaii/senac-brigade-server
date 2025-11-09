@@ -151,10 +151,10 @@ fn try_assign_members(
     row.inserted_user_id
   }
 
-  // Notify assignments
+  //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
   list.each(assigned_members, fn(user_uuid) {
-    brigade.notify_user_assigned_to_brigade(user_uuid, brigade_id, registry)
+    brigade.notify_user_assigned(user_uuid, brigade_id, registry)
   })
 
   assigned_members

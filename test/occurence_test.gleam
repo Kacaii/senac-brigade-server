@@ -103,23 +103,27 @@ pub fn register_new_occurrence_test() {
     as "Response should contain valid JSON"
 
   // Check if users were registered as participants ----------------------------
-  let assert [] = {
-    let dummy_participants_set = set.from_list(dummy_participants_id)
+  let dummy_participants_set = set.from_list(dummy_participants_id)
 
-    let registered_participants_set =
-      set.from_list({
-        let assert Ok(returned) =
-          o_sql.query_occurrence_participants(ctx.conn, dummy_occurrence_id)
-          as "Failed to query occurrence participants"
+  let registered_participants_set =
+    set.from_list({
+      let assert Ok(returned) =
+        o_sql.query_occurrence_participants(ctx.conn, dummy_occurrence_id)
+        as "Failed to query occurrence participants"
 
-        use row <- list.map(returned.rows)
-        row.user_id
-      })
+      use row <- list.map(returned.rows)
+      row.user_id
+    })
 
-    set.difference(dummy_participants_set, registered_participants_set)
+  assert set.difference(registered_participants_set, dummy_participants_set)
     |> set.to_list()
-  }
-    as "Users were not registered as participants"
+    == []
+    as "Registered members contain unexpected users"
+
+  assert set.difference(dummy_participants_set, registered_participants_set)
+    |> set.to_list()
+    == []
+    as "Not all users were assigned"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(_) = dev_sql.truncate_occurrence(ctx.conn)

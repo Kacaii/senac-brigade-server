@@ -158,20 +158,4 @@ ON public.occurrence_brigade (occurrence_id);
 CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_brigade_id
 ON public.occurrence_brigade (brigade_id);
 
-
-CREATE TABLE IF NOT EXISTS public.occurrence_participant (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    occurrence_id UUID NOT NULL REFERENCES public.occurrence (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (occurrence_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_occurrence_participant_occurrence_id
-ON public.occurrence_participant (occurrence_id);
-
-CREATE INDEX IF NOT EXISTS idx_occurrence_participant_user_id
-ON public.occurrence_participant (user_id);
-
 COMMIT;

@@ -130,7 +130,7 @@ fn handle_custom_msg(
 
     context.UserAssignedToBrigade(user_id:, brigade_id:) -> {
       // Build notification
-      let data_type_json = "assignment_to_brigade" |> json.string
+      let data_type_json = "assigned_to_brigade" |> json.string
       let user_id_json = uuid.to_string(user_id) |> json.string
       let brigade_id_json = uuid.to_string(brigade_id) |> json.string
 
@@ -140,6 +140,27 @@ fn handle_custom_msg(
           #("data_type", data_type_json),
           #("user_id", user_id_json),
           #("brigade_id", brigade_id_json),
+        ])
+        |> json.to_string
+
+      let msg_result = mist.send_text_frame(conn, body)
+      case msg_result {
+        Error(_) -> mist.stop_abnormal("Failed to notify assignment to user")
+        Ok(_) -> mist.continue(state)
+      }
+    }
+    context.UserAssignedToOccurrence(user_id:, occurrence_id:) -> {
+      // Build notification
+      let data_type_json = "assigned_to_occurrence" |> json.string
+      let user_id_json = uuid.to_string(user_id) |> json.string
+      let occurrence_id_json = uuid.to_string(occurrence_id) |> json.string
+
+      // Construct the body
+      let body =
+        json.object([
+          #("data_type", data_type_json),
+          #("user_id", user_id_json),
+          #("occurrence_id", occurrence_id_json),
         ])
         |> json.to_string
 

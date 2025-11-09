@@ -12,7 +12,6 @@ DROP FUNCTION IF EXISTS public.set_default_notification_preferences;
 -- pgt-ignore-start lint/safety/banDropTable: We are resetting the Database
 DROP TABLE IF EXISTS public.occurrence_brigade;
 DROP TABLE IF EXISTS public.brigade_membership;
-DROP TABLE IF EXISTS public.occurrence_participant;
 DROP TABLE IF EXISTS public.occurrence;
 DROP TABLE IF EXISTS public.brigade;
 DROP TABLE IF EXISTS public.user_notification_preference;

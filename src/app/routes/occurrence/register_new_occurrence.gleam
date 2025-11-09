@@ -1,6 +1,7 @@
 //// Processes occurrence registration form data, validates inputs, and creates
 //// a new occurrence record in the database.
 
+import app/routes/occurrence
 import app/routes/occurrence/category
 import app/routes/occurrence/priority
 import app/routes/occurrence/sql
@@ -14,6 +15,7 @@ import gleam/json
 import gleam/list
 import gleam/result
 import gleam/time/timestamp
+import group_registry
 import pog
 import wisp
 import youid/uuid
@@ -202,11 +204,11 @@ fn insert_occurrence(
 
 fn try_assign_brigades(
   ctx ctx: Context,
-  assign brigades: List(uuid.Uuid),
-  to occorrence: uuid.Uuid,
+  assign brigades_id: List(uuid.Uuid),
+  to occurrence_id: uuid.Uuid,
 ) -> Result(List(uuid.Uuid), RegisterNewOccurrenceError) {
   use returned <- result.try(
-    sql.assign_brigades_to_occurrence(ctx.conn, occorrence, brigades)
+    sql.assign_brigades_to_occurrence(ctx.conn, occurrence_id, brigades_id)
     |> result.map_error(DataBaseError),
   )
 
@@ -214,6 +216,26 @@ fn try_assign_brigades(
     use row <- list.map(returned.rows)
     row.inserted_brigade_id
   }
+
+  use assigned_users <- result.try({
+    use returned <- result.try(
+      sql.query_occurrence_participants(ctx.conn, occurrence_id)
+      |> result.map_error(DataBaseError),
+    )
+
+    list.map(returned.rows, fn(row) { row.user_id })
+    |> Ok
+  })
+
+  //   BROADCAST --------------------------------------------------------------
+  let registry = group_registry.get_registry(ctx.registry_name)
+  list.each(assigned_users, fn(assigned_user) {
+    occurrence.notify_user_assignment(
+      assigned: assigned_user,
+      to: occurrence_id,
+      registry:,
+    )
+  })
 
   Ok(assigned_brigades)
 }

@@ -1,16 +1,20 @@
-import app/routes/occurrence/category
-import app/routes/occurrence/subcategory
-import gleam/option
+import app/web/context
+import gleam/erlang/process
+import gleam/list
+import group_registry
 import youid/uuid
 
-pub type Occurrence {
-  Occurrence(
-    occurrence_category: category.Category,
-    occurrence_subcategory: option.Option(subcategory.Subcategory),
-    brigade_id: option.Option(uuid.Uuid),
-    description: String,
-    location: List(Float),
-    reference_point: String,
-    vehicle_code: String,
-  )
+///   Notify a member that their brigade was assigned to an occurrence.
+pub fn notify_user_assignment(
+  assigned user_id: uuid.Uuid,
+  to occurrence_id: uuid.Uuid,
+  registry registry: group_registry.GroupRegistry(context.ServerMessage),
+) -> Nil {
+  let members = group_registry.members(registry, uuid.to_string(user_id))
+  list.each(members, fn(subject) {
+    process.send(
+      subject,
+      context.UserAssignedToOccurrence(user_id:, occurrence_id:),
+    )
+  })
 }

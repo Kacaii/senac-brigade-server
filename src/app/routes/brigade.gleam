@@ -4,8 +4,8 @@ import gleam/list
 import group_registry
 import youid/uuid
 
-/// Notify an user that they were assigned to a brigade
-pub fn notify_user_assigned_to_brigade(
+///   Notify an user that they were assigned to a brigade
+pub fn notify_user_assigned(
   assigned user_id: uuid.Uuid,
   to brigade_id: uuid.Uuid,
   registry registry: group_registry.GroupRegistry(context.ServerMessage),
