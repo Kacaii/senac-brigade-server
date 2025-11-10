@@ -12,7 +12,7 @@ import youid/uuid
 /// 󱜠  Broadcast a text message to all members of a brigade
 pub fn broadcast(
   ctx ctx: Context,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+  registry registry: group_registry.GroupRegistry(msg.Msg),
   brigade brigade_id: uuid.Uuid,
   body body: String,
 ) -> Result(Nil, pog.QueryError) {
@@ -31,7 +31,7 @@ pub fn broadcast(
 pub fn notify_user_assignment(
   assigned user_id: uuid.Uuid,
   to brigade_id: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   let members = group_registry.members(registry, uuid.to_string(user_id))
 
@@ -44,7 +44,7 @@ pub fn notify_user_assignment(
 pub fn broadcast_assignments(
   assigned_members user_id_list: List(uuid.Uuid),
   to brigade_id: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   use user_id <- list.each(user_id_list)
   notify_user_assignment(user_id, brigade_id, registry)

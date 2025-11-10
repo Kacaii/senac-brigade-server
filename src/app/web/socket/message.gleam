@@ -1,7 +1,7 @@
 import youid/uuid
 
 /// 󱔔  Message broadcasted to all active users
-pub type ServerMessage {
+pub type Msg {
   /// 󱥁  Broadcast a text message
   Broadcast(String)
   /// 󰿄  User was assigned to a brigade

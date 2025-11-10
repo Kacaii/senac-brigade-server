@@ -18,6 +18,7 @@ INSERT INTO public.occurrence AS o (
 )
 RETURNING
     o.id,
+    o.occurrence_category,
     o.priority,
     o.applicant_id,
     o.created_at;

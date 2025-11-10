@@ -1,6 +1,7 @@
-import app/routes/notification
 import app/routes/notification/sql
+import app/routes/occurrence/category
 import app/routes/user
+import app/web
 import app/web/context.{type Context}
 import gleam/dict
 import gleam/dynamic/decode
@@ -37,8 +38,7 @@ pub fn handle_request(
       case update_preferences(req, ctx, form_data) {
         Error(err) -> handle_err(err)
         Ok(_) -> {
-          let data =
-            json.dict(form_data, notification.to_string_pt_br, json.bool)
+          let data = json.dict(form_data, category.to_string_pt_br, json.bool)
           wisp.json_response(json.to_string(data), 200)
         }
       }
@@ -57,10 +57,10 @@ fn notification_preferences_decoder(
 
     decode.success(
       dict.from_list([
-        #(sql.Fire, fire_enabled),
-        #(sql.Emergency, emergency_enabled),
-        #(sql.Traffic, traffic),
-        #(sql.Other, other),
+        #(category.Fire, fire_enabled),
+        #(category.MedicEmergency, emergency_enabled),
+        #(category.TrafficAccident, traffic),
+        #(category.Other, other),
       ]),
     )
   }
@@ -71,23 +71,7 @@ fn notification_preferences_decoder(
 fn handle_err(err: UpdateNotificationPreferencesError) -> wisp.Response {
   case err {
     AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    DataBaseError(err) -> {
-      let err_message = case err {
-        //
-        //   Connection failed
-        pog.ConnectionUnavailable ->
-          "Conexão com o Banco de Dados não disponível"
-
-        //   Took too long
-        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-
-        // Fallback
-        _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-      }
-
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_message))
-    }
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 
@@ -103,6 +87,15 @@ fn update_preferences(
 
   use update_result <- result.try({
     use #(key, value) <- list.try_map(dict.to_list(preferences))
+
+    // Parse into the SQL enum
+    let key = case key {
+      category.Fire -> sql.Fire
+      category.MedicEmergency -> sql.Emergency
+      category.Other -> sql.Other
+      category.TrafficAccident -> sql.Traffic
+    }
+
     sql.update_notification_preferences(ctx.db, user_uuid, key, value)
     |> result.map_error(DataBaseError)
   })
@@ -111,7 +104,7 @@ fn update_preferences(
 }
 
 type NotificationPreferences =
-  dict.Dict(sql.NotificationTypeEnum, Bool)
+  dict.Dict(category.Category, Bool)
 
 type UpdateNotificationPreferencesError {
   AuthenticationFailed(user.AuthenticationError)

@@ -41,10 +41,9 @@ FROM public.assign_occurrence_brigades($1, $2) AS ob;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.array(
-    fn(value) { pog.text(uuid.to_string(value)) },
-    arg_2,
-  ))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -93,6 +92,7 @@ RETURNING o.id;
 pub type InsertNewOccurenceRow {
   InsertNewOccurenceRow(
     id: Uuid,
+    occurrence_category: OccurrenceCategoryEnum,
     priority: OccurrencePriorityEnum,
     applicant_id: Uuid,
     created_at: Timestamp,
@@ -116,11 +116,16 @@ pub fn insert_new_occurence(
 ) -> Result(pog.Returned(InsertNewOccurenceRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
-    use priority <- decode.field(1, occurrence_priority_enum_decoder())
-    use applicant_id <- decode.field(2, uuid_decoder())
-    use created_at <- decode.field(3, pog.timestamp_decoder())
+    use occurrence_category <- decode.field(
+      1,
+      occurrence_category_enum_decoder(),
+    )
+    use priority <- decode.field(2, occurrence_priority_enum_decoder())
+    use applicant_id <- decode.field(3, uuid_decoder())
+    use created_at <- decode.field(4, pog.timestamp_decoder())
     decode.success(InsertNewOccurenceRow(
       id:,
+      occurrence_category:,
       priority:,
       applicant_id:,
       created_at:,
@@ -147,6 +152,7 @@ INSERT INTO public.occurrence AS o (
 )
 RETURNING
     o.id,
+    o.occurrence_category,
     o.priority,
     o.applicant_id,
     o.created_at;
@@ -411,10 +417,9 @@ FROM public.assign_occurrence_brigades($1, $2) AS o;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.array(
-    fn(value) { pog.text(uuid.to_string(value)) },
-    arg_2,
-  ))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -452,9 +457,7 @@ fn occurrence_category_enum_encoder(occurrence_category_enum) -> pog.Value {
     MedicEmergency -> "medic_emergency"
   }
   |> pog.text
-}
-
-/// Corresponds to the Postgres `occurrence_priority_enum` enum.
+}/// Corresponds to the Postgres `occurrence_priority_enum` enum.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -482,9 +485,7 @@ fn occurrence_priority_enum_encoder(occurrence_priority_enum) -> pog.Value {
     Low -> "low"
   }
   |> pog.text
-}
-
-/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
+}/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -508,9 +509,7 @@ pub type OccurrenceSubcategoryEnum {
   HeartStop
 }
 
-fn occurrence_subcategory_enum_decoder() -> decode.Decoder(
-  OccurrenceSubcategoryEnum,
-) {
+fn occurrence_subcategory_enum_decoder() -> decode.Decoder(OccurrenceSubcategoryEnum) {
   use occurrence_subcategory_enum <- decode.then(decode.string)
   case occurrence_subcategory_enum {
     "injured_animal" -> decode.success(InjuredAnimal)
@@ -533,7 +532,9 @@ fn occurrence_subcategory_enum_decoder() -> decode.Decoder(
   }
 }
 
-fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> pog.Value {
+fn occurrence_subcategory_enum_encoder(
+  occurrence_subcategory_enum,
+) -> pog.Value {
   case occurrence_subcategory_enum {
     InjuredAnimal -> "injured_animal"
     Flood -> "flood"

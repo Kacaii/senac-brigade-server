@@ -17,6 +17,7 @@ pub fn start(
     response.Response(mist.ResponseData),
   secret_key_base secret_key_base: String,
   registry_name registry_name: process.Name(_),
+  notification_registry_name notification_registry_name: process.Name(_),
 ) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
   // Handler for the web server
   let webserver_handler = fn(req) {
@@ -38,5 +39,6 @@ pub fn start(
   |> supervisor.add(pog.supervised(pog_config))
   |> supervisor.add(mist.supervised(mist_pool_child))
   |> supervisor.add(group_registry.supervised(registry_name))
+  |> supervisor.add(group_registry.supervised(notification_registry_name))
   |> supervisor.start
 }

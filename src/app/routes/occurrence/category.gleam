@@ -19,10 +19,10 @@ pub fn to_string(category: Category) {
 
 pub fn to_string_pt_br(category: Category) {
   case category {
-    Fire -> "incêndio"
-    MedicEmergency -> "emergência médica"
+    Fire -> "incendio"
+    MedicEmergency -> "emergencia"
+    TrafficAccident -> "transito"
     Other -> "outros"
-    TrafficAccident -> "acidente de trânsito"
   }
 }
 
@@ -39,9 +39,9 @@ pub fn from_string(maybe_category: String) -> Result(Category, String) {
 
 pub fn from_string_pt_br(maybe_category: String) {
   case string.lowercase(maybe_category) {
-    "incêndio" -> Ok(Fire)
-    "acidente de trânsito" -> Ok(TrafficAccident)
-    "emergência médica" -> Ok(MedicEmergency)
+    "incendio" -> Ok(Fire)
+    "emergencia" -> Ok(MedicEmergency)
+    "transito" -> Ok(TrafficAccident)
     "outros" -> Ok(Other)
 
     unkown -> Error(unkown)

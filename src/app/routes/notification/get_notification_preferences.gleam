@@ -1,5 +1,5 @@
-import app/routes/notification
 import app/routes/notification/sql
+import app/routes/occurrence/category
 import app/routes/user
 import app/web/context.{type Context}
 import gleam/dict
@@ -76,10 +76,18 @@ fn query_database(
 
   let preferences = {
     use acc, row <- list.fold(returned.rows, dict.new())
-    dict.insert(acc, row.notification_type, row.enabled)
+
+    let occ_category = case row.notification_type {
+      sql.Emergency -> category.MedicEmergency
+      sql.Fire -> category.Fire
+      sql.Other -> category.Other
+      sql.Traffic -> category.TrafficAccident
+    }
+
+    dict.insert(acc, occ_category, row.enabled)
   }
 
-  Ok(json.dict(preferences, notification.to_string_pt_br, json.bool))
+  Ok(json.dict(preferences, category.to_string, json.bool))
 }
 
 type GetNotificationPreferencesError {

@@ -20,6 +20,8 @@ pub fn global_data() -> Context {
   global_value.create_with_unique_name("global_context", fn() {
     let db_process_name = process.new_name("db_conn")
     let registry_name = process.new_name("registry")
+    let notification_registry_name = process.new_name("notification_registry")
+
     let assert Ok(config) = app.read_connection_uri(db_process_name)
     let assert Ok(secret_key_base) = app.read_cookie_token()
 
@@ -30,6 +32,7 @@ pub fn global_data() -> Context {
       static_directory: app.static_directory(),
       db:,
       registry_name:,
+      notification_registry_name:,
       secret_key_base:,
     )
   })

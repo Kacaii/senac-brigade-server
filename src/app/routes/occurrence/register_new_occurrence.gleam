@@ -65,7 +65,9 @@ fn handle_body(
     //   Handle possible errors
     Error(err) -> handle_error(err)
     //   Send a response to the client 
-    Ok(data) -> wisp.json_response(data, 201)
+    Ok(data) -> {
+      wisp.json_response(data, 201)
+    }
   }
 }
 
@@ -190,6 +192,17 @@ fn insert_occurrence(
   let occurrence_priority =
     enum_to_priority(row.priority)
     |> priority.to_string_pt_br
+
+  let occ_category = case row.occurrence_category {
+    sql.Fire -> category.Fire
+    sql.MedicEmergency -> category.MedicEmergency
+    sql.Other -> category.Other
+    sql.TrafficAccident -> category.TrafficAccident
+  }
+
+  //   Broadcast new occurrence
+  let registry = group_registry.get_registry(ctx.notification_registry_name)
+  occurrence.notify_new_occurrence(new: row.id, of: occ_category, registry:)
 
   json.object([
     #("id", uuid.to_string(row.id) |> json.string),

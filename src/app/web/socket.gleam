@@ -2,6 +2,7 @@ import app/routes/user
 import app/web/context.{type Context}
 import app/web/socket/envelope
 import app/web/socket/message as msg
+import app/web/socket/routes/notification as ws_notification
 import gleam/bit_array
 import gleam/bool
 import gleam/bytes_tree
@@ -58,25 +59,33 @@ fn handle_connection(
   req: request.Request(mist.Connection),
   ctx: Context,
   user_uuid: uuid.Uuid,
-  registry: group_registry.GroupRegistry(msg.ServerMessage),
+  registry: group_registry.GroupRegistry(msg.Msg),
 ) -> response.Response(mist.ResponseData) {
-  mist.websocket(
-    request: req,
-    on_init: ws_on_init(_, req, ctx, user_uuid, registry),
-    on_close: ws_on_close(_, ctx, registry),
-    handler: fn(state, msg, conn) {
-      ws_handler(state, msg, conn, ctx, registry)
-    },
-  )
+  let handler =
+    mist.websocket(
+      request: req,
+      on_init: ws_on_init(_, req, ctx, user_uuid, registry),
+      on_close: ws_on_close(_, ctx, registry),
+      handler: fn(state, msg, conn) {
+        ws_handler(state, msg, conn, ctx, registry)
+      },
+    )
+
+  case request.path_segments(req) {
+    ["ws"] -> handler
+    ["ws", "occurrence_notifications"] ->
+      ws_notification.handle_connection(req, ctx, user_uuid)
+    _ -> build_error_response("Not found", 404)
+  }
 }
 
 fn ws_handler(
   state state: State,
-  msg msg: mist.WebsocketMessage(msg.ServerMessage),
+  msg msg: mist.WebsocketMessage(msg.Msg),
   ws_conn ws_conn: mist.WebsocketConnection,
   ctx ctx: Context,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> mist.Next(State, msg.ServerMessage) {
+  registry registry: group_registry.GroupRegistry(msg.Msg),
+) -> mist.Next(State, msg.Msg) {
   case msg {
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
@@ -87,11 +96,11 @@ fn ws_handler(
 
 fn handle_custom_msg(
   state: State,
-  msg: msg.ServerMessage,
+  msg: msg.Msg,
   conn: mist.WebsocketConnection,
   _ctx: Context,
-  _registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> mist.Next(State, msg.ServerMessage) {
+  _registry: group_registry.GroupRegistry(msg.Msg),
+) -> mist.Next(State, msg.Msg) {
   case msg {
     msg.Ping ->
       send_envelope(
@@ -140,7 +149,7 @@ pub fn send_envelope(
   conn conn: mist.WebsocketConnection,
   data_type data_type: String,
   data data: json.Json,
-) -> mist.Next(State, msg.ServerMessage) {
+) -> mist.Next(State, msg.Msg) {
   //   Build metadata
   let meta =
     envelope.MetaData(
@@ -197,8 +206,8 @@ fn ws_on_init(
   req _req: request.Request(mist.Connection),
   ctx _ctx: Context,
   user_uuid user_uuid: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> #(State, option.Option(process.Selector(msg.ServerMessage))) {
+  registry registry: group_registry.GroupRegistry(msg.Msg),
+) -> #(State, option.Option(process.Selector(msg.Msg))) {
   let self = process.self()
   let group_subject = group_registry.join(registry, group_topic, self)
 
@@ -218,7 +227,7 @@ fn ws_on_init(
 fn ws_on_close(
   state _state: State,
   ctx _ctx: Context,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   group_registry.leave(registry, group_topic, [process.self()])
 }
