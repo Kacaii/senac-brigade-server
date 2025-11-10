@@ -158,7 +158,7 @@ fn insert_occurrence(
 
   use returned <- result.try(
     sql.insert_new_occurence(
-      ctx.conn,
+      ctx.db,
       applicant_uuid,
       category_to_enum(body.occurrence_category),
       subcategory_to_enum(body.occurrence_subcategory),
@@ -208,7 +208,7 @@ fn try_assign_brigades(
   to occurrence_id: uuid.Uuid,
 ) -> Result(List(uuid.Uuid), RegisterNewOccurrenceError) {
   use returned <- result.try(
-    sql.assign_brigades_to_occurrence(ctx.conn, occurrence_id, brigades_id)
+    sql.assign_brigades_to_occurrence(ctx.db, occurrence_id, brigades_id)
     |> result.map_error(DataBaseError),
   )
 
@@ -219,7 +219,7 @@ fn try_assign_brigades(
 
   use assigned_users <- result.try({
     use returned <- result.try(
-      sql.query_occurrence_participants(ctx.conn, occurrence_id)
+      sql.query_occurrence_participants(ctx.db, occurrence_id)
       |> result.map_error(DataBaseError),
     )
 

@@ -61,7 +61,7 @@ fn query_crew_members(ctx ctx: Context, user_id user_id: String) {
     |> result.replace_error(InvalidUUID(user_id)),
   )
   use returned <- result.try(
-    sql.query_crew_members(ctx.conn, user_uuid)
+    sql.query_crew_members(ctx.db, user_uuid)
     |> result.map_error(DataBaseError),
   )
   let fellow_members_list = {

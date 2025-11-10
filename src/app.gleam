@@ -39,7 +39,7 @@ pub fn main() -> Nil {
 
   // DATABASE POOL -------------------------------------------------------------
   //   Database connection
-  let conn = pog.named_connection(db_process_name)
+  let db = pog.named_connection(db_process_name)
 
   // SECRET KEYS ---------------------------------------------------------------
   // Used for signing and encryption
@@ -53,7 +53,7 @@ pub fn main() -> Nil {
   let ctx =
     Context(
       static_directory: static_directory(),
-      conn:,
+      db:,
       registry_name:,
       secret_key_base:,
     )
@@ -110,7 +110,7 @@ pub fn static_directory() -> String {
 
 /// Generate a default admin account if the user_account table is empty
 pub fn setup_admin(ctx: Context) {
-  let assert Ok(returned) = admin_sql.count_total_users(ctx.conn)
+  let assert Ok(returned) = admin_sql.count_total_users(ctx.db)
   let assert Ok(row) = list.first(returned.rows)
 
   case row.total == 0 {

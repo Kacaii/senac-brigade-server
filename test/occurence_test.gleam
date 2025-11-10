@@ -21,15 +21,15 @@ pub fn register_new_occurrence_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USERS -----------------------------------------------------------
-  let dummy_applicant_id = dummy.random_user(ctx.conn)
+  let dummy_applicant_id = dummy.random_user(ctx.db)
   let dummy_participants_id = {
-    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx.conn) })
+    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx.db) })
   }
 
   // DUMMY BRIGADE -------------------------------------------------------------
   let dummy_brigade_id =
     dummy.random_brigade(
-      conn: ctx.conn,
+      conn: ctx.db,
       leader_id: dummy_applicant_id,
       members: dummy_participants_id,
     )
@@ -108,7 +108,7 @@ pub fn register_new_occurrence_test() {
   let registered_participants_set =
     set.from_list({
       let assert Ok(returned) =
-        o_sql.query_occurrence_participants(ctx.conn, dummy_occurrence_id)
+        o_sql.query_occurrence_participants(ctx.db, dummy_occurrence_id)
         as "Failed to query occurrence participants"
 
       use row <- list.map(returned.rows)
@@ -126,9 +126,9 @@ pub fn register_new_occurrence_test() {
     as "Not all users were assigned"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.truncate_occurrence(ctx.conn)
-  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.truncate_occurrence(ctx.db)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }
 
 pub fn get_occurrences_by_applicant_test() {
@@ -136,22 +136,22 @@ pub fn get_occurrences_by_applicant_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USERS -----------------------------------------------------------
-  let dummy_applicant_id = dummy.random_user(ctx.conn)
+  let dummy_applicant_id = dummy.random_user(ctx.db)
   let dummy_participants_id = {
-    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx.conn) })
+    list.map(list.range(0, 12), fn(_) { dummy.random_user(ctx.db) })
   }
 
   // DUMMY BRIGADE -------------------------------------------------------------
   let dummy_brigade_id =
     dummy.random_brigade(
-      conn: ctx.conn,
+      conn: ctx.db,
       leader_id: dummy_applicant_id,
       members: dummy_participants_id,
     )
 
   // DUMMY OCCURRENCE ----------------------------------------------------------
   let dummy_occurrence =
-    dummy.random_occurrence(ctx.conn, dummy_applicant_id, [dummy_brigade_id])
+    dummy.random_occurrence(ctx.db, dummy_applicant_id, [dummy_brigade_id])
 
   let path = "/user/" <> uuid.to_string(dummy_applicant_id) <> "/occurrences"
   let req = simulate.browser_request(http.Get, path)
@@ -236,9 +236,9 @@ pub fn get_occurrences_by_applicant_test() {
     })
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.truncate_occurrence(ctx.conn)
-  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.truncate_occurrence(ctx.db)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }
 
 pub fn delete_occurrence_test() {
@@ -246,9 +246,9 @@ pub fn delete_occurrence_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY
-  let dummy_applicant = dummy.random_user(ctx.conn)
+  let dummy_applicant = dummy.random_user(ctx.db)
   let dummy_occurrence =
-    dummy.random_occurrence(ctx.conn, applicant_id: dummy_applicant, assign: [])
+    dummy.random_occurrence(ctx.db, applicant_id: dummy_applicant, assign: [])
 
   let path = "/occurrence/" <> uuid.to_string(dummy_occurrence)
   let req = simulate.request(http.Delete, path)
@@ -280,5 +280,5 @@ pub fn delete_occurrence_test() {
     as "Deleted the wrong Occurrence"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }

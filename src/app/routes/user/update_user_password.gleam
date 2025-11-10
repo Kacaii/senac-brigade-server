@@ -121,7 +121,7 @@ fn update_user_password(
       // 󰚰  Update their password
       use _ <- result.try(
         sql.update_user_password(
-          ctx.conn,
+          ctx.db,
           user_uuid,
           hashed_password.encoded_hash,
         )
@@ -146,7 +146,7 @@ fn query_user_password(
   user_uuid user_uuid: uuid.Uuid,
 ) -> Result(String, UpdatePasswordError) {
   use returned <- result.try(
-    sql.query_user_password(ctx.conn, user_uuid)
+    sql.query_user_password(ctx.db, user_uuid)
     |> result.map_error(DataBaseError),
   )
 

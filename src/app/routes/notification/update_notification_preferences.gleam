@@ -103,7 +103,7 @@ fn update_preferences(
 
   use update_result <- result.try({
     use #(key, value) <- list.try_map(dict.to_list(preferences))
-    sql.update_notification_preferences(ctx.conn, user_uuid, key, value)
+    sql.update_notification_preferences(ctx.db, user_uuid, key, value)
     |> result.map_error(DataBaseError)
   })
 

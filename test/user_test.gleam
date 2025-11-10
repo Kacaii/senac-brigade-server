@@ -89,7 +89,7 @@ pub fn signup_test() {
     as "Response should contain valid JSON data"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 
   // REGISTRATION ALREADY TAKEN ------------------------------------------------
   {
@@ -303,5 +303,5 @@ pub fn update_user_profile_test() {
   }
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }

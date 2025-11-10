@@ -17,7 +17,7 @@ pub fn admin_update_user_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // DUMMY USER ----------------------------------------------------------------
-  let dummy_user_id = dummy.random_user(ctx.conn)
+  let dummy_user_id = dummy.random_user(ctx.db)
   let path = "/admin/users/" <> uuid.to_string(dummy_user_id)
 
   // Data
@@ -90,7 +90,7 @@ pub fn admin_update_user_test() {
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(deleted_user) = {
-    let assert Ok(returned) = u_sql.delete_user_by_id(ctx.conn, dummy_user_id)
+    let assert Ok(returned) = u_sql.delete_user_by_id(ctx.db, dummy_user_id)
       as "Failed to delete dummy user"
     list.first(returned.rows)
   }
@@ -103,7 +103,7 @@ pub fn update_user_status_test() {
   let ctx = app_test.global_data()
   use _ <- list.each(list.range(1, app_test.n_tests))
 
-  let dummy_user = dummy.random_user(ctx.conn)
+  let dummy_user = dummy.random_user(ctx.db)
   let path = "/admin/users/" <> uuid.to_string(dummy_user) <> "/status"
 
   let target_status = False
@@ -133,5 +133,5 @@ pub fn update_user_status_test() {
       decode.success(Nil)
     })
 
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }

@@ -44,7 +44,7 @@ fn query_occurrences(
   )
 
   use returned <- result.try(
-    sql.query_occurences_by_applicant(ctx.conn, user_uuid)
+    sql.query_occurences_by_applicant(ctx.db, user_uuid)
     |> result.map_error(DataBaseError),
   )
 

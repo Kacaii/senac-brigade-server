@@ -70,7 +70,7 @@ fn query_database(
   )
 
   use returned <- result.try(
-    sql.query_notification_preferences(ctx.conn, user_uuid)
+    sql.query_notification_preferences(ctx.db, user_uuid)
     |> result.map_error(DatabaseError),
   )
 

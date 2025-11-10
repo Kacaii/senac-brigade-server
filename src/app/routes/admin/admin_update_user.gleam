@@ -124,7 +124,7 @@ fn try_update_user(
 
   use returned <- result.try(
     sql.admin_update_user(
-      ctx.conn,
+      ctx.db,
       user_uuid,
       body.full_name,
       body.email,

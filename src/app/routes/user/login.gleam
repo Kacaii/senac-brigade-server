@@ -153,7 +153,7 @@ type LoginError {
 /// Returns the user's UUID if successfull.
 fn query_login_token(login data: LogIn, ctx ctx: Context) {
   use returned <- result.try(
-    sql.query_login_token(ctx.conn, data.registration)
+    sql.query_login_token(ctx.db, data.registration)
     |> result.map_error(DataBaseError),
   )
 

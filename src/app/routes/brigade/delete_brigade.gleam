@@ -50,7 +50,7 @@ fn delete_from_database(
     uuid.from_string(id) |> result.replace_error(InvalidBrigadeUuid(id)),
   )
   use returned <- result.try(
-    sql.delete_brigade_by_id(ctx.conn, brigade_uuid)
+    sql.delete_brigade_by_id(ctx.db, brigade_uuid)
     |> result.map_error(DataBaseError),
   )
   use row <- result.map(

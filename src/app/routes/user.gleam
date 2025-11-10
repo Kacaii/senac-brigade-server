@@ -43,7 +43,7 @@ pub fn get_user_role(
   user_uuid id: uuid.Uuid,
 ) -> Result(role.Role, AccessControlError) {
   use returned <- result.try(
-    sql.query_user_role(ctx.conn, id)
+    sql.query_user_role(ctx.db, id)
     |> result.map_error(DataBase),
   )
 

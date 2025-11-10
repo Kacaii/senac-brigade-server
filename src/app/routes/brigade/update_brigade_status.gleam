@@ -61,7 +61,7 @@ fn try_update_status(
     uuid.from_string(id) |> result.replace_error(InvalidBrigadeUuid(id)),
   )
   use returned <- result.try(
-    sql.update_brigade_status(ctx.conn, brigade_uuid, is_active)
+    sql.update_brigade_status(ctx.db, brigade_uuid, is_active)
     |> result.map_error(DataBaseError),
   )
   use row <- result.try(

@@ -96,7 +96,7 @@ fn try_update_user(
 
   use returned <- result.try(
     sql.update_user_profile(
-      ctx.conn,
+      ctx.db,
       maybe_id,
       body.full_name,
       body.email,

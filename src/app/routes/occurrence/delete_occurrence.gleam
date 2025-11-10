@@ -62,7 +62,7 @@ fn try_delete_occurrence(
   )
 
   use returned <- result.try(
-    sql.delete_occurrence_by_id(ctx.conn, occ_uuid)
+    sql.delete_occurrence_by_id(ctx.db, occ_uuid)
     |> result.map_error(DataBaseError),
   )
 

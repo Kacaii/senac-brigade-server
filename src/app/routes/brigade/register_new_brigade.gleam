@@ -102,7 +102,7 @@ fn try_register_brigade(
 
   use returned <- result.try(
     sql.insert_new_brigade(
-      ctx.conn,
+      ctx.db,
       body.leader_id,
       body.name,
       body.vehicle_code,
@@ -142,7 +142,7 @@ fn try_assign_members(
   to brigade_id: uuid.Uuid,
 ) -> Result(List(uuid.Uuid), RegisterBrigadeError) {
   use returned <- result.map(
-    sql.assign_brigade_members(ctx.conn, brigade_id, members)
+    sql.assign_brigade_members(ctx.db, brigade_id, members)
     |> result.map_error(DataBaseError),
   )
 

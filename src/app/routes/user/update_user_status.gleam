@@ -75,7 +75,7 @@ fn try_update_user_status(
   )
 
   use returned <- result.try(
-    sql.update_user_status(ctx.conn, user_uuid, is_active)
+    sql.update_user_status(ctx.db, user_uuid, is_active)
     |> result.map_error(DataBaseError),
   )
 

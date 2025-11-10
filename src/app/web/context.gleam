@@ -8,7 +8,7 @@ import pog
 pub type Context {
   Context(
     static_directory: String,
-    conn: pog.Connection,
+    db: pog.Connection,
     secret_key_base: String,
     registry_name: process.Name(group_registry.Message(msg.ServerMessage)),
   )

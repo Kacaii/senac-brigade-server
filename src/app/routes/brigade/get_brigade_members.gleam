@@ -78,7 +78,7 @@ fn query_brigade_members(
   )
 
   use returned <- result.try(
-    sql.query_members_info(ctx.conn, brigade_uuid)
+    sql.query_members_info(ctx.db, brigade_uuid)
     |> result.map_error(DataBaseError),
   )
 

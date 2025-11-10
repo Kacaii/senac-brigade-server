@@ -45,7 +45,7 @@ fn insert_first_admin(ctx: Context) -> wisp.Response {
 
     use _ <- result.try(
       user_sql.insert_new_user(
-        ctx.conn,
+        ctx.db,
         "Drop Table da Silva",
         admin_registration,
         "0000000000",
@@ -105,7 +105,7 @@ fn validate_admin_key(ctx: Context, key: String) -> Result(Nil, SetupAdminError)
   )
 
   use returned <- result.try(
-    sql.count_total_users(ctx.conn)
+    sql.count_total_users(ctx.db)
     |> result.map_error(DataBaseError),
   )
 

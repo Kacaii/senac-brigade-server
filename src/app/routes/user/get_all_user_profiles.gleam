@@ -77,7 +77,7 @@ fn try_query_database(
   )
 
   use returned <- result.try(
-    sql.get_complete_user_profiles(ctx.conn)
+    sql.get_complete_user_profiles(ctx.db)
     |> result.map_error(DataBaseError),
   )
 

@@ -84,7 +84,7 @@ fn try_delete_user(
     True -> Error(CantDeleteSelf)
     False -> {
       use returned <- result.try(
-        sql.delete_user_by_id(ctx.conn, target_user_uuid)
+        sql.delete_user_by_id(ctx.db, target_user_uuid)
         |> result.map_error(DataBaseError),
       )
 

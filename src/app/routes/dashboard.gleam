@@ -38,7 +38,7 @@ fn get_dashboard_data(
 ) -> Result(json.Json, GetDashboardStatsError) {
   //  QUERY THE DATABASE ----------------------------------------------------
   use returned <- result.try(
-    sql.query_dashboard_stats(ctx.conn)
+    sql.query_dashboard_stats(ctx.db)
     |> result.map_error(DataBaseError),
   )
   use row <- result.try(

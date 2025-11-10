@@ -66,14 +66,14 @@ fn handle_error(err: GetUserProfileError) {
   }
 }
 
-pub fn query_user_data(context: Context, request: wisp.Request) {
+pub fn query_user_data(ctx: Context, request: wisp.Request) {
   use user_id <- result.try(
     user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessControl),
   )
 
   use returned <- result.try(
-    sql.query_user_profile(context.conn, user_id)
+    sql.query_user_profile(ctx.db, user_id)
     |> result.map_error(DataBaseError),
   )
 

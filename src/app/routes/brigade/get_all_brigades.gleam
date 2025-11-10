@@ -52,7 +52,7 @@ fn handle_error(err: QueryAllBrigadesError) -> wisp.Response {
 
 fn query_database(ctx ctx: Context) -> Result(String, QueryAllBrigadesError) {
   use returned <- result.try(
-    sql.query_all_brigades(ctx.conn)
+    sql.query_all_brigades(ctx.db)
     |> result.map_error(DataBaseError),
   )
 

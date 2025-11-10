@@ -46,9 +46,9 @@ fn handle_error(err: GetRoleListError) -> wisp.Response {
 }
 
 /// 󰆼  Queries the database to collect all available role names
-fn query_user_roles(context: Context) -> Result(json.Json, GetRoleListError) {
+fn query_user_roles(ctx: Context) -> Result(json.Json, GetRoleListError) {
   use returned <- result.try(
-    sql.query_available_user_roles(context.conn)
+    sql.query_available_user_roles(ctx.db)
     |> result.map_error(DataBaseError),
   )
 

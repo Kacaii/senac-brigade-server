@@ -40,7 +40,7 @@ pub fn broadcast(
   body body: String,
 ) -> Result(Nil, pog.QueryError) {
   use <- bool.guard(when: body == "", return: Ok(Nil))
-  use returned <- result.map(sql.query_members_id(ctx.conn, brigade_id))
+  use returned <- result.map(sql.query_members_id(ctx.db, brigade_id))
   use row <- list.each(returned.rows)
 
   let user_id = row.id

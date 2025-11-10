@@ -86,7 +86,7 @@ fn try_insert_into_database(
 
   use returned <- result.try(
     sql.insert_new_user(
-      ctx.conn,
+      ctx.db,
       data.name,
       data.registration,
       data.phone_number,

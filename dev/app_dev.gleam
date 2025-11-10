@@ -31,9 +31,7 @@ fn dummy_data(ctx: Context) {
   io.println("   Inserindo usuários..")
 
   let dummy_users =
-    list.map(list.range(1, n_user_accounts), fn(_) {
-      dummy.random_user(ctx.conn)
-    })
+    list.map(list.range(1, n_user_accounts), fn(_) { dummy.random_user(ctx.db) })
 
   // BRIGADES ------------------------------------------------------------------
   io.println("   Formando equipes..")
@@ -45,7 +43,7 @@ fn dummy_data(ctx: Context) {
   let dummy_brigades =
     list.map(assigned_members, fn(team) {
       let assert Ok(leader) = list.first(team)
-      dummy.random_brigade(ctx.conn, leader, team)
+      dummy.random_brigade(ctx.db, leader, team)
     })
 
   let assigned_brigades =
@@ -57,7 +55,7 @@ fn dummy_data(ctx: Context) {
     list.map(list.range(1, n_occurences), fn(_) {
       let assert Ok(applicant_id) = list.first(list.sample(dummy_users, 1))
       let assert Ok(assign) = list.first(list.sample(assigned_brigades, 1))
-      dummy.random_occurrence(conn: ctx.conn, applicant_id:, assign:)
+      dummy.random_occurrence(conn: ctx.db, applicant_id:, assign:)
     })
 
   // ALL DONE ------------------------------------------------------------------
@@ -88,12 +86,12 @@ fn setup_context() {
   let assert Ok(config) = app.read_connection_uri(db_process_name)
   let assert Ok(secret_key_base) = app.read_cookie_token()
 
-  let conn = pog.named_connection(db_process_name)
+  let db = pog.named_connection(db_process_name)
   let assert Ok(_) = pog.start(config)
 
   Context(
     static_directory: app.static_directory(),
-    conn:,
+    db:,
     registry_name:,
     secret_key_base:,
   )

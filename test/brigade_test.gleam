@@ -18,9 +18,9 @@ pub fn register_new_brigade_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   // 󰚩  DUMMY ------------------------------------------------------------------
-  let dummy_leader = dummy.random_user(ctx.conn)
+  let dummy_leader = dummy.random_user(ctx.db)
   let dummy_members =
-    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.conn) })
+    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.db) })
 
   // START ---------------------------------------------------------------------
 
@@ -88,8 +88,8 @@ pub fn register_new_brigade_test() {
     as "Response should contain valid JSON"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
-  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
 }
 
 pub fn get_brigade_members_test() {
@@ -97,15 +97,15 @@ pub fn get_brigade_members_test() {
   use _ <- list.each(list.range(1, app_test.n_tests))
 
   //   DUMMY LEADER -----------------------------------------------------------
-  let leader_id = dummy.random_user(ctx.conn)
+  let leader_id = dummy.random_user(ctx.db)
 
   // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
   let dummy_members =
-    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.conn) })
+    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.db) })
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
-    dummy.random_brigade(conn: ctx.conn, leader_id:, members: dummy_members)
+    dummy.random_brigade(conn: ctx.db, leader_id:, members: dummy_members)
 
   // START ---------------------------------------------------------------------
 
@@ -154,8 +154,8 @@ pub fn get_brigade_members_test() {
     as "Returned list should be the same as the members list"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
-  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }
 
 pub fn get_all_brigades_test() {
@@ -164,15 +164,15 @@ pub fn get_all_brigades_test() {
   let path = "/admin/teams"
 
   //   DUMMY LEADER -----------------------------------------------------------
-  let leader_id = dummy.random_user(ctx.conn)
+  let leader_id = dummy.random_user(ctx.db)
 
   // 󰚩  DUMMY MEMBERS ----------------------------------------------------------
   let dummy_members =
-    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.conn) })
+    list.map(list.range(1, 10), fn(_) { dummy.random_user(ctx.db) })
 
   // 󰚩  󰚩  󰚩  DUMMY BRIGADE ----------------------------------------------------
   let dummy_brigade =
-    dummy.random_brigade(conn: ctx.conn, leader_id:, members: dummy_members)
+    dummy.random_brigade(conn: ctx.db, leader_id:, members: dummy_members)
 
   // START ---------------------------------------------------------------------
   let req = simulate.browser_request(http.Get, path)
@@ -206,6 +206,6 @@ pub fn get_all_brigades_test() {
     as "Response should contain the dummy brigade"
 
   // 󰃢  CLEANUP ---------------------------------------------------------------
-  let assert Ok(_) = dev_sql.truncate_brigade(ctx.conn)
-  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.conn)
+  let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
+  let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
 }

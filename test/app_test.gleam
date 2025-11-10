@@ -23,12 +23,12 @@ pub fn global_data() -> Context {
     let assert Ok(config) = app.read_connection_uri(db_process_name)
     let assert Ok(secret_key_base) = app.read_cookie_token()
 
-    let conn = pog.named_connection(db_process_name)
+    let db = pog.named_connection(db_process_name)
     let assert Ok(_) = pog.start(config)
 
     Context(
       static_directory: app.static_directory(),
-      conn:,
+      db:,
       registry_name:,
       secret_key_base:,
     )
