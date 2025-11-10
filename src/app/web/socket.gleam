@@ -2,6 +2,7 @@ import app/routes/user
 import app/web/context.{type Context}
 import app/web/socket/message as msg
 import gleam/bit_array
+import gleam/bool
 import gleam/bytes_tree
 import gleam/crypto
 import gleam/erlang/process
@@ -99,14 +100,14 @@ fn ws_on_close(
 fn ws_handler(
   state state: State,
   msg msg: mist.WebsocketMessage(msg.ServerMessage),
-  ws_conn conn: mist.WebsocketConnection,
-  ctx _ctx: Context,
-  registry _registry: group_registry.GroupRegistry(msg.ServerMessage),
+  ws_conn ws_conn: mist.WebsocketConnection,
+  ctx ctx: Context,
+  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> mist.Next(State, msg.ServerMessage) {
   case msg {
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
-    mist.Custom(msg) -> handle_custom_msg(state, msg, conn)
+    mist.Custom(msg) -> handle_custom_msg(state, msg, ws_conn, ctx, registry)
     mist.Closed | mist.Shutdown -> mist.stop()
   }
 }
@@ -115,6 +116,8 @@ fn handle_custom_msg(
   state: State,
   msg: msg.ServerMessage,
   conn: mist.WebsocketConnection,
+  _ctx: Context,
+  _registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> mist.Next(State, msg.ServerMessage) {
   case msg {
     msg.Ping -> {
@@ -125,8 +128,9 @@ fn handle_custom_msg(
       }
     }
 
-    msg.Broadcast(message) -> {
-      let msg_result = mist.send_text_frame(conn, message)
+    msg.Broadcast(body) -> {
+      use <- bool.guard(when: body == "", return: mist.continue(state))
+      let msg_result = mist.send_text_frame(conn, body)
       case msg_result {
         Error(_) -> mist.stop_abnormal("Failed to broadcast message")
         Ok(_) -> mist.continue(state)

@@ -243,14 +243,51 @@ WHERE b.id = $1;
   |> pog.execute(db)
 }
 
-/// A row you get from running the `query_brigade_members` query
-/// defined in `./src/app/routes/brigade/sql/query_brigade_members.sql`.
+/// A row you get from running the `query_members_id` query
+/// defined in `./src/app/routes/brigade/sql/query_members_id.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type QueryBrigadeMembersRow {
-  QueryBrigadeMembersRow(id: Uuid, full_name: String, user_role: UserRoleEnum)
+pub type QueryMembersIdRow {
+  QueryMembersIdRow(id: Uuid)
+}
+
+///   Find the id of all members assigned a specific brigade
+///
+/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_members_id(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(QueryMembersIdRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    decode.success(QueryMembersIdRow(id:))
+  }
+
+  "--   Find the id of all members assigned a specific brigade
+SELECT u.id
+FROM public.user_account AS u
+INNER JOIN public.brigade_membership AS bm
+    ON u.id = bm.user_id
+WHERE bm.brigade_id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
+/// A row you get from running the `query_members_info` query
+/// defined in `./src/app/routes/brigade/sql/query_members_info.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryMembersInfoRow {
+  QueryMembersInfoRow(id: Uuid, full_name: String, user_role: UserRoleEnum)
 }
 
 ///   Find all members of a brigade
@@ -258,15 +295,15 @@ pub type QueryBrigadeMembersRow {
 /// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn query_brigade_members(
+pub fn query_members_info(
   db: pog.Connection,
   arg_1: Uuid,
-) -> Result(pog.Returned(QueryBrigadeMembersRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryMembersInfoRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use full_name <- decode.field(1, decode.string)
     use user_role <- decode.field(2, user_role_enum_decoder())
-    decode.success(QueryBrigadeMembersRow(id:, full_name:, user_role:))
+    decode.success(QueryMembersInfoRow(id:, full_name:, user_role:))
   }
 
   "--   Find all members of a brigade
