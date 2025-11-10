@@ -62,7 +62,7 @@ pub fn signup_test() {
       #("nome", wisp.random_string(10)),
       #("matricula", int.random(111) |> int.to_string),
       #("telefone", int.random(9_999_999_999) |> int.to_string),
-      #("email", wisp.random_string(5) <> "@email.com"),
+      #("email", wisp.random_string(12) <> "@email.com"),
       #("senha", dummy_password),
       #("confirma_senha", dummy_password),
       #("cargo", role.to_string_pt_br(dummy.random_role())),

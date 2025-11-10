@@ -22,7 +22,7 @@ pub fn admin_update_user_test() {
 
   // Data
   let new_full_name = "wibble"
-  let new_email = wisp.random_string(6) <> "@email.com"
+  let new_email = wisp.random_string(12) <> "@email.com"
   let new_role = dummy.random_role()
   let new_registration = wisp.random_string(6)
   let new_status = False

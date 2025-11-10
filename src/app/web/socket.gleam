@@ -1,5 +1,6 @@
 import app/routes/user
 import app/web/context.{type Context}
+import app/web/socket/envelope
 import app/web/socket/message as msg
 import gleam/bit_array
 import gleam/bool
@@ -12,6 +13,7 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/time/timestamp
 import group_registry
 import mist
 import youid/uuid
@@ -45,7 +47,7 @@ pub fn handle_request(
 }
 
 ///   Current state of the websocket connection
-type State {
+pub opaque type State {
   State(
     ///   User connected to this socket
     user_uuid: uuid.Uuid,
@@ -66,35 +68,6 @@ fn handle_connection(
       ws_handler(state, msg, conn, ctx, registry)
     },
   )
-}
-
-fn ws_on_init(
-  conn _conn: mist.WebsocketConnection,
-  req _req: request.Request(mist.Connection),
-  ctx _ctx: Context,
-  user_uuid user_uuid: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> #(State, option.Option(process.Selector(msg.ServerMessage))) {
-  let self = process.self()
-  let group_subject = group_registry.join(registry, group_topic, self)
-
-  let user_subject =
-    group_registry.join(registry, uuid.to_string(user_uuid), self)
-
-  let selector =
-    process.new_selector()
-    |> process.select(group_subject)
-    |> process.select(user_subject)
-
-  #(State(user_uuid:), option.Some(selector))
-}
-
-fn ws_on_close(
-  state _state: State,
-  ctx _ctx: Context,
-  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
-) -> Nil {
-  group_registry.leave(registry, group_topic, [process.self()])
 }
 
 fn ws_handler(
@@ -120,89 +93,71 @@ fn handle_custom_msg(
   _registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> mist.Next(State, msg.ServerMessage) {
   case msg {
-    msg.Ping -> {
-      let msg_result = mist.send_text_frame(conn, "  Pong")
-      case msg_result {
-        Error(_) -> mist.stop_abnormal("Failed to reply with pong")
-        Ok(_) -> mist.continue(state)
-      }
-    }
+    msg.Ping ->
+      send_envelope(
+        state:,
+        conn:,
+        data_type: "ping",
+        data: json.object([#("message", "  Pong" |> json.string)]),
+      )
 
     msg.Broadcast(body) -> {
       use <- bool.guard(when: body == "", return: mist.continue(state))
-      let msg_result = mist.send_text_frame(conn, body)
-      case msg_result {
-        Error(_) -> mist.stop_abnormal("Failed to broadcast message")
-        Ok(_) -> mist.continue(state)
-      }
+      send_envelope(
+        state:,
+        conn:,
+        data_type: "broadcast",
+        data: json.object([#("message", body |> json.string)]),
+      )
     }
 
-    msg.UserAssignedToBrigade(user_id:, brigade_id:) -> {
-      // Build notification
-      let data_type_json = "assigned_to_brigade" |> json.string
-      let user_id_json = uuid.to_string(user_id) |> json.string
-      let brigade_id_json = uuid.to_string(brigade_id) |> json.string
+    msg.UserAssignedToBrigade(user_id:, brigade_id:) ->
+      send_envelope(
+        state:,
+        conn:,
+        data_type: "assigned_to_brigade",
+        data: json.object([
+          #("user_id", uuid.to_string(user_id) |> json.string),
+          #("brigade_id", uuid.to_string(brigade_id) |> json.string),
+        ]),
+      )
 
-      // Construct the body
-      let body =
-        json.object([
-          #("data_type", data_type_json),
-          #("user_id", user_id_json),
-          #("brigade_id", brigade_id_json),
-        ])
-        |> json.to_string
-
-      let msg_result = mist.send_text_frame(conn, body)
-      case msg_result {
-        Error(_) -> mist.stop_abnormal("Failed to notify assignment to user")
-        Ok(_) -> mist.continue(state)
-      }
-    }
-
-    msg.UserAssignedToOccurrence(user_id:, occurrence_id:) -> {
-      // Build notification
-      let data_type_json = "assigned_to_occurrence" |> json.string
-      let user_id_json = uuid.to_string(user_id) |> json.string
-      let occurrence_id_json = uuid.to_string(occurrence_id) |> json.string
-
-      // Construct the body
-      let body =
-        json.object([
-          #("data_type", data_type_json),
-          #("user_id", user_id_json),
-          #("occurrence_id", occurrence_id_json),
-        ])
-        |> json.to_string
-
-      let msg_result = mist.send_text_frame(conn, body)
-      case msg_result {
-        Error(_) -> mist.stop_abnormal("Failed to notify assignment to user")
-        Ok(_) -> mist.continue(state)
-      }
-    }
+    msg.UserAssignedToOccurrence(user_id:, occurrence_id:) ->
+      send_envelope(
+        state:,
+        conn:,
+        data_type: "assigned_to_occurrence",
+        data: json.object([
+          #("user_id", uuid.to_string(user_id) |> json.string),
+          #("occurrence_id", uuid.to_string(occurrence_id) |> json.string),
+        ]),
+      )
   }
 }
 
-fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
-  case err {
-    InvalidUuid(id) ->
-      build_error_response("Usuário possui Uuid inválido: " <> id, 401)
-    InvalidSignature ->
-      build_error_response("Falha ao desencriptografar o token de acesso", 401)
-    InvalidUtf8 ->
-      build_error_response("Token de acesso possui formato inválido", 404)
-    MissingCookie -> build_error_response("Cookie de autorização ausente", 401)
-  }
-}
+pub fn send_envelope(
+  state state: State,
+  conn conn: mist.WebsocketConnection,
+  data_type data_type: String,
+  data data: json.Json,
+) -> mist.Next(State, msg.ServerMessage) {
+  //   Build metadata
+  let meta =
+    envelope.MetaData(
+      timestamp: timestamp.system_time(),
+      request_id: state.user_uuid,
+    )
 
-fn build_error_response(
-  error_msg: String,
-  status: Int,
-) -> response.Response(mist.ResponseData) {
-  error_msg
-  |> bytes_tree.from_string
-  |> mist.Bytes
-  |> response.set_body(response.new(status), _)
+  // 󰛮  Wrap envelope
+  let envelope_json =
+    envelope.to_json(envelope.Envelope(data_type:, data:, meta:))
+
+  // 󱅡  Send data
+  let msg_result = mist.send_text_frame(conn, json.to_string(envelope_json))
+  case msg_result {
+    Error(_) -> mist.stop_abnormal("Failed to send envelope to User")
+    Ok(_) -> mist.continue(state)
+  }
 }
 
 pub fn extract_uuid_mist(
@@ -233,4 +188,61 @@ pub fn extract_uuid_mist(
   )
 
   Ok(user_uuid)
+}
+
+// ON INIT ---------------------------------------------------------------------
+
+fn ws_on_init(
+  conn _conn: mist.WebsocketConnection,
+  req _req: request.Request(mist.Connection),
+  ctx _ctx: Context,
+  user_uuid user_uuid: uuid.Uuid,
+  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+) -> #(State, option.Option(process.Selector(msg.ServerMessage))) {
+  let self = process.self()
+  let group_subject = group_registry.join(registry, group_topic, self)
+
+  let user_subject =
+    group_registry.join(registry, uuid.to_string(user_uuid), self)
+
+  let selector =
+    process.new_selector()
+    |> process.select(group_subject)
+    |> process.select(user_subject)
+
+  #(State(user_uuid:), option.Some(selector))
+}
+
+// ON CLOSE --------------------------------------------------------------------
+
+fn ws_on_close(
+  state _state: State,
+  ctx _ctx: Context,
+  registry registry: group_registry.GroupRegistry(msg.ServerMessage),
+) -> Nil {
+  group_registry.leave(registry, group_topic, [process.self()])
+}
+
+// HELPERS ---------------------------------------------------------------------
+
+fn build_error_response(
+  error_msg: String,
+  status: Int,
+) -> response.Response(mist.ResponseData) {
+  error_msg
+  |> bytes_tree.from_string
+  |> mist.Bytes
+  |> response.set_body(response.new(status), _)
+}
+
+fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
+  case err {
+    InvalidUuid(id) ->
+      build_error_response("Usuário possui Uuid inválido: " <> id, 401)
+    InvalidSignature ->
+      build_error_response("Falha ao desencriptografar o token de acesso", 401)
+    InvalidUtf8 ->
+      build_error_response("Token de acesso possui formato inválido", 404)
+    MissingCookie -> build_error_response("Cookie de autorização ausente", 401)
+  }
 }
