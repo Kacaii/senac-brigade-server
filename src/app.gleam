@@ -33,7 +33,6 @@ pub fn main() -> Nil {
   // NAMES ---------------------------------------------------------------------
   // 󰩵  Setup registry process name
   let registry_name = process.new_name("registry")
-  let notification_registry_name = process.new_name("notification_registry")
 
   //   Setup the connection process name
   let db_process_name = process.new_name("db_conn")
@@ -56,7 +55,6 @@ pub fn main() -> Nil {
       static_directory: static_directory(),
       db:,
       registry_name:,
-      notification_registry_name:,
       secret_key_base:,
     )
 
@@ -71,7 +69,6 @@ pub fn main() -> Nil {
       ws_handler:,
       secret_key_base:,
       registry_name:,
-      notification_registry_name:,
     )
     as "󰪋  Failed to start the application supervisor"
 

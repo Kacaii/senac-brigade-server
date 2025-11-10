@@ -1,9 +1,8 @@
 import app/routes/occurrence/category
 import app/routes/occurrence/sql
 import app/web/context.{type Context}
+import app/web/socket
 import app/web/socket/message as msg
-import app/web/socket/routes/notification as occ_notification
-import app/web/socket/routes/notification/message as occ_msg
 import gleam/bool
 import gleam/erlang/process
 import gleam/list
@@ -52,13 +51,14 @@ pub fn notify_user_assignment(
   process.send(subject, msg.UserAssignedToOccurrence(user_id:, occurrence_id:))
 }
 
+///   Notify subscribed users that a new occurrence has been added
 pub fn notify_new_occurrence(
   new occ_id: uuid.Uuid,
   of occ_type: category.Category,
-  registry registry: group_registry.GroupRegistry(occ_msg.Msg),
+  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
-  let members = group_registry.members(registry, occ_notification.topic)
+  let members = group_registry.members(registry, socket.topic)
 
   use subject <- list.each(members)
-  process.send(subject, occ_msg.NewOccurrence(occ_id:, occ_type:))
+  process.send(subject, msg.NewOccurrence(occ_id:, occ_type:))
 }

@@ -201,7 +201,7 @@ fn insert_occurrence(
   }
 
   //   Broadcast new occurrence
-  let registry = group_registry.get_registry(ctx.notification_registry_name)
+  let registry = group_registry.get_registry(ctx.registry_name)
   occurrence.notify_new_occurrence(new: row.id, of: occ_category, registry:)
 
   json.object([

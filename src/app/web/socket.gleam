@@ -1,12 +1,13 @@
+import app/routes/occurrence/category
 import app/routes/user
 import app/web/context.{type Context}
 import app/web/socket/envelope
 import app/web/socket/message as msg
-import app/web/socket/routes/notification as ws_notification
 import gleam/bit_array
 import gleam/bool
 import gleam/bytes_tree
 import gleam/crypto
+import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
@@ -19,7 +20,7 @@ import group_registry
 import mist
 import youid/uuid
 
-const group_topic = "active_users"
+pub const topic = "active_users"
 
 /// Connecting to a websocket can fail
 pub opaque type WebSocketError {
@@ -52,6 +53,8 @@ pub opaque type State {
   State(
     ///   User connected to this socket
     user_uuid: uuid.Uuid,
+    /// 󱥁  Notifications that the user wants to receive
+    subscribed_categories: List(category.Category),
   )
 }
 
@@ -73,8 +76,6 @@ fn handle_connection(
 
   case request.path_segments(req) {
     ["ws"] -> handler
-    ["ws", "occurrence_notifications"] ->
-      ws_notification.handle_connection(req, ctx, user_uuid)
     _ -> build_error_response("Not found", 404)
   }
 }
@@ -141,6 +142,23 @@ fn handle_custom_msg(
           #("occurrence_id", uuid.to_string(occurrence_id) |> json.string),
         ]),
       )
+
+    msg.NewOccurrence(occ_id:, occ_type:) ->
+      case
+        list.any(state.subscribed_categories, fn(item) { item == occ_type })
+      {
+        False -> mist.continue(state)
+        True ->
+          send_envelope(
+            state:,
+            conn:,
+            data_type: "new_occurrence",
+            data: json.object([
+              #("id", json.string(uuid.to_string(occ_id))),
+              #("occ_type", json.string(category.to_string_pt_br(occ_type))),
+            ]),
+          )
+      }
   }
 }
 
@@ -203,13 +221,13 @@ pub fn extract_uuid_mist(
 
 fn ws_on_init(
   conn _conn: mist.WebsocketConnection,
-  req _req: request.Request(mist.Connection),
+  req req: request.Request(mist.Connection),
   ctx _ctx: Context,
   user_uuid user_uuid: uuid.Uuid,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> #(State, option.Option(process.Selector(msg.Msg))) {
   let self = process.self()
-  let group_subject = group_registry.join(registry, group_topic, self)
+  let group_subject = group_registry.join(registry, topic, self)
 
   let user_subject =
     group_registry.join(registry, uuid.to_string(user_uuid), self)
@@ -219,7 +237,32 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
-  #(State(user_uuid:), option.Some(selector))
+  let body = {
+    use req <- result.try(
+      mist.read_body(req, 1024 * 1024 * 10)
+      |> result.replace_error(Nil),
+    )
+    use body <- result.map(
+      bit_array.to_string(req.body)
+      |> result.replace_error(Nil),
+    )
+
+    body
+  }
+
+  let parse_result =
+    json.parse(result.unwrap(body, ""), {
+      use subscribe_to <- decode.field(
+        "subscribe",
+        decode.list(category.decoder_pt_br()),
+      )
+      decode.success(subscribe_to)
+    })
+
+  #(
+    State(user_uuid:, subscribed_categories: result.unwrap(parse_result, [])),
+    option.Some(selector),
+  )
 }
 
 // ON CLOSE --------------------------------------------------------------------
@@ -229,7 +272,7 @@ fn ws_on_close(
   ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
-  group_registry.leave(registry, group_topic, [process.self()])
+  group_registry.leave(registry, topic, [process.self()])
 }
 
 // HELPERS ---------------------------------------------------------------------
