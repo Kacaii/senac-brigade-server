@@ -41,9 +41,10 @@ FROM public.assign_occurrence_brigades($1, $2) AS ob;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
-  )
+  |> pog.parameter(pog.array(
+    fn(value) { pog.text(uuid.to_string(value)) },
+    arg_2,
+  ))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -270,14 +271,14 @@ WHERE o.applicant_id = $1;
   |> pog.execute(db)
 }
 
-/// A row you get from running the `query_occurrence_participants` query
-/// defined in `./src/app/routes/occurrence/sql/query_occurrence_participants.sql`.
+/// A row you get from running the `query_participants` query
+/// defined in `./src/app/routes/occurrence/sql/query_participants.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type QueryOccurrenceParticipantsRow {
-  QueryOccurrenceParticipantsRow(user_id: Uuid)
+pub type QueryParticipantsRow {
+  QueryParticipantsRow(user_id: Uuid)
 }
 
 /// 󰀖  Find all users that participated in a occurrence
@@ -285,13 +286,13 @@ pub type QueryOccurrenceParticipantsRow {
 /// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn query_occurrence_participants(
+pub fn query_participants(
   db: pog.Connection,
   arg_1: Uuid,
-) -> Result(pog.Returned(QueryOccurrenceParticipantsRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryParticipantsRow), pog.QueryError) {
   let decoder = {
     use user_id <- decode.field(0, uuid_decoder())
-    decode.success(QueryOccurrenceParticipantsRow(user_id:))
+    decode.success(QueryParticipantsRow(user_id:))
   }
 
   "-- 󰀖  Find all users that participated in a occurrence
@@ -410,9 +411,10 @@ FROM public.assign_occurrence_brigades($1, $2) AS o;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
-  )
+  |> pog.parameter(pog.array(
+    fn(value) { pog.text(uuid.to_string(value)) },
+    arg_2,
+  ))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -450,7 +452,9 @@ fn occurrence_category_enum_encoder(occurrence_category_enum) -> pog.Value {
     MedicEmergency -> "medic_emergency"
   }
   |> pog.text
-}/// Corresponds to the Postgres `occurrence_priority_enum` enum.
+}
+
+/// Corresponds to the Postgres `occurrence_priority_enum` enum.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -478,7 +482,9 @@ fn occurrence_priority_enum_encoder(occurrence_priority_enum) -> pog.Value {
     Low -> "low"
   }
   |> pog.text
-}/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
+}
+
+/// Corresponds to the Postgres `occurrence_subcategory_enum` enum.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -502,7 +508,9 @@ pub type OccurrenceSubcategoryEnum {
   HeartStop
 }
 
-fn occurrence_subcategory_enum_decoder() -> decode.Decoder(OccurrenceSubcategoryEnum) {
+fn occurrence_subcategory_enum_decoder() -> decode.Decoder(
+  OccurrenceSubcategoryEnum,
+) {
   use occurrence_subcategory_enum <- decode.then(decode.string)
   case occurrence_subcategory_enum {
     "injured_animal" -> decode.success(InjuredAnimal)
@@ -525,9 +533,7 @@ fn occurrence_subcategory_enum_decoder() -> decode.Decoder(OccurrenceSubcategory
   }
 }
 
-fn occurrence_subcategory_enum_encoder(
-  occurrence_subcategory_enum,
-) -> pog.Value {
+fn occurrence_subcategory_enum_encoder(occurrence_subcategory_enum) -> pog.Value {
   case occurrence_subcategory_enum {
     InjuredAnimal -> "injured_animal"
     Flood -> "flood"

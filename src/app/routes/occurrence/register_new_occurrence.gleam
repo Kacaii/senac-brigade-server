@@ -219,7 +219,7 @@ fn try_assign_brigades(
 
   use assigned_users <- result.try({
     use returned <- result.try(
-      sql.query_occurrence_participants(ctx.db, occurrence_id)
+      sql.query_participants(ctx.db, occurrence_id)
       |> result.map_error(DataBaseError),
     )
 

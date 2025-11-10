@@ -108,7 +108,7 @@ pub fn register_new_occurrence_test() {
   let registered_participants_set =
     set.from_list({
       let assert Ok(returned) =
-        o_sql.query_occurrence_participants(ctx.db, dummy_occurrence_id)
+        o_sql.query_participants(ctx.db, dummy_occurrence_id)
         as "Failed to query occurrence participants"
 
       use row <- list.map(returned.rows)
