@@ -8,6 +8,6 @@ pub type ServerMessage {
   UserAssignedToBrigade(user_id: uuid.Uuid, brigade_id: uuid.Uuid)
   /// 󰿄  Member of a brigade was assigned to a occurrence
   UserAssignedToOccurrence(user_id: uuid.Uuid, occurrence_id: uuid.Uuid)
-  ///   Everyone replies with pong! Useful to check connections.
+  ///   Everyone replies with pong! Useful for checking active connections
   Ping
 }
