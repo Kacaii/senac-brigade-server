@@ -10,6 +10,7 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/string
 import gleam/time/timestamp
 import group_registry
 import mist
@@ -122,16 +123,16 @@ fn ws_on_init(
   let query = result.unwrap(request.get_query(req), [])
   let state =
     list.fold(query, State(user_uuid:, subscribed: []), fn(acc, query) {
-      case query {
-        #("occurrences", "fire") ->
+      case string.lowercase(query.0), string.lowercase(query.1) {
+        "occurrences", "fire" ->
           State(..acc, subscribed: [category.Fire, ..acc.subscribed])
-        #("occurrences", "emergency") ->
+        "occurrences", "emergency" ->
           State(..acc, subscribed: [category.MedicEmergency, ..acc.subscribed])
-        #("occurrences", "traffic") ->
+        "occurrences", "traffic" ->
           State(..acc, subscribed: [category.TrafficAccident, ..acc.subscribed])
-        #("occurrences", "other") ->
+        "occurrences", "other" ->
           State(..acc, subscribed: [category.Other, ..acc.subscribed])
-        #(_, _) -> acc
+        _, _ -> acc
       }
     })
 
