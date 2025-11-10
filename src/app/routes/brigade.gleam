@@ -35,10 +35,9 @@ pub fn notify_user_assignment(
 ) -> Nil {
   let members = group_registry.members(registry, uuid.to_string(user_id))
 
-  list.each(members, fn(subject) {
-    let msg = msg.UserAssignedToBrigade(user_id:, brigade_id:)
-    process.send(subject, msg)
-  })
+  use subject <- list.each(members)
+  let msg = msg.UserAssignedToBrigade(user_id:, brigade_id:)
+  process.send(subject, msg)
 }
 
 ///   Call `notify_user_assignment` on multiple users
@@ -47,7 +46,6 @@ pub fn broadcast_assignments(
   to brigade_id: uuid.Uuid,
   registry registry: group_registry.GroupRegistry(msg.ServerMessage),
 ) -> Nil {
-  list.each(user_id_list, fn(user_id) {
-    notify_user_assignment(user_id, brigade_id, registry)
-  })
+  use user_id <- list.each(user_id_list)
+  notify_user_assignment(user_id, brigade_id, registry)
 }
