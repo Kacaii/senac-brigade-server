@@ -54,7 +54,7 @@ pub opaque type State {
     ///   User connected to this socket
     user_uuid: uuid.Uuid,
     /// 󱥁  Notifications that the user wants to receive
-    subscribed_categories: List(category.Category),
+    subscribed: List(category.Category),
   )
 }
 
@@ -143,22 +143,22 @@ fn handle_custom_msg(
         ]),
       )
 
-    msg.NewOccurrence(occ_id:, occ_type:) ->
-      case
-        list.any(state.subscribed_categories, fn(item) { item == occ_type })
-      {
-        False -> mist.continue(state)
-        True ->
-          send_envelope(
-            state:,
-            conn:,
-            data_type: "new_occurrence",
-            data: json.object([
-              #("id", json.string(uuid.to_string(occ_id))),
-              #("occ_type", json.string(category.to_string_pt_br(occ_type))),
-            ]),
-          )
-      }
+    msg.NewOccurrence(occ_id:, occ_type:) -> {
+      use <- bool.guard(
+        when: list.any(state.subscribed, fn(sub) { sub == occ_type }),
+        return: mist.continue(state),
+      )
+
+      send_envelope(
+        state:,
+        conn:,
+        data_type: "new_occurrence",
+        data: json.object([
+          #("id", json.string(uuid.to_string(occ_id))),
+          #("occ_type", json.string(category.to_string_pt_br(occ_type))),
+        ]),
+      )
+    }
   }
 }
 
@@ -238,10 +238,13 @@ fn ws_on_init(
     |> process.select(user_subject)
 
   let body = {
+    let max_length = 1024 * 1024 * 10
+
     use req <- result.try(
-      mist.read_body(req, 1024 * 1024 * 10)
+      mist.read_body(req, max_length)
       |> result.replace_error(Nil),
     )
+
     use body <- result.map(
       bit_array.to_string(req.body)
       |> result.replace_error(Nil),
@@ -256,11 +259,12 @@ fn ws_on_init(
         "subscribe",
         decode.list(category.decoder_pt_br()),
       )
+
       decode.success(subscribe_to)
     })
 
   #(
-    State(user_uuid:, subscribed_categories: result.unwrap(parse_result, [])),
+    State(user_uuid:, subscribed: result.unwrap(parse_result, [])),
     option.Some(selector),
   )
 }
