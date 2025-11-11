@@ -1,4 +1,4 @@
-import app/router
+import app/http_router
 import app/routes/role
 import app/routes/user
 import app_dev/sql as dev_sql
@@ -23,7 +23,7 @@ pub fn login_test() {
     simulate.browser_request(http.Post, "/user/login")
     |> simulate.form_body([#("matricula", "000"), #("senha", "aluno")])
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status == 200 as "Status should be 200"
 
   let body = simulate.read_body(resp)
@@ -68,12 +68,12 @@ pub fn signup_test() {
       #("cargo", role.to_string_pt_br(dummy.random_role())),
     ])
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status == 401 as "Endpoint access should be restricted"
 
   //   AUTH -------------------------------------------------------------------
   let with_auth = app_test.with_authorization(next: req)
-  let resp = router.handle_request(with_auth, ctx)
+  let resp = http_router.handle_request(with_auth, ctx)
   assert resp.status == 201 as "Response should be 201 Created"
 
   let body = simulate.read_body(resp)
@@ -107,7 +107,7 @@ pub fn signup_test() {
       ])
 
     let with_auth = app_test.with_authorization(next: req)
-    let resp = router.handle_request(with_auth, ctx)
+    let resp = http_router.handle_request(with_auth, ctx)
     assert resp.status == 409 as "Registration should be unique"
   }
 
@@ -127,7 +127,7 @@ pub fn signup_test() {
       ])
 
     let with_auth = app_test.with_authorization(next: req)
-    let resp = router.handle_request(with_auth, ctx)
+    let resp = http_router.handle_request(with_auth, ctx)
     assert resp.status == 409 as "Email should be unique"
   }
 
@@ -147,7 +147,7 @@ pub fn signup_test() {
       ])
 
     let with_auth = app_test.with_authorization(next: req)
-    let resp = router.handle_request(with_auth, ctx)
+    let resp = http_router.handle_request(with_auth, ctx)
     assert resp.status == 409 as "Phone should be unique"
   }
 }
@@ -156,13 +156,13 @@ pub fn get_all_users_test() {
   let ctx = app_test.global_data()
 
   let req = simulate.browser_request(http.Get, "/admin/users")
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 401 as "Access only provided to Admin users"
 
   // -------------------------------------------------------
   let with_auth = app_test.with_authorization(next: req)
-  let resp = router.handle_request(with_auth, ctx)
+  let resp = http_router.handle_request(with_auth, ctx)
   assert resp.status == 200 as "Endpoint access should be available for Admins"
 
   let body = simulate.read_body(resp)
@@ -208,7 +208,7 @@ pub fn update_user_profile_test() {
     ])
 
   let with_auth = app_test.with_authorization(new_user_req)
-  let new_user_resp = router.handle_request(with_auth, ctx)
+  let new_user_resp = http_router.handle_request(with_auth, ctx)
 
   let assert Ok(_) =
     json.parse(simulate.read_body(new_user_resp), {
@@ -227,7 +227,7 @@ pub fn update_user_profile_test() {
       #("matricula", dummy_registration),
       #("senha", dummy_password),
     ])
-  let login_resp = router.handle_request(login_req, ctx)
+  let login_resp = http_router.handle_request(login_req, ctx)
 
   // UPDATING DUMMY ------------------------------------------------------------
   let new_name = wisp.random_string(8)
@@ -245,7 +245,7 @@ pub fn update_user_profile_test() {
     )
     |> simulate.session(login_req, login_resp)
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   // ASSERTIONS ----------------------------------------------------------------
 
@@ -281,7 +281,7 @@ pub fn update_user_profile_test() {
       )
       |> simulate.session(login_req, login_resp)
 
-    let resp = router.handle_request(req, ctx)
+    let resp = http_router.handle_request(req, ctx)
     assert resp.status == 409 as "Status should be HTTP 409"
   }
 
@@ -298,7 +298,7 @@ pub fn update_user_profile_test() {
         ]),
       )
       |> simulate.session(login_req, login_resp)
-    let resp = router.handle_request(req, ctx)
+    let resp = http_router.handle_request(req, ctx)
     assert resp.status == 409 as "Status should be HTTP 409"
   }
 

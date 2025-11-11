@@ -20,6 +20,7 @@ import app/routes/notification/update_notification_preferences
 import app/routes/occurrence/delete_occurrence
 import app/routes/occurrence/get_ocurrences_by_applicant
 import app/routes/occurrence/register_new_occurrence
+import app/routes/occurrence/update_occurrence_status
 import app/routes/role/get_role_list
 import app/routes/user/delete_user
 import app/routes/user/get_all_user_profiles
@@ -107,7 +108,9 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     http.Delete, ["occurrence", id] ->
       delete_occurrence.handle_request(request:, ctx:, id:)
 
-    http.Put, ["occurrence", "resolve", id] -> todo as "handle request"
+    http.Post, ["occurrence", "resolved_at", id]
+    | http.Delete, ["occurrence", "resolved_at", id]
+    -> update_occurrence_status.handle_request(request:, ctx:, id:)
 
     // 󰢫  Brigade routes -------------------------------------------------------
     http.Get, ["brigade", id, "members"] ->

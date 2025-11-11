@@ -1,5 +1,5 @@
 import app
-import app/router
+import app/http_router
 import app/web/context.{type Context, Context}
 import gleam/erlang/process
 import gleam/http
@@ -44,7 +44,7 @@ pub fn with_authorization(next req: wisp.Request) -> wisp.Request {
     simulate.browser_request(http.Post, "/user/login")
     |> simulate.form_body([#("matricula", "000"), #("senha", "aluno")])
 
-  let login_resp = router.handle_request(login_req, ctx)
+  let login_resp = http_router.handle_request(login_req, ctx)
 
   // Continue the session after being logged in
   simulate.session(req, login_req, login_resp)

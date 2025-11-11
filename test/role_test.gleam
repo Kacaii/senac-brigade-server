@@ -1,4 +1,4 @@
-import app/router
+import app/http_router
 import app/routes/role
 import app_test
 import gleam/dynamic/decode
@@ -11,7 +11,7 @@ pub fn get_role_list_test() {
   let ctx = app_test.global_data()
 
   let req = simulate.browser_request(http.Get, "/user/roles")
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 200 as "Status code should be 200 OK"
   let body = simulate.read_body(resp)

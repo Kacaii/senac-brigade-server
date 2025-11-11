@@ -1,7 +1,7 @@
--- 󰚰  Mark a occurrence as resolved
+-- 󰚰  Mark a occurrence as unresolved
 UPDATE public.occurrence
 SET
-    resolved_at = CURRENT_TIMESTAMP,
+    resolved_at = NULL,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING

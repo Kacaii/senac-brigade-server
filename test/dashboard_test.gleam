@@ -1,4 +1,4 @@
-import app/router
+import app/http_router
 import app_test
 import gleam/dynamic/decode
 import gleam/http
@@ -9,7 +9,7 @@ pub fn dashboard_stats_test() {
   let ctx = app_test.global_data()
 
   let req = simulate.browser_request(http.Get, "/dashboard/stats")
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status == 200 as "Response status should be 200"
 
   let body = simulate.read_body(resp)

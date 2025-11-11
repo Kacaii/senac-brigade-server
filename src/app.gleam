@@ -9,7 +9,7 @@
 //// 1. A PostgreSQL database connection pool using Pog
 //// 2. An HTTP server using Mist (with Wisp handling the web layer)
 
-import app/router
+import app/http_router
 import app/routes/admin/sql as admin_sql
 import app/supervision_tree
 import app/web
@@ -58,7 +58,7 @@ pub fn main() -> Nil {
       secret_key_base:,
     )
 
-  let wisp_handler = router.handle_request(_, ctx)
+  let wisp_handler = http_router.handle_request(_, ctx)
   let ws_handler = socket.handle_request(_, ctx)
 
   // Start all essential processes under a supervision tree
@@ -120,7 +120,7 @@ pub fn setup_admin(ctx: Context) {
         simulate.browser_request(http.Post, "/admin/setup")
         |> simulate.json_body(json.object([#("key", json.string("admin"))]))
 
-      router.handle_request(setup_admin_req, ctx)
+      http_router.handle_request(setup_admin_req, ctx)
       io.println("  Administrador cadastrado com sucesso!")
     }
   }

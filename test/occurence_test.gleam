@@ -1,4 +1,4 @@
-import app/router
+import app/http_router
 import app/routes/occurrence/category
 import app/routes/occurrence/priority
 import app/routes/occurrence/sql as o_sql
@@ -58,13 +58,13 @@ pub fn register_new_occurrence_test() {
     )
 
   // RESPONSE ------------------------------------------------------------------
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status != 422 as "Invalid request Payload"
   assert resp.status == 401
     as "Endpoint should only accessible to authenticated users"
 
   let with_auth = app_test.with_authorization(next: req)
-  let resp = router.handle_request(with_auth, ctx)
+  let resp = http_router.handle_request(with_auth, ctx)
   assert resp.status == 201 as "Status should be HTTP 201 Created"
 
   // JSON PARSING --------------------------------------------------------------
@@ -156,7 +156,7 @@ pub fn get_occurrences_by_applicant_test() {
   let path = "/user/" <> uuid.to_string(dummy_applicant_id) <> "/occurrences"
   let req = simulate.browser_request(http.Get, path)
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   let body = simulate.read_body(resp)
   assert resp.status == 200
 
@@ -252,12 +252,12 @@ pub fn delete_occurrence_test() {
 
   let path = "/occurrence/" <> uuid.to_string(dummy_occurrence)
   let req = simulate.request(http.Delete, path)
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 401 as "Only accessible to Admins"
 
   let with_auth = app_test.with_authorization(req)
-  let resp = router.handle_request(with_auth, ctx)
+  let resp = http_router.handle_request(with_auth, ctx)
 
   assert resp.status == 200 as "Status should be HTTP 200 OK"
 

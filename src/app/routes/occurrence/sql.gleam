@@ -386,6 +386,53 @@ WHERE o.created_at >= (NOW() - '1 day'::INTERVAL);
   |> pog.execute(db)
 }
 
+/// A row you get from running the `reopen_occurrence` query
+/// defined in `./src/app/routes/occurrence/sql/reopen_occurrence.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ReopenOccurrenceRow {
+  ReopenOccurrenceRow(
+    id: Uuid,
+    resolved_at: Option(Timestamp),
+    updated_at: Timestamp,
+  )
+}
+
+/// 󰚰  Mark a occurrence as unresolved
+///
+/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn reopen_occurrence(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(ReopenOccurrenceRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use resolved_at <- decode.field(1, decode.optional(pog.timestamp_decoder()))
+    use updated_at <- decode.field(2, pog.timestamp_decoder())
+    decode.success(ReopenOccurrenceRow(id:, resolved_at:, updated_at:))
+  }
+
+  "-- 󰚰  Mark a occurrence as unresolved
+UPDATE public.occurrence
+SET
+    resolved_at = NULL,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING
+    id,
+    resolved_at,
+    updated_at;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `replace_occurrence_brigades` query
 /// defined in `./src/app/routes/occurrence/sql/replace_occurrence_brigades.sql`.
 ///
@@ -431,10 +478,14 @@ FROM public.assign_occurrence_brigades($1, $2) AS o;
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type ResolveOccurrenceRow {
-  ResolveOccurrenceRow(id: Uuid, resolved_at: Option(Timestamp))
+  ResolveOccurrenceRow(
+    id: Uuid,
+    resolved_at: Option(Timestamp),
+    updated_at: Timestamp,
+  )
 }
 
-/// 󰚰  Resolve a occurrence
+/// 󰚰  Mark a occurrence as resolved
 ///
 /// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
@@ -446,16 +497,20 @@ pub fn resolve_occurrence(
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use resolved_at <- decode.field(1, decode.optional(pog.timestamp_decoder()))
-    decode.success(ResolveOccurrenceRow(id:, resolved_at:))
+    use updated_at <- decode.field(2, pog.timestamp_decoder())
+    decode.success(ResolveOccurrenceRow(id:, resolved_at:, updated_at:))
   }
 
-  "-- 󰚰  Resolve a occurrence
+  "-- 󰚰  Mark a occurrence as resolved
 UPDATE public.occurrence
-SET resolved_at = CURRENT_TIMESTAMP
+SET
+    resolved_at = CURRENT_TIMESTAMP,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING
     id,
-    resolved_at;
+    resolved_at,
+    updated_at;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

@@ -8,30 +8,31 @@
 
 ## Routes
 
-| Route                          | Description                                                 | Method      |
-| ------------------------------ | ----------------------------------------------------------- | ----------- |
-| /admin/setup                   | Create the first admin user                                 | POST (JSON) |
-| /admin/signup                  | Register a new user account                                 | POST (Form) |
-| /admin/users                   | List all registred users                                    | GET         |
-| /admin/users/{{id}}            | Delete an user from the DataBase                            | DELETE      |
-| /admin/users/{{id}}            | Update the user data as an admin                            | PUT (JSON)  |
-| /admin/users/{{id}}/status     | Update the status of a user account                         | PUT (JSON)  |
-| /admin/teams                   | Register a new brigade, with a leader and all their members | POST (Form) |
-| /admin/teams                   | Query all registered brigades                               | GET         |
-| /admin/teams/{{id}}/status     | Update the status of a brigade                              | PUT (JSON)  |
-| /admin/teams/{{id}}            | Remove a brigade                                            | DELETE      |
-| /user/login                    | Login with your user account                                | POST (Form) |
-| /user/profile                  | Retrieve data about the authenticated user                  | GET         |
-| /user/profile                  | Update your profile                                         | PUT(JSON)   |
-| /user/roles                    | Get a list of all available roles                           | GET         |
-| /user/{{id}}/occurrences       | Find all occurrences applied by this user                   | GET         |
-| /user/{{id}}/crew_members      | List fellow brigade members of this user                    | GET         |
-| /user/notification_preferences | Fetch authenticated user notification preferences           | GET         |
-| /user/notification_preferences | Update authenticated user notification preferences          | PUT (JSON)  |
-| /user/password                 | Update authenticated user password                          | PUT (JSON)  |
-| /brigade/{{id}}/members        | List brigade members                                        | GET         |
-| /occurrence/new                | Register new occurrence                                     | POST (Form) |
-| /dashboard/stats               | Fetch stats for the dashboard page                          | GET         |
+| Route                          | Description                                                 | Method        |
+| ------------------------------ | ----------------------------------------------------------- | ------------- |
+| /admin/setup                   | Create the first admin user                                 | POST (JSON)   |
+| /admin/signup                  | Register a new user account                                 | POST (Form)   |
+| /admin/users                   | List all registred users                                    | GET           |
+| /admin/users/{{id}}            | Delete an user from the DataBase                            | DELETE        |
+| /admin/users/{{id}}            | Update the user data as an admin                            | PUT (JSON)    |
+| /admin/users/{{id}}/status     | Update the status of a user account                         | PUT (JSON)    |
+| /admin/teams                   | Register a new brigade, with a leader and all their members | POST (Form)   |
+| /admin/teams                   | Query all registered brigades                               | GET           |
+| /admin/teams/{{id}}/status     | Update the status of a brigade                              | PUT (JSON)    |
+| /admin/teams/{{id}}            | Remove a brigade                                            | DELETE        |
+| /user/login                    | Login with your user account                                | POST (Form)   |
+| /user/profile                  | Retrieve data about the authenticated user                  | GET           |
+| /user/profile                  | Update your profile                                         | PUT(JSON)     |
+| /user/roles                    | Get a list of all available roles                           | GET           |
+| /user/{{id}}/occurrences       | Find all occurrences applied by this user                   | GET           |
+| /user/{{id}}/crew_members      | List fellow brigade members of this user                    | GET           |
+| /user/notification_preferences | Fetch authenticated user notification preferences           | GET           |
+| /user/notification_preferences | Update authenticated user notification preferences          | PUT (JSON)    |
+| /user/password                 | Update authenticated user password                          | PUT (JSON)    |
+| /brigade/{{id}}/members        | List brigade members                                        | GET           |
+| /dashboard/stats               | Fetch stats for the dashboard page                          | GET           |
+| /occurrence/new                | Register a new occurrence                                   | POST (Form)   |
+| /occurrence/resolve/{{id}}     | Update an occurrence `resolved_at` field                    | POST / DELETE |
 
 ## Entity RelationShip Diagram
 

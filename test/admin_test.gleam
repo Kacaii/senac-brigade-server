@@ -1,4 +1,4 @@
-import app/router
+import app/http_router
 import app/routes/role
 import app/routes/user/sql as u_sql
 import app_dev/sql as dev_sql
@@ -40,12 +40,12 @@ pub fn admin_update_user_test() {
       ]),
     )
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status == 401
     as "Endpoint only accessible for authenticated Admin users"
 
   let req = app_test.with_authorization(req)
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 200 as "Response should be HTTP 200 OK"
 
@@ -112,12 +112,12 @@ pub fn update_user_status_test() {
     simulate.request(http.Put, path)
     |> simulate.json_body(json.object([#("status", json.bool(target_status))]))
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 401 as "Only accessible to Admin users"
 
   let req = app_test.with_authorization(req)
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 200 as "Status should be 200"
   let body = simulate.read_body(resp)

@@ -1,4 +1,4 @@
-import app/router
+import app/http_router
 import app/routes/role
 import app_dev/sql as dev_sql
 import app_test
@@ -40,14 +40,14 @@ pub fn register_new_brigade_test() {
     )
 
   // REGULAR REQUEST
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status == 401 as "Endpoint restricted to Admin users"
 
   // AS ADMIN
   let with_auth = app_test.with_authorization(req)
 
   // AUTHORIZED REQUEST
-  let resp = router.handle_request(with_auth, ctx)
+  let resp = http_router.handle_request(with_auth, ctx)
   assert resp.status == 201 as "Response sould be HTTP 201 CREATED"
 
   // READ BODY -----------------------------------------------------------------
@@ -112,7 +112,7 @@ pub fn get_brigade_members_test() {
   let path = "/brigade/" <> uuid.to_string(dummy_brigade) <> "/members"
   let req = simulate.browser_request(http.Get, path)
 
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
   assert resp.status == 200 as "Response should be HTTP 200 OK"
 
   let body = simulate.read_body(resp)
@@ -176,7 +176,7 @@ pub fn get_all_brigades_test() {
 
   // START ---------------------------------------------------------------------
   let req = simulate.browser_request(http.Get, path)
-  let resp = router.handle_request(req, ctx)
+  let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 200 as "Enpoint should be accessible"
 
