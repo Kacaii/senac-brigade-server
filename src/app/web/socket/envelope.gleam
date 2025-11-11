@@ -4,12 +4,24 @@ import youid/uuid
 
 /// 󰛮  Wrapper for data sent a websocket connection
 pub type Envelope {
-  Envelope(data_type: String, data: json.Json, meta: MetaData)
+  Envelope(
+    /// 󱤇  Used by the client to determine the type of message
+    data_type: String,
+    /// 󰏓  Payload of the message sent
+    data: json.Json,
+    /// 󱩼  Metadata aboute the package
+    meta: MetaData,
+  )
 }
 
-///   Metadata for the envelope
+///   Metadata for the envelope type
 pub type MetaData {
-  MetaData(timestamp: timestamp.Timestamp, request_id: uuid.Uuid)
+  MetaData(
+    /// 󱎫  Timestamp of the moment the package was sent
+    timestamp: timestamp.Timestamp,
+    ///   User connected to the websocket
+    request_id: uuid.Uuid,
+  )
 }
 
 ///   Converts a envelope to a json type
