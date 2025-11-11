@@ -424,6 +424,45 @@ FROM public.assign_occurrence_brigades($1, $2) AS o;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `resolve_occurrence` query
+/// defined in `./src/app/routes/occurrence/sql/resolve_occurrence.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type ResolveOccurrenceRow {
+  ResolveOccurrenceRow(id: Uuid, resolved_at: Option(Timestamp))
+}
+
+/// 󰚰  Resolve a occurrence
+///
+/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn resolve_occurrence(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(ResolveOccurrenceRow), pog.QueryError) {
+  let decoder = {
+    use id <- decode.field(0, uuid_decoder())
+    use resolved_at <- decode.field(1, decode.optional(pog.timestamp_decoder()))
+    decode.success(ResolveOccurrenceRow(id:, resolved_at:))
+  }
+
+  "-- 󰚰  Resolve a occurrence
+UPDATE public.occurrence
+SET resolved_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING
+    id,
+    resolved_at;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 // --- Enums -------------------------------------------------------------------
 
 /// Corresponds to the Postgres `occurrence_category_enum` enum.

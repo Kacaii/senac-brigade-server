@@ -1,4 +1,6 @@
 import app/routes/occurrence/category
+import gleam/option
+import gleam/time/timestamp
 import youid/uuid
 
 /// 󱔔  Message broadcasted to all active users
@@ -11,6 +13,11 @@ pub type Msg {
   UserAssignedToOccurrence(user_id: uuid.Uuid, occurrence_id: uuid.Uuid)
   ///   A new occurrence has been created
   NewOccurrence(occ_id: uuid.Uuid, occ_type: category.Category)
+  /// TODO
+  OccurrenceResolved(
+    occ_id: uuid.Uuid,
+    when: option.Option(timestamp.Timestamp),
+  )
   ///   Everyone replies with pong! Useful for checking active connections
   Ping
 }

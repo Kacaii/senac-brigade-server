@@ -159,6 +159,7 @@ fn handle_custom_msg(
         ]),
       )
     }
+    msg.OccurrenceResolved(occ_id:, when:) -> todo
   }
 }
 

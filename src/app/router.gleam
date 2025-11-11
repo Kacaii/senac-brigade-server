@@ -107,6 +107,8 @@ pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
     http.Delete, ["occurrence", id] ->
       delete_occurrence.handle_request(request:, ctx:, id:)
 
+    http.Put, ["occurrence", "resolve", id] -> todo as "handle request"
+
     // 󰢫  Brigade routes -------------------------------------------------------
     http.Get, ["brigade", id, "members"] ->
       get_brigade_members.handle_request(request:, ctx:, id:)
