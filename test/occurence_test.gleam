@@ -61,12 +61,11 @@ pub fn register_new_occurrence_test() {
   // RESPONSE ------------------------------------------------------------------
   let resp = http_router.handle_request(req, ctx)
   assert resp.status != 422 as "Invalid request Payload"
-  assert resp.status == 401
-    as "Endpoint should only accessible to authenticated users"
+  assert resp.status == 401 as "Endpoint restricted to authenticated users"
 
   let with_auth = app_test.with_authorization(next: req)
   let resp = http_router.handle_request(with_auth, ctx)
-  assert resp.status == 201 as "Status should be HTTP 201 Created"
+  assert resp.status == 201 as "HTTP 201 Created"
 
   // JSON PARSING --------------------------------------------------------------
   let body = simulate.read_body(resp)
@@ -92,16 +91,13 @@ pub fn register_new_occurrence_test() {
 
       use dummy_occurrence_id <- decode.field("id", uuid_decoder)
       use _ <- decode.field("priority", priority_decoder)
-      use _ <- decode.optional_field("applicant_id", uuid.v7(), uuid_decoder)
-      use _ <- decode.optional_field(
-        "brigade_list",
-        [uuid.v7()],
-        decode.list(uuid_decoder),
-      )
+      use _ <- decode.field("applicant_id", decode.optional(uuid_decoder))
+      use _ <- decode.field("assigned_brigades", decode.list(uuid_decoder))
       use _ <- decode.field("created_at", decode.float)
+
       decode.success(dummy_occurrence_id)
     })
-    as "Response should contain valid JSON"
+    as "Response contain valid JSON"
 
   // Check if users were registered as participants ----------------------------
   let dummy_participants_set = set.from_list(dummy_participants_id)
@@ -110,7 +106,7 @@ pub fn register_new_occurrence_test() {
     set.from_list({
       let assert Ok(returned) =
         o_sql.query_participants(ctx.db, dummy_occurrence_id)
-        as "Failed to query occurrence participants"
+        as "Query occurrence participants"
 
       use row <- list.map(returned.rows)
       row.user_id
@@ -119,12 +115,12 @@ pub fn register_new_occurrence_test() {
   assert set.difference(registered_participants_set, dummy_participants_set)
     |> set.to_list()
     == []
-    as "Registered members contain unexpected users"
+    as "Registered members contain all expected users"
 
   assert set.difference(dummy_participants_set, registered_participants_set)
     |> set.to_list()
     == []
-    as "Not all users were assigned"
+    as "Participants were assigned correclty"
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(_) = dev_sql.truncate_occurrence(ctx.db)
@@ -217,10 +213,9 @@ pub fn get_occurrences_by_applicant_test() {
         use _ <- decode.field("status", decode.string)
         use _ <- decode.field("prioridade", priority_decoder)
         use _ <- decode.field("chamado", call_decoder)
-        use _ <- decode.optional_field(
+        use _ <- decode.field(
           "coordenadas",
-          [],
-          decode.list(decode.float),
+          decode.optional(decode.list(decode.float)),
         )
         use _ <- decode.field("timestamps", occurrence_timestamp_decoder)
         use _ <- decode.field("metadata", occurrence_metadata_decoder)

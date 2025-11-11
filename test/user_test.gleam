@@ -175,7 +175,7 @@ pub fn get_all_users_test() {
         use _ <- decode.field("id", decode.string)
         use _ <- decode.field("full_name", decode.string)
         use _ <- decode.field("registration", decode.string)
-        use _ <- decode.optional_field("email", "null", decode.string)
+        use _ <- decode.field("email", decode.optional(decode.string))
         use _ <- decode.field("user_role", decode.string)
         decode.success(Nil)
       }),

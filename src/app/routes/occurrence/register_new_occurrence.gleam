@@ -13,7 +13,7 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result
+import gleam/result.{try}
 import gleam/time/timestamp
 import group_registry
 import pog
@@ -94,9 +94,9 @@ pub opaque type RegisterOccurrenceBody {
 /// Registering a new occurrence can fail
 type RegisterNewOccurrenceError {
   /// Failed to authenticate the user
-  AuthenticationFailed(user.AuthenticationError)
+  AccessControl(user.AuthenticationError)
   /// Failed to access the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// Database returned no results
   OccurrenceNotCreated
   /// Failed to assign a brigade to the giving occurrence
@@ -105,8 +105,8 @@ type RegisterNewOccurrenceError {
 
 fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   case err {
-    AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    AccessControl(err) -> user.handle_authentication_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     FailedToAssignBrigade(id) ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
@@ -118,12 +118,12 @@ fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   }
 }
 
-fn body_decoder() {
+fn body_decoder() -> decode.Decoder(RegisterOccurrenceBody) {
   let brigade_uuid_decoder = {
     use maybe_uuid <- decode.then(decode.string)
     case uuid.from_string(maybe_uuid) {
       Ok(value) -> decode.success(value)
-      Error(_) -> decode.failure(uuid.v7(), "uuid")
+      Error(_) -> decode.failure(uuid.v7(), "brigade_uuid")
     }
   }
   use occ_category <- decode.field("categoria", category.decoder())
@@ -153,12 +153,12 @@ fn insert_occurrence(
   ctx ctx: Context,
   body body: RegisterOccurrenceBody,
 ) -> Result(String, RegisterNewOccurrenceError) {
-  use applicant_uuid <- result.try(
+  use applicant_uuid <- try(
     user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
-    |> result.map_error(AuthenticationFailed),
+    |> result.map_error(AccessControl),
   )
 
-  use returned <- result.try(
+  use returned <- try(
     sql.insert_new_occurence(
       ctx.db,
       applicant_uuid,
@@ -169,15 +169,15 @@ fn insert_occurrence(
       body.location,
       body.reference_point,
     )
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
-  use row <- result.try(case list.first(returned.rows) {
+  use row <- try(case list.first(returned.rows) {
     Error(_) -> Error(OccurrenceNotCreated)
     Ok(row) -> Ok(row)
   })
 
-  use assigned_brigades <- result.try(try_assign_brigades(
+  use assigned_brigades <- result.map(try_assign_brigades(
     ctx:,
     assign: body.brigade_list,
     to: row.id,
@@ -190,8 +190,11 @@ fn insert_occurrence(
 
   // RESPONSE ------------------------------------------------------------------
   let occurrence_priority =
-    enum_to_priority(row.priority)
-    |> priority.to_string_pt_br
+    priority.to_string_pt_br(case row.priority {
+      sql.High -> priority.High
+      sql.Medium -> priority.Medium
+      sql.Low -> priority.Low
+    })
 
   let occ_category = case row.occurrence_category {
     sql.Fire -> category.Fire
@@ -200,19 +203,19 @@ fn insert_occurrence(
     sql.TrafficAccident -> category.TrafficAccident
   }
 
-  //   Broadcast new occurrence
+  //   Broadcast new occurrence -----------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
   occurrence.notify_new_occurrence(new: row.id, of: occ_category, registry:)
 
-  json.object([
-    #("id", uuid.to_string(row.id) |> json.string),
-    #("applicant_id", uuid.to_string(row.id) |> json.string),
-    #("priority", json.string(occurrence_priority)),
-    #("assigned_brigades", assigned_brigades_json),
-    #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
-  ])
-  |> json.to_string
-  |> Ok
+  json.to_string(
+    json.object([
+      #("id", uuid.to_string(row.id) |> json.string),
+      #("applicant_id", uuid.to_string(row.id) |> json.string),
+      #("priority", json.string(occurrence_priority)),
+      #("assigned_brigades", assigned_brigades_json),
+      #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+    ]),
+  )
 }
 
 fn try_assign_brigades(
@@ -220,9 +223,9 @@ fn try_assign_brigades(
   assign brigades_id: List(uuid.Uuid),
   to occurrence_id: uuid.Uuid,
 ) -> Result(List(uuid.Uuid), RegisterNewOccurrenceError) {
-  use returned <- result.try(
+  use returned <- try(
     sql.assign_brigades_to_occurrence(ctx.db, occurrence_id, brigades_id)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   let assigned_brigades = {
@@ -230,10 +233,10 @@ fn try_assign_brigades(
     row.inserted_brigade_id
   }
 
-  use assigned_users <- result.try({
-    use returned <- result.try(
+  use assigned_users <- try({
+    use returned <- try(
       sql.query_participants(ctx.db, occurrence_id)
-      |> result.map_error(DataBaseError),
+      |> result.map_error(DataBase),
     )
 
     list.map(returned.rows, fn(row) { row.user_id })
@@ -256,14 +259,6 @@ fn priority_to_enum(priority: priority.Priority) -> sql.OccurrencePriorityEnum {
     priority.High -> sql.High
     priority.Low -> sql.Low
     priority.Medium -> sql.Medium
-  }
-}
-
-fn enum_to_priority(enum: sql.OccurrencePriorityEnum) {
-  case enum {
-    sql.High -> priority.High
-    sql.Medium -> priority.Medium
-    sql.Low -> priority.Low
   }
 }
 
