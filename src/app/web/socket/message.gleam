@@ -13,11 +13,8 @@ pub type Msg {
   UserAssignedToOccurrence(user_id: uuid.Uuid, occurrence_id: uuid.Uuid)
   ///   A new occurrence has been created
   NewOccurrence(occ_id: uuid.Uuid, occ_type: category.Category)
-  /// TODO
-  OccurrenceResolved(
-    occ_id: uuid.Uuid,
-    when: option.Option(timestamp.Timestamp),
-  )
+  ///   An occurrence has been marked as resolved
+  OccurrenceResolved(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
   ///   Everyone replies with pong! Useful for checking active connections
   Ping
 }

@@ -160,13 +160,13 @@ fn handle_custom_msg(
       )
     }
 
-    msg.OccurrenceResolved(occ_id:, when:) -> {
+    msg.OccurrenceResolved(id:, when:) -> {
       send_envelope(
         state:,
         conn:,
         data_type: "occurrence_resolved",
         data: json.object([
-          #("id", json.string(uuid.to_string(occ_id))),
+          #("id", json.string(uuid.to_string(id))),
           #(
             "timestamp",
             json.nullable(when, fn(time) {

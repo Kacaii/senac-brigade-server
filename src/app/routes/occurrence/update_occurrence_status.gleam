@@ -91,7 +91,7 @@ fn try_resolve_occurrence(
       ctx:,
       registry: group_registry.get_registry(ctx.registry_name),
       occurrence: row.id,
-      message: msg.OccurrenceResolved(occ_id: row.id, when: row.resolved_at),
+      message: msg.OccurrenceResolved(id: row.id, when: row.resolved_at),
     )
 
   // RESPONSE
