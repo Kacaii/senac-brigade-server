@@ -3,7 +3,6 @@ import app/routes/occurrence/sql
 import app/web/context.{type Context}
 import app/web/socket
 import app/web/socket/message as msg
-import gleam/bool
 import gleam/erlang/process
 import gleam/list
 import gleam/result
@@ -11,14 +10,13 @@ import group_registry
 import pog
 import youid/uuid
 
-/// 󱜠  Broadcast a text message to all users assigned to a occurrence
+/// 󱜠  Broadcast a message to all users assigned to a occurrence
 pub fn broadcast(
   ctx ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
   occurrence occ_id: uuid.Uuid,
-  body body: String,
+  message message: msg.Msg,
 ) -> Result(Nil, pog.QueryError) {
-  use <- bool.guard(when: body == "", return: Ok(Nil))
   use returned <- result.map(sql.query_participants(ctx.db, occ_id))
   use row <- list.each(returned.rows)
 
@@ -26,7 +24,7 @@ pub fn broadcast(
   let members = group_registry.members(registry, uuid.to_string(user_id))
 
   use member <- list.each(members)
-  process.send(member, msg.Broadcast(body))
+  process.send(member, message)
 }
 
 ///   Call `notify_user_assignment` on multiple users
