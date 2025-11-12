@@ -11,6 +11,7 @@ import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
+import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
@@ -274,21 +275,23 @@ fn parse_body(body: String) -> Result(List(category.Category), json.DecodeError)
 
       decode.success(subscribe_to)
     })
+
   parse_result
 }
 
-fn read_body(req: request.Request(mist.Connection)) -> Result(String, Nil) {
-  use req <- try(
-    mist.read_body(req, 1024 * 1024 * 10)
-    |> result.replace_error(Nil),
-  )
+fn read_body(
+  req: request.Request(mist.Connection),
+) -> Result(String, mist.ReadError) {
+  let max_body_limit =
+    request.get_header(req, "content-length")
+    |> result.try(int.parse)
+    |> result.unwrap(0)
 
-  use body <- result.map(
-    bit_array.to_string(req.body)
-    |> result.replace_error(Nil),
-  )
+  use req <- result.map(mist.read_body(req, max_body_limit:))
 
-  body
+  req.body
+  |> bit_array.to_string
+  |> result.unwrap("")
 }
 
 // ON CLOSE --------------------------------------------------------------------
