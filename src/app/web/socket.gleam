@@ -255,14 +255,13 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
-  // 󰘦  Parse body
-  let body = read_body(req)
-  let subscribed_result = parse_body(result.unwrap(body, ""))
+  let subscribed =
+    read_body(req)
+    |> result.unwrap("")
+    |> parse_body
+    |> result.unwrap([])
 
-  #(
-    State(user_uuid:, subscribed: result.unwrap(subscribed_result, [])),
-    option.Some(selector),
-  )
+  #(State(user_uuid:, subscribed:), option.Some(selector))
 }
 
 fn parse_body(body: String) -> Result(List(category.Category), json.DecodeError) {
@@ -301,10 +300,9 @@ fn ws_on_close(
   ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
-  group_registry.leave(registry, topic, [process.self()])
-  group_registry.leave(registry, uuid.to_string(state.user_uuid), [
-    process.self(),
-  ])
+  let self = process.self()
+  group_registry.leave(registry, topic, [self])
+  group_registry.leave(registry, uuid.to_string(state.user_uuid), [self])
 }
 
 // HELPERS ---------------------------------------------------------------------
