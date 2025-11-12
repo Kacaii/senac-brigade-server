@@ -304,35 +304,54 @@ pub fn resolve_occurrence_test() {
   let resp = http_router.handle_request(req, ctx)
 
   assert resp.status == 401 as "Restricted to authenticated Users"
-  let req = app_test.with_authorization(req)
-  let resp = http_router.handle_request(req, ctx)
-  let body = simulate.read_body(resp)
 
-  let assert Ok(_) =
-    json.parse(body, {
-      let uuid_decoder = {
-        use maybe_uuid <- decode.then(decode.string)
-        case uuid.from_string(maybe_uuid) {
-          Error(_) -> decode.failure(uuid.v7(), "occurrence_uuid")
-          Ok(value) -> decode.success(value)
-        }
+  // Response decoder
+  let resp_decoder = {
+    let uuid_decoder = {
+      use maybe_uuid <- decode.then(decode.string)
+      case uuid.from_string(maybe_uuid) {
+        Error(_) -> decode.failure(uuid.v7(), "occurrence_uuid")
+        Ok(value) -> decode.success(value)
       }
+    }
 
-      let resolved_at_decoder = decode.optional(decode.float)
+    let resolved_at_decoder = decode.optional(decode.float)
 
-      use occ_id <- decode.field("id", uuid_decoder)
-      use resolved_at <- decode.field("resolved_at", resolved_at_decoder)
-      use _ <- decode.field("updated_at", decode.float)
+    use occ_id <- decode.field("id", uuid_decoder)
+    use resolved_at <- decode.field("resolved_at", resolved_at_decoder)
+    use _ <- decode.field("updated_at", decode.float)
 
-      assert option.is_some(resolved_at) as "Occurrence should be closed"
-      assert occ_id == dummy_occurrence as "Update the correct occurrence"
-      decode.success(Nil)
-    })
+    assert option.is_some(resolved_at) as "Occurrence should be closed"
+    assert occ_id == dummy_occurrence as "Update the correct occurrence"
+    decode.success(Nil)
+  }
+
+  let _happy_path = {
+    let req = app_test.with_authorization(req)
+    let resp = http_router.handle_request(req, ctx)
+    let body = simulate.read_body(resp)
+
+    let assert Ok(_) = json.parse(body, resp_decoder)
+      as "Json response should be valid"
+  }
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(_) = dev_sql.truncate_occurrence(ctx.db)
   let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
   let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
+}
+
+pub fn resolve_missing_occurrence_test() {
+  let ctx = app_test.global_data()
+  let base_path = "/occurrence/resolved_at/"
+  let path = base_path <> uuid.v7_string()
+
+  let req =
+    simulate.browser_request(http.Post, path)
+    |> app_test.with_authorization()
+
+  let resp = http_router.handle_request(req, ctx)
+  assert resp.status == 404 as "Cant resolve missing occurrence"
 }
 
 pub fn reopen_occurrence_test() {
@@ -391,4 +410,17 @@ pub fn reopen_occurrence_test() {
   let assert Ok(_) = dev_sql.truncate_occurrence(ctx.db)
   let assert Ok(_) = dev_sql.truncate_brigade(ctx.db)
   let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
+}
+
+pub fn reopen_missing_occurrence_test() {
+  let ctx = app_test.global_data()
+  let base_path = "/occurrence/resolved_at/"
+  let path = base_path <> uuid.v7_string()
+
+  let req =
+    simulate.browser_request(http.Delete, path)
+    |> app_test.with_authorization()
+
+  let resp = http_router.handle_request(req, ctx)
+  assert resp.status == 404 as "Cant reopen missing occurrence"
 }
