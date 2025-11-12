@@ -44,7 +44,6 @@ pub fn notify_user_assignment(
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   let members = group_registry.members(registry, uuid.to_string(user_id))
-
   use subject <- list.each(members)
   process.send(subject, msg.UserAssignedToOccurrence(user_id:, occurrence_id:))
 }
@@ -55,8 +54,7 @@ pub fn notify_new_occurrence(
   of occ_type: category.Category,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
-  let members = group_registry.members(registry, socket.topic)
-
+  let members = group_registry.members(registry, socket.ws_topic)
   use subject <- list.each(members)
   process.send(subject, msg.NewOccurrence(occ_id:, occ_type:))
 }

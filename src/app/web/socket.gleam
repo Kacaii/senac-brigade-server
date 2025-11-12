@@ -15,13 +15,13 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
-import gleam/result.{try}
+import gleam/result
 import gleam/time/timestamp
 import group_registry
 import mist
 import youid/uuid
 
-pub const topic = "active_users"
+pub const ws_topic = "active_users"
 
 /// Connecting to a websocket can fail
 pub opaque type WebSocketError {
@@ -186,21 +186,20 @@ pub fn send_envelope(
   data_type data_type: String,
   data data: json.Json,
 ) -> mist.Next(State, msg.Msg) {
-  //   Build metadata
   let meta =
     envelope.MetaData(
       timestamp: timestamp.system_time(),
       request_id: state.user_uuid,
     )
 
-  // 󰛮  Wrap envelope
-  let envelope_json =
-    envelope.to_json(envelope.Envelope(data_type:, data:, meta:))
+  let frame_result =
+    envelope.Envelope(data_type:, data:, meta:)
+    |> envelope.to_json
+    |> json.to_string
+    |> mist.send_text_frame(conn, _)
 
-  // 󱅡  Send data
-  let msg_result = mist.send_text_frame(conn, json.to_string(envelope_json))
-  case msg_result {
-    Error(_) -> mist.stop_abnormal("Failed to send message to User")
+  case frame_result {
+    Error(_) -> mist.stop_abnormal("Failed to send text frame")
     Ok(_) -> mist.continue(state)
   }
 }
@@ -212,22 +211,22 @@ pub fn extract_uuid_mist(
   let cookies = request.get_cookies(req)
   let salt = <<ctx.secret_key_base:utf8>>
 
-  use hashed_uuid <- try(
+  use hashed_uuid <- result.try(
     list.key_find(cookies, user.uuid_cookie_name)
     |> result.replace_error(MissingCookie),
   )
 
-  use decrypted <- try(
+  use decrypted <- result.try(
     crypto.verify_signed_message(hashed_uuid, salt)
     |> result.replace_error(InvalidSignature),
   )
 
-  use maybe_uuid_str <- try(
+  use maybe_uuid_str <- result.try(
     bit_array.to_string(decrypted)
     |> result.replace_error(InvalidUtf8),
   )
 
-  use user_uuid <- try(
+  use user_uuid <- result.try(
     uuid.from_string(maybe_uuid_str)
     |> result.replace_error(InvalidUuid(maybe_uuid_str)),
   )
@@ -245,10 +244,10 @@ fn ws_on_init(
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> #(State, option.Option(process.Selector(msg.Msg))) {
   let self = process.self()
-  let group_subject = group_registry.join(registry, topic, self)
+  let group_subject = group_registry.join(registry, ws_topic, self)
 
-  let user_subject =
-    group_registry.join(registry, uuid.to_string(user_uuid), self)
+  let user_topic = uuid.to_string(user_uuid)
+  let user_subject = group_registry.join(registry, user_topic, self)
 
   let selector =
     process.new_selector()
@@ -265,29 +264,23 @@ fn ws_on_init(
 }
 
 fn parse_body(body: String) -> Result(List(category.Category), json.DecodeError) {
-  let parse_result =
-    json.parse(body, {
-      use subscribe_to <- decode.field(
-        "subscribe",
-        decode.list(category.decoder_pt_br()),
-      )
-
-      decode.success(subscribe_to)
-    })
-
-  parse_result
+  json.parse(body, {
+    let category_list_decoder = decode.list(category.decoder_pt_br())
+    use subscribe_to <- decode.field("subscribe", category_list_decoder)
+    decode.success(subscribe_to)
+  })
 }
 
 fn read_body(
   req: request.Request(mist.Connection),
 ) -> Result(String, mist.ReadError) {
-  let max_body_limit =
+  let req_result =
     request.get_header(req, "content-length")
     |> result.try(int.parse)
     |> result.unwrap(0)
+    |> mist.read_body(req, _)
 
-  use req <- result.map(mist.read_body(req, max_body_limit:))
-
+  use req <- result.map(req_result)
   req.body
   |> bit_array.to_string
   |> result.unwrap("")
@@ -301,7 +294,7 @@ fn ws_on_close(
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   let self = process.self()
-  group_registry.leave(registry, topic, [self])
+  group_registry.leave(registry, ws_topic, [self])
   group_registry.leave(registry, uuid.to_string(state.user_uuid), [self])
 }
 
