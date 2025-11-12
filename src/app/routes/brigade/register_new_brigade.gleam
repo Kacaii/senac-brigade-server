@@ -8,7 +8,7 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result
+import gleam/result.{try}
 import gleam/time/timestamp
 import group_registry
 import pog
@@ -43,6 +43,34 @@ pub fn handle_request(
     Ok(body) -> handle_body(request:, ctx:, body:)
     Error(err) -> web.handle_decode_error(err)
   }
+}
+
+/// Body sent by the Client in during the request
+type RequestBody {
+  RequestBody(
+    /// Id of the brigade leader
+    leader_id: uuid.Uuid,
+    /// Name of the brigade
+    name: String,
+    /// Code of the brigade's vehicle
+    vehicle_code: String,
+    /// All members meant to be assigned to the brigade
+    members_id: List(uuid.Uuid),
+    /// Brigade status
+    is_active: Bool,
+  )
+}
+
+/// Registering a new brigade can fail
+type RegisterBrigadeError {
+  /// Uuid contain invalid format
+  InvalidUuid(String)
+  /// An error occurred while accessing the Database
+  DataBase(pog.QueryError)
+  /// Brigade not found in the Database
+  BrigadeNotFound
+  /// Error related to Authentication / Authorization
+  AccessError(user.AccessControlError)
 }
 
 fn body_decoder() {
@@ -90,7 +118,7 @@ fn try_register_brigade(
   ctx ctx: Context,
   body body: RequestBody,
 ) -> Result(String, RegisterBrigadeError) {
-  use _ <- result.try(
+  use _ <- try(
     user.check_role_authorization(
       request:,
       ctx:,
@@ -100,7 +128,7 @@ fn try_register_brigade(
     |> result.map_error(AccessError),
   )
 
-  use returned <- result.try(
+  use returned <- try(
     sql.insert_new_brigade(
       ctx.db,
       body.leader_id,
@@ -108,15 +136,15 @@ fn try_register_brigade(
       body.vehicle_code,
       body.is_active,
     )
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
-  use row <- result.try(
+  use row <- try(
     list.first(returned.rows)
     |> result.replace_error(BrigadeNotFound),
   )
 
-  use assigned_members <- result.try(try_assign_members(
+  use assigned_members <- try(try_assign_members(
     ctx:,
     to: row.id,
     assign: body.members_id,
@@ -143,7 +171,7 @@ fn try_assign_members(
 ) -> Result(List(uuid.Uuid), RegisterBrigadeError) {
   use returned <- result.map(
     sql.assign_brigade_members(ctx.db, brigade_id, members)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   let assigned_members = {
@@ -160,39 +188,13 @@ fn try_assign_members(
 
 fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response {
   case err {
-    BrigadeNotFound ->
-      wisp.not_found()
-      |> wisp.set_body(wisp.Text(
-        "O Banco de Dados não retornou informações sobre a nova equipe após a inserção",
-      ))
     InvalidUuid(user_id) ->
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     AccessError(err) -> user.handle_access_control_error(request, err)
-    FailedToRegisterMember(user_id) ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível registrar o usuário: "
-        <> uuid.to_string(user_id)
-        <> " como membro da equipe",
-      ))
+    BrigadeNotFound ->
+      "O Banco de Dados não retornou informações sobre a nova equipe após a inserção"
+      |> wisp.Text
+      |> wisp.set_body(wisp.not_found(), _)
   }
-}
-
-type RequestBody {
-  RequestBody(
-    leader_id: uuid.Uuid,
-    name: String,
-    vehicle_code: String,
-    members_id: List(uuid.Uuid),
-    is_active: Bool,
-  )
-}
-
-type RegisterBrigadeError {
-  InvalidUuid(String)
-  DataBaseError(pog.QueryError)
-  BrigadeNotFound
-  AccessError(user.AccessControlError)
-  FailedToRegisterMember(uuid.Uuid)
 }

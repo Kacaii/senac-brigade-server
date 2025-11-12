@@ -41,9 +41,10 @@ FROM public.assign_brigade_members($1, $2) AS b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
-  )
+  |> pog.parameter(pog.array(
+    fn(value) { pog.text(uuid.to_string(value)) },
+    arg_2,
+  ))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -189,14 +190,14 @@ LEFT JOIN public.user_account AS u
   |> pog.execute(db)
 }
 
-/// A row you get from running the `query_brigade_by_id` query
-/// defined in `./src/app/routes/brigade/sql/query_brigade_by_id.sql`.
+/// A row you get from running the `query_brigade_info` query
+/// defined in `./src/app/routes/brigade/sql/query_brigade_info.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.5.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type QueryBrigadeByIdRow {
-  QueryBrigadeByIdRow(
+pub type QueryBrigadeInfoRow {
+  QueryBrigadeInfoRow(
     id: Uuid,
     brigade_name: String,
     leader_name: Uuid,
@@ -209,16 +210,16 @@ pub type QueryBrigadeByIdRow {
 /// > 🐿️ This function was generated automatically using v4.5.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn query_brigade_by_id(
+pub fn query_brigade_info(
   db: pog.Connection,
   arg_1: Uuid,
-) -> Result(pog.Returned(QueryBrigadeByIdRow), pog.QueryError) {
+) -> Result(pog.Returned(QueryBrigadeInfoRow), pog.QueryError) {
   let decoder = {
     use id <- decode.field(0, uuid_decoder())
     use brigade_name <- decode.field(1, decode.string)
     use leader_name <- decode.field(2, uuid_decoder())
     use is_active <- decode.field(3, decode.bool)
-    decode.success(QueryBrigadeByIdRow(
+    decode.success(QueryBrigadeInfoRow(
       id:,
       brigade_name:,
       leader_name:,
@@ -353,9 +354,10 @@ FROM public.replace_brigade_members($1, $2) AS b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(
-    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
-  )
+  |> pog.parameter(pog.array(
+    fn(value) { pog.text(uuid.to_string(value)) },
+    arg_2,
+  ))
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
