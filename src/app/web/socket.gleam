@@ -25,13 +25,13 @@ pub const topic = "active_users"
 
 /// Connecting to a websocket can fail
 pub opaque type WebSocketError {
-  /// Session cookie was not found
+  /// 󱛪  Session cookie was not found
   MissingCookie
-  /// `crypto.verify_signed_message` failed
+  /// 󰣮  Failed to verify signed message
   InvalidSignature
-  /// The signed message could not be properly decrypted
+  /// 󱦃  The signed message could not be properly decrypted
   InvalidUtf8
-  /// Decrypted string was not a valid Uuid
+  /// 󰘨  Session token has invalid Uuid fomat
   InvalidUuid(String)
 }
 
@@ -126,7 +126,7 @@ fn handle_custom_msg(
       send_envelope(
         state:,
         conn:,
-        data_type: "assigned_to_brigade",
+        data_type: "brigade:assigned",
         data: json.object([
           #("user_id", uuid.to_string(user_id) |> json.string),
           #("brigade_id", uuid.to_string(brigade_id) |> json.string),
@@ -137,7 +137,7 @@ fn handle_custom_msg(
       send_envelope(
         state:,
         conn:,
-        data_type: "assigned_to_occurrence",
+        data_type: "occurrence:assigned",
         data: json.object([
           #("user_id", uuid.to_string(user_id) |> json.string),
           #("occurrence_id", uuid.to_string(occurrence_id) |> json.string),
@@ -153,7 +153,7 @@ fn handle_custom_msg(
       send_envelope(
         state:,
         conn:,
-        data_type: "new_occurrence",
+        data_type: "occurrence:new",
         data: json.object([
           #("id", json.string(uuid.to_string(occ_id))),
           #("occ_type", json.string(category.to_string_pt_br(occ_type))),
@@ -162,18 +162,18 @@ fn handle_custom_msg(
     }
 
     msg.OccurrenceResolved(id:, when:) -> {
+      let timestamp_json =
+        json.nullable(when, fn(time) {
+          timestamp.to_unix_seconds(time) |> json.float
+        })
+
       send_envelope(
         state:,
         conn:,
-        data_type: "occurrence_resolved",
+        data_type: "occurrence:resolved",
         data: json.object([
           #("id", json.string(uuid.to_string(id))),
-          #(
-            "timestamp",
-            json.nullable(when, fn(time) {
-              timestamp.to_unix_seconds(time) |> json.float
-            }),
-          ),
+          #("timestamp", timestamp_json),
         ]),
       )
     }
@@ -200,7 +200,7 @@ pub fn send_envelope(
   // 󱅡  Send data
   let msg_result = mist.send_text_frame(conn, json.to_string(envelope_json))
   case msg_result {
-    Error(_) -> mist.stop_abnormal("Failed to send envelope to User")
+    Error(_) -> mist.stop_abnormal("Failed to send message to User")
     Ok(_) -> mist.continue(state)
   }
 }
