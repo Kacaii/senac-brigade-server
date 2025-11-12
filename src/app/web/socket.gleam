@@ -14,7 +14,7 @@ import gleam/http/response
 import gleam/json
 import gleam/list
 import gleam/option
-import gleam/result
+import gleam/result.{try}
 import gleam/time/timestamp
 import group_registry
 import mist
@@ -254,24 +254,19 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
-  let body = {
-    let max_length = 1024 * 1024 * 10
+  // 󰘦  Parse body
+  let body = read_body(req)
+  let subscribed_result = parse_body(result.unwrap(body, ""))
 
-    use req <- result.try(
-      mist.read_body(req, max_length)
-      |> result.replace_error(Nil),
-    )
+  #(
+    State(user_uuid:, subscribed: result.unwrap(subscribed_result, [])),
+    option.Some(selector),
+  )
+}
 
-    use body <- result.map(
-      bit_array.to_string(req.body)
-      |> result.replace_error(Nil),
-    )
-
-    body
-  }
-
+fn parse_body(body: String) -> Result(List(category.Category), json.DecodeError) {
   let parse_result =
-    json.parse(result.unwrap(body, ""), {
+    json.parse(body, {
       use subscribe_to <- decode.field(
         "subscribe",
         decode.list(category.decoder_pt_br()),
@@ -279,21 +274,34 @@ fn ws_on_init(
 
       decode.success(subscribe_to)
     })
+  parse_result
+}
 
-  #(
-    State(user_uuid:, subscribed: result.unwrap(parse_result, [])),
-    option.Some(selector),
+fn read_body(req: request.Request(mist.Connection)) -> Result(String, Nil) {
+  use req <- try(
+    mist.read_body(req, 1024 * 1024 * 10)
+    |> result.replace_error(Nil),
   )
+
+  use body <- result.map(
+    bit_array.to_string(req.body)
+    |> result.replace_error(Nil),
+  )
+
+  body
 }
 
 // ON CLOSE --------------------------------------------------------------------
 
 fn ws_on_close(
-  state _state: State,
+  state state: State,
   ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   group_registry.leave(registry, topic, [process.self()])
+  group_registry.leave(registry, uuid.to_string(state.user_uuid), [
+    process.self(),
+  ])
 }
 
 // HELPERS ---------------------------------------------------------------------
