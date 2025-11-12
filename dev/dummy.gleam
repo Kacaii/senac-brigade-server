@@ -7,9 +7,7 @@ import app/routes/occurrence/sql as o_sql
 import app/routes/occurrence/subcategory
 import app/routes/role
 import app/routes/user/sql as u_sql
-import gleam/dict
 import gleam/float
-import gleam/int
 import gleam/list
 import gleam/set
 import pog
@@ -18,43 +16,31 @@ import youid/uuid
 
 /// Panics on failure
 pub fn random_role() -> role.Role {
-  let samples =
-    dict.from_list([
-      #(0, role.Firefighter),
-      #(1, role.Admin),
-      #(2, role.Analyst),
-      #(3, role.Captain),
-      #(4, role.Developer),
-      #(5, role.Sargeant),
-    ])
+  let samples = [
+    role.Firefighter,
+    role.Admin,
+    role.Analyst,
+    role.Captain,
+    role.Developer,
+    role.Sargeant,
+  ]
 
-  let assert Ok(chosen) =
-    dict.get(samples, {
-      dict.to_list(samples)
-      |> list.length()
-      |> int.random()
-    })
-    as "Failed to pick a random user role"
+  let assert Ok(chosen) = list.first(list.sample(samples, 1))
+    as "Picked a random user role"
 
   chosen
 }
 
 /// Panics on failure
-pub fn random_priority() {
-  let samples =
-    dict.from_list([
-      #(0, priority.Low),
-      #(1, priority.Medium),
-      #(2, priority.High),
-    ])
+pub fn random_priority() -> priority.Priority {
+  let samples = [
+    priority.Low,
+    priority.Medium,
+    priority.High,
+  ]
 
-  let assert Ok(chosen) =
-    dict.get(samples, {
-      dict.to_list(samples)
-      |> list.length()
-      |> int.random()
-    })
-    as "Failed to pick a random occurrence priority"
+  let assert Ok(chosen) = list.first(list.sample(samples, 1))
+    as "Picked a random occurrence priority"
 
   chosen
 }
@@ -64,7 +50,7 @@ pub fn random_brigade(
   conn conn: pog.Connection,
   leader_id leader_id: uuid.Uuid,
   members dummy_members: List(uuid.Uuid),
-) {
+) -> uuid.Uuid {
   let assert Ok(returned) =
     b_sql.insert_new_brigade(
       conn,
@@ -73,14 +59,14 @@ pub fn random_brigade(
       "VEHICLE " <> wisp.random_string(3),
       True,
     )
-    as "Failed to create dummy brigade"
+    as "Dummy brigade is generated"
 
   let assert Ok(inserted_brigade_row) = list.first(returned.rows)
-    as "Database returned no results after creating new Brigade"
+    as "Database returned results after creating new Brigade"
 
   let assert Ok(assigments) =
     b_sql.assign_brigade_members(conn, inserted_brigade_row.id, dummy_members)
-    as "Failed to assign dummy members to a brigade"
+    as "Dummy members were assigned"
 
   let assigned_members =
     list.map(assigments.rows, fn(row) { row.inserted_user_id })
@@ -91,18 +77,18 @@ pub fn random_brigade(
   assert set.difference(assigned_members_set, dummy_members_set)
     |> set.to_list
     == []
-    as "Returned members contain unexpected users"
+    as "Returned members expected users"
 
   assert set.difference(dummy_members_set, assigned_members_set)
     |> set.to_list
     == []
-    as "Some brigade members were not returned"
+    as "All brigade members were returned"
 
   inserted_brigade_row.id
 }
 
 /// Panic on failure
-pub fn clean_brigade(conn: pog.Connection, dummy: uuid.Uuid) {
+pub fn clean_brigade(conn: pog.Connection, dummy: uuid.Uuid) -> Nil {
   let cleanup_brigade_id = {
     let assert Ok(returned) = b_sql.delete_brigade_by_id(conn, dummy)
       as "Failed to delete dummy brigade"
@@ -117,54 +103,42 @@ pub fn clean_brigade(conn: pog.Connection, dummy: uuid.Uuid) {
 }
 
 /// Panics on failure
-pub fn random_category() {
-  let samples =
-    dict.from_list([
-      #(0, category.Other),
-      #(1, category.Fire),
-      #(2, category.MedicEmergency),
-      #(3, category.TrafficAccident),
-    ])
+pub fn random_category() -> category.Category {
+  let samples = [
+    category.Other,
+    category.Fire,
+    category.MedicEmergency,
+    category.TrafficAccident,
+  ]
 
-  let assert Ok(chosen) =
-    dict.get(samples, {
-      dict.to_list(samples)
-      |> list.length()
-      |> int.random()
-    })
+  let assert Ok(chosen) = list.first(list.sample(samples, 1))
     as "Failed to pick a random user occurrence category"
 
   chosen
 }
 
 /// Panics on failure
-pub fn random_subcategory() {
-  let samples =
-    dict.from_list([
-      #(0, subcategory.InjuredAnimal),
-      #(1, subcategory.Flood),
-      #(2, subcategory.TreeCrash),
-      #(3, subcategory.MotorcycleCrash),
-      #(4, subcategory.Rollover),
-      #(5, subcategory.RunOver),
-      #(6, subcategory.Collision),
-      #(7, subcategory.Vehicle),
-      #(8, subcategory.Vegetation),
-      #(9, subcategory.Comercial),
-      #(10, subcategory.Residential),
-      #(11, subcategory.Intoxication),
-      #(12, subcategory.SeriousInjury),
-      #(13, subcategory.Seizure),
-      #(14, subcategory.PreHospitalCare),
-      #(15, subcategory.HeartStop),
-    ])
+pub fn random_subcategory() -> subcategory.Subcategory {
+  let samples = [
+    subcategory.InjuredAnimal,
+    subcategory.Flood,
+    subcategory.TreeCrash,
+    subcategory.MotorcycleCrash,
+    subcategory.Rollover,
+    subcategory.RunOver,
+    subcategory.Collision,
+    subcategory.Vehicle,
+    subcategory.Vegetation,
+    subcategory.Comercial,
+    subcategory.Residential,
+    subcategory.Intoxication,
+    subcategory.SeriousInjury,
+    subcategory.Seizure,
+    subcategory.PreHospitalCare,
+    subcategory.HeartStop,
+  ]
 
-  let assert Ok(chosen) =
-    dict.get(samples, {
-      dict.to_list(samples)
-      |> list.length()
-      |> int.random()
-    })
+  let assert Ok(chosen) = list.first(list.sample(samples, 1))
     as "Failed to pick a random occurrence subcategory"
 
   chosen
@@ -201,15 +175,14 @@ pub fn random_user(conn: pog.Connection) -> uuid.Uuid {
 }
 
 /// Panic on failure
-pub fn clean_user(conn: pog.Connection, dummy: uuid.Uuid) {
-  let assert Ok(cleanup_applicant) = {
-    let assert Ok(returned) = u_sql.delete_user_by_id(conn, dummy)
-      as "Failed to cleanup dummy user"
+pub fn clean_user(conn: pog.Connection, dummy: uuid.Uuid) -> Nil {
+  let assert Ok(returned) = u_sql.delete_user_by_id(conn, dummy)
+    as "Database has been accessed"
 
-    list.first(returned.rows)
-  }
+  let assert Ok(row) = list.first(returned.rows)
+    as "Database returned row after deletion"
 
-  assert cleanup_applicant.id == dummy as "Deleted the wrong User"
+  assert row.id == dummy as "Deleted the correct user"
 }
 
 /// Panic on failure
@@ -276,10 +249,10 @@ pub fn random_occurrence(
       [float.random() *. 100.0, float.random() *. 100.0],
       "Next to: " <> wisp.random_string(12),
     )
-    as "Failed to generate a dummy Occurrence"
+    as "Database has been accessed"
 
   let assert Ok(created_occurrence_row) = list.first(returned.rows)
-    as "Database returned no results"
+    as "Database returned results after registering occurrence"
 
   let assert Ok(assigned_brigades_row) =
     o_sql.assign_brigades_to_occurrence(
@@ -287,6 +260,7 @@ pub fn random_occurrence(
       created_occurrence_row.id,
       dummy_brigade_list,
     )
+    as "Brigades were assigned to occurrence"
 
   let dummy_brigades_set = set.from_list(dummy_brigade_list)
   let assigned_brigades_set =
@@ -311,11 +285,10 @@ pub fn random_occurrence(
 
 /// Panic on failure
 pub fn clean_occurrence(conn: pog.Connection, dummy: uuid.Uuid) {
-  let assert Ok(cleanup_occurrence) = {
-    let assert Ok(returned) = o_sql.delete_occurrence_by_id(conn, dummy)
-      as "Failed to cleanup dummy occurrence"
-    list.first(returned.rows)
-  }
+  let assert Ok(returned) = o_sql.delete_occurrence_by_id(conn, dummy)
+    as "DataBase has been accessed"
+  let assert Ok(row) = list.first(returned.rows)
+    as "DataBase returned row after deleting"
 
-  assert cleanup_occurrence.id == dummy as "Deleted the wrong Occurrence"
+  assert row.id == dummy as "Deleted the wrong Occurrence"
 }
