@@ -2,6 +2,7 @@
 
 import app/routes/role
 import app/routes/user/sql
+import app/web
 import app/web/context.{type Context}
 import gleam/http
 import gleam/json
@@ -45,38 +46,46 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
-  let query_result = query_crew_members(ctx:, user_id:)
-
-  case query_result {
-    Ok(fellow_members_list) ->
-      wisp.json_response(json.to_string(fellow_members_list), 200)
-
+  case try_query_database(ctx:, user_id:) {
+    Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_err(err)
   }
 }
 
-fn query_crew_members(ctx ctx: Context, user_id user_id: String) {
+fn try_query_database(
+  ctx ctx: Context,
+  user_id user_id: String,
+) -> Result(String, GetCrewMembersError) {
   use user_uuid <- result.try(
     uuid.from_string(user_id)
     |> result.replace_error(InvalidUUID(user_id)),
   )
+
   use returned <- result.try(
     sql.query_crew_members(ctx.db, user_uuid)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
+
   let fellow_members_list = {
     use fellow_brigade_member <- list.map(returned.rows)
     get_crew_members_row_to_json(fellow_brigade_member)
   }
 
-  Ok(json.preprocessed_array(fellow_members_list))
+  json.preprocessed_array(fellow_members_list)
+  |> json.to_string
+  |> Ok
 }
 
 fn get_crew_members_row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
   let role_name =
-    row.user_role
-    |> enum_to_role()
-    |> role.to_string_pt_br()
+    role.to_string_pt_br(case row.user_role {
+      sql.Admin -> role.Admin
+      sql.Analyst -> role.Analyst
+      sql.Captain -> role.Captain
+      sql.Developer -> role.Developer
+      sql.Firefighter -> role.Firefighter
+      sql.Sargeant -> role.Sargeant
+    })
 
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
@@ -86,35 +95,17 @@ fn get_crew_members_row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
   ])
 }
 
-fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
-  case user_role {
-    sql.Admin -> role.Admin
-    sql.Analyst -> role.Analyst
-    sql.Captain -> role.Captain
-    sql.Developer -> role.Developer
-    sql.Firefighter -> role.Firefighter
-    sql.Sargeant -> role.Sargeant
+fn handle_err(err: GetCrewMembersError) {
+  case err {
+    InvalidUUID(id) -> wisp.bad_request("ID de usuário inválido: " <> id)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
-fn handle_err(err: GetFellowBrigadeMembersError) {
-  let error_message = case err {
-    InvalidUUID(user_id) -> "ID de usuário inválido: " <> user_id
-    DataBaseError(db_err) -> {
-      case db_err {
-        pog.ConnectionUnavailable ->
-          "Conexão com o Banco de Dados não disponível"
-        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-        _ -> "Ocorreu um erro ao realizar a consulta no Banco de Dados"
-      }
-    }
-  }
-
-  wisp.internal_server_error()
-  |> wisp.set_body(wisp.Text(error_message))
-}
-
-type GetFellowBrigadeMembersError {
-  DataBaseError(pog.QueryError)
+/// Finding the user's crew can fail
+type GetCrewMembersError {
+  /// User has invalid Uuid fornmat
   InvalidUUID(String)
+  /// An error occurred while accessing the DataBase
+  DataBase(pog.QueryError)
 }

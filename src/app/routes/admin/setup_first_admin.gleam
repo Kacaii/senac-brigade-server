@@ -4,6 +4,7 @@ import app/web
 import app/web/context.{type Context}
 import argus
 import envoy
+import gleam/bool
 import gleam/dynamic/decode
 import gleam/http
 import gleam/list
@@ -74,6 +75,7 @@ fn handle_error(err: SetupAdminError) -> wisp.Response {
       wisp.bad_request(
         "O banco de dados precisa estar com a tabela de usuários vazia",
       )
+
     DataBaseReturnedEmptyRow(_) ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
@@ -85,9 +87,11 @@ fn handle_error(err: SetupAdminError) -> wisp.Response {
       |> wisp.set_body(wisp.Text(
         "Ocorreu um erro ao encriptografar a senha do usuário",
       ))
+
     IncorrectRequestToken(_) ->
       wisp.response(403)
       |> wisp.set_body(wisp.Text("Token Inválido"))
+
     MissingEnvToken ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
@@ -114,13 +118,10 @@ fn validate_admin_key(ctx: Context, key: String) -> Result(Nil, SetupAdminError)
     |> result.map_error(DataBaseReturnedEmptyRow),
   )
 
-  case key == admin_token, row.total {
-    // Correct token, empty database
-    True, 0 -> Ok(Nil)
-    // Invalid token
-    False, _ -> Error(IncorrectRequestToken(key))
-    // Database already have some user
-    _, _ -> Error(DataBaseNotEmpty)
+  use <- bool.guard(when: row.total > 0, return: Error(DataBaseNotEmpty))
+  case key == admin_token {
+    True -> Ok(Nil)
+    False -> Error(IncorrectRequestToken(key))
   }
 }
 
@@ -129,11 +130,18 @@ fn key_decoder() -> decode.Decoder(String) {
   decode.success(key)
 }
 
+/// Setting up default admin can fail
 type SetupAdminError {
+  /// Submitted the wrong access token
   IncorrectRequestToken(String)
+  /// Env has not been found
   MissingEnvToken
+  /// An error occurred while accessing the DataBase
   DataBaseError(pog.QueryError)
+  /// Failed to count how many users are registered
   DataBaseReturnedEmptyRow(Nil)
+  /// Database needs to be empty
   DataBaseNotEmpty
+  /// Failed to hash the admin password
   HashError
 }

@@ -1,6 +1,7 @@
 import app/routes/notification/sql
 import app/routes/occurrence/category
 import app/routes/user
+import app/web
 import app/web/context.{type Context}
 import gleam/dict
 import gleam/http
@@ -29,44 +30,26 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
-  case query_database(req, ctx) {
+  case try_query_database(req, ctx) {
     Error(err) -> handle_error(err)
-    Ok(preferences) -> wisp.json_response(json.to_string(preferences), 200)
+    Ok(body) -> wisp.json_response(body, 200)
   }
 }
 
 fn handle_error(err: GetNotificationPreferencesError) -> wisp.Response {
   case err {
-    AuthenticationFailed(err) -> user.handle_authentication_error(err)
-    DataBaseReturnedEmptyRow ->
-      wisp.bad_request("O Banco de Dados não retornou resultados")
-    DatabaseError(err) -> {
-      let err_message = case err {
-        //
-        //   Connection failed
-        pog.ConnectionUnavailable ->
-          "Conexão com o Banco de Dados não disponível"
-
-        //   Took too long
-        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-
-        // Fallback
-        _ -> "Ocorreu um erro ao acessar o Banco de Dados"
-      }
-
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(err_message))
-    }
+    AccessControl(err) -> user.handle_authentication_error(err)
+    DatabaseError(err) -> web.handle_database_error(err)
   }
 }
 
-fn query_database(
+fn try_query_database(
   req: wisp.Request,
   ctx: Context,
-) -> Result(json.Json, GetNotificationPreferencesError) {
+) -> Result(String, GetNotificationPreferencesError) {
   use user_uuid <- result.try(
     user.extract_uuid(request: req, cookie_name: user.uuid_cookie_name)
-    |> result.map_error(AuthenticationFailed),
+    |> result.map_error(AccessControl),
   )
 
   use returned <- result.try(
@@ -76,7 +59,6 @@ fn query_database(
 
   let preferences = {
     use acc, row <- list.fold(returned.rows, dict.new())
-
     let occ_category = case row.notification_type {
       sql.Emergency -> category.MedicEmergency
       sql.Fire -> category.Fire
@@ -87,11 +69,15 @@ fn query_database(
     dict.insert(acc, occ_category, row.enabled)
   }
 
-  Ok(json.dict(preferences, category.to_string, json.bool))
+  json.dict(preferences, category.to_string, json.bool)
+  |> json.to_string
+  |> Ok
 }
 
+/// Querying the user notification preferences can fail
 type GetNotificationPreferencesError {
-  DataBaseReturnedEmptyRow
-  AuthenticationFailed(user.AuthenticationError)
+  /// Authentication failed
+  AccessControl(user.AuthenticationError)
+  /// An error occurred while querying the DataBase
   DatabaseError(pog.QueryError)
 }
