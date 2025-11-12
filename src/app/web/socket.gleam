@@ -212,22 +212,22 @@ pub fn extract_uuid_mist(
   let cookies = request.get_cookies(req)
   let salt = <<ctx.secret_key_base:utf8>>
 
-  use hashed_uuid <- result.try(
+  use hashed_uuid <- try(
     list.key_find(cookies, user.uuid_cookie_name)
     |> result.replace_error(MissingCookie),
   )
 
-  use decrypted <- result.try(
+  use decrypted <- try(
     crypto.verify_signed_message(hashed_uuid, salt)
     |> result.replace_error(InvalidSignature),
   )
 
-  use maybe_uuid_str <- result.try(
+  use maybe_uuid_str <- try(
     bit_array.to_string(decrypted)
     |> result.replace_error(InvalidUtf8),
   )
 
-  use user_uuid <- result.try(
+  use user_uuid <- try(
     uuid.from_string(maybe_uuid_str)
     |> result.replace_error(InvalidUuid(maybe_uuid_str)),
   )

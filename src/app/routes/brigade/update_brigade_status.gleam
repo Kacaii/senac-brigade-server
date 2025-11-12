@@ -5,7 +5,7 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result
+import gleam/result.{try}
 import gleam/time/timestamp
 import pog
 import wisp
@@ -27,28 +27,34 @@ pub fn handle_request(
   id brigade_id: String,
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Put)
-  use json_data <- wisp.require_json(req)
+  use data <- wisp.require_json(req)
 
-  case decode.run(json_data, is_active_decoder()) {
-    Error(_) -> wisp.unprocessable_content()
-    Ok(is_active) -> {
+  let decoder = body_decoder()
+  case decode.run(data, decoder) {
+    Error(err) -> web.handle_decode_error(err)
+    Ok(is_active) ->
       case try_update_status(ctx, brigade_id, is_active) {
-        Ok(resp) -> wisp.json_response(json.to_string(resp), 200)
+        Ok(body) -> wisp.json_response(body, 200)
         Error(err) -> handle_error(err)
       }
-    }
   }
+}
+
+///   Updating a brigade status can fail
+type UpdateBrigadeStatusError {
+  /// Brigade contains invalid Uuid
+  InvalidUuid(String)
+  /// An error occurred while accessing the DataBase
+  DataBase(pog.QueryError)
+  /// Brigade not found in the DataBase
+  BrigadeNotFound(String)
 }
 
 fn handle_error(err: UpdateBrigadeStatusError) -> wisp.Response {
   case err {
-    InvalidBrigadeUuid(id) ->
-      wisp.unprocessable_content()
-      |> wisp.set_body(wisp.Text(
-        "Brigada de incêndio possui UUID Inválido: " <> id,
-      ))
-    UuidNotFound(id) -> wisp.bad_request("Equipe não encontrada: " <> id)
-    DataBaseError(err) -> web.handle_database_error(err)
+    InvalidUuid(id) -> wisp.bad_request("Equipe possui UUID Inválido: " <> id)
+    BrigadeNotFound(id) -> wisp.bad_request("Equipe não encontrada: " <> id)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -56,20 +62,22 @@ fn try_update_status(
   ctx: Context,
   id: String,
   is_active: Bool,
-) -> Result(json.Json, UpdateBrigadeStatusError) {
-  use brigade_uuid <- result.try(
-    uuid.from_string(id) |> result.replace_error(InvalidBrigadeUuid(id)),
-  )
-  use returned <- result.try(
-    sql.update_brigade_status(ctx.db, brigade_uuid, is_active)
-    |> result.map_error(DataBaseError),
-  )
-  use row <- result.try(
-    list.first(returned.rows)
-    |> result.replace_error(UuidNotFound(id)),
+) -> Result(String, UpdateBrigadeStatusError) {
+  use brigade_uuid <- try(
+    uuid.from_string(id) |> result.replace_error(InvalidUuid(id)),
   )
 
-  Ok(
+  use returned <- try(
+    sql.update_brigade_status(ctx.db, brigade_uuid, is_active)
+    |> result.map_error(DataBase),
+  )
+
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(BrigadeNotFound(id)),
+  )
+
+  json.to_string(
     json.object([
       #("id", json.string(uuid.to_string(row.id))),
       #("is_active", json.bool(row.is_active)),
@@ -78,13 +86,7 @@ fn try_update_status(
   )
 }
 
-fn is_active_decoder() -> decode.Decoder(Bool) {
+fn body_decoder() -> decode.Decoder(Bool) {
   use is_active <- decode.field("ativo", decode.bool)
   decode.success(is_active)
-}
-
-type UpdateBrigadeStatusError {
-  InvalidBrigadeUuid(String)
-  DataBaseError(pog.QueryError)
-  UuidNotFound(String)
 }
