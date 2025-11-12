@@ -38,9 +38,11 @@ import wisp
 
 /// 󱂇  Main request router - matches HTTP methods and paths to appropriate handlers
 /// All routes pass through middleware first for common processing
-pub fn handle_request(request: wisp.Request, ctx: Context) -> wisp.Response {
-  use request <- web.middleware(request: request, context: ctx)
-
+pub fn handle_request(
+  request request: wisp.Request,
+  ctx ctx: Context,
+) -> wisp.Response {
+  use request <- web.middleware(request:, context: ctx)
   case request.method, wisp.path_segments(request) {
     //   Security routes -------------------------------------------------
     http.Post, ["user", "login"] -> login.handle_request(request:, ctx:)

@@ -2,6 +2,7 @@ import app
 import app/web/context.{type Context, Context}
 import argv
 import dummy
+import envoy
 import gleam/erlang/process
 import gleam/int
 import gleam/io
@@ -85,7 +86,7 @@ fn setup_context() {
   let registry_name = process.new_name("registry")
 
   let assert Ok(config) = app.read_connection_uri(db_process_name)
-  let assert Ok(secret_key_base) = app.read_cookie_token()
+  let assert Ok(secret_key_base) = envoy.get("COOKIE_TOKEN")
 
   let db = pog.named_connection(db_process_name)
   let assert Ok(_) = pog.start(config)

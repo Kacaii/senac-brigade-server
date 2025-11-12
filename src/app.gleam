@@ -16,6 +16,7 @@ import app/web
 import app/web/context.{type Context, Context}
 import app/web/socket
 import envoy
+import gleam/bool
 import gleam/erlang/process
 import gleam/http
 import gleam/io
@@ -37,23 +38,20 @@ pub fn main() -> Nil {
   //   Setup the connection process name
   let db_process_name = process.new_name("db_conn")
 
-  // DATABASE POOL -------------------------------------------------------------
-  //   Database connection
-  let db = pog.named_connection(db_process_name)
-
   // SECRET KEYS ---------------------------------------------------------------
   // Used for signing and encryption
-  let assert Ok(secret_key_base) = read_cookie_token()
-    as "  Failed to read the cookie secret key"
+  let assert Ok(secret_key_base) = envoy.get("COOKIE_TOKEN")
+    as "  Cookie secret key is available"
 
   // Postgresql connection URI
   let assert Ok(pog_config) = read_connection_uri(db_process_name)
-    as "  Failed to read DataBase connection URI"
+    as "  DataBase connection URI is available"
+
   // Pass the application context to the router
   let ctx =
     Context(
       static_directory: static_directory(),
-      db:,
+      db: pog.named_connection(db_process_name),
       registry_name:,
       secret_key_base:,
     )
@@ -70,16 +68,9 @@ pub fn main() -> Nil {
       secret_key_base:,
       registry_name:,
     )
-    as "󰪋  Failed to start the application supervisor"
+    as "󰪋  Start the application supervision tree"
 
-  // ⏾ 󰒲
   process.sleep_forever()
-}
-
-///   Read the `COOKIE_TOKEN` enviroment variable
-pub fn read_cookie_token() -> Result(String, Nil) {
-  use cookie_token <- result.try(envoy.get("COOKIE_TOKEN"))
-  Ok(cookie_token)
 }
 
 ///   Read the `DATABASE_URL` environment variable and then
@@ -103,7 +94,7 @@ pub fn read_connection_uri(
 /// Access to static files
 pub fn static_directory() -> String {
   let assert Ok(priv_directory) = wisp.priv_directory("app")
-    as "Failed to access priv directory"
+    as "Erlang's priv directory is generated"
 
   priv_directory <> "/static"
 }
@@ -111,17 +102,14 @@ pub fn static_directory() -> String {
 /// Generate a default admin account if the user_account table is empty
 pub fn setup_admin(ctx: Context) {
   let assert Ok(returned) = admin_sql.count_total_users(ctx.db)
+    as "Check if the users table is empty"
   let assert Ok(row) = list.first(returned.rows)
+  use <- bool.guard(when: row.total != 0, return: Nil)
 
-  case row.total == 0 {
-    False -> Nil
-    True -> {
-      let setup_admin_req =
-        simulate.browser_request(http.Post, "/admin/setup")
-        |> simulate.json_body(json.object([#("key", json.string("admin"))]))
+  // Generate a default admin user
+  simulate.browser_request(http.Post, "/admin/setup")
+  |> simulate.json_body(json.object([#("key", json.string("admin"))]))
+  |> http_router.handle_request(request: _, ctx:)
 
-      http_router.handle_request(setup_admin_req, ctx)
-      io.println("  Administrador cadastrado com sucesso!")
-    }
-  }
+  io.println("  Administrador cadastrado com sucesso!")
 }

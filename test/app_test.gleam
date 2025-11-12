@@ -1,6 +1,7 @@
 import app
 import app/http_router
 import app/web/context.{type Context, Context}
+import envoy
 import gleam/erlang/process
 import gleam/http
 import gleeunit
@@ -22,7 +23,7 @@ pub fn global_data() -> Context {
     let registry_name = process.new_name("registry")
 
     let assert Ok(config) = app.read_connection_uri(db_process_name)
-    let assert Ok(secret_key_base) = app.read_cookie_token()
+    let assert Ok(secret_key_base) = envoy.get("COOKIE_TOKEN")
 
     let db = pog.named_connection(db_process_name)
     let assert Ok(_) = pog.start(config)
