@@ -93,10 +93,10 @@ fn ws_handler(
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> mist.Next(State, msg.Msg) {
   case msg {
+    mist.Closed | mist.Shutdown | mist.Text(":q") -> mist.stop()
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
     mist.Custom(msg) -> handle_msg(state, msg, ws_conn, ctx, registry)
-    mist.Closed | mist.Shutdown -> mist.stop()
   }
 }
 

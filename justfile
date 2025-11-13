@@ -53,10 +53,17 @@ prod:
     psql $DATABASE_URL -f priv/sql/create/functions.sql
     psql $DATABASE_URL -f priv/sql/create/views.sql
 
+# 󱊏  Rebuild the database and setup default admin
 [group('  dev')]
 @rebuild_full:
     just rebuild_empty
     just setup_admin
+
+#   Connect to the websocket. Requires cookies
+[group('  dev')]
+ws:
+    http --session=./session.json --form POST http://localhost:8000/user/login matricula='000' senha='aluno' confirma_senha='aluno'
+    http --session=./session.json ws://localhost:8000/ws
 
 [group('  gleam')]
 [group('  dev')]

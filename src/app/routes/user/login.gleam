@@ -5,9 +5,11 @@
 import app/routes/role
 import app/routes/user
 import app/routes/user/sql
+import app/web
 import app/web/context.{type Context}
 import argus
 import formal/form
+import gleam/bool
 import gleam/http/response
 import gleam/json
 import gleam/list
@@ -27,9 +29,11 @@ fn login_form() -> form.Form(LogIn) {
     use registration <- form.field("matricula", {
       form.parse_string |> form.check_not_empty()
     })
+
     use password <- form.field("senha", {
       form.parse_string |> form.check_not_empty()
     })
+
     form.success(LogIn(registration:, password:))
   })
 }
@@ -53,7 +57,7 @@ pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
     |> form.run
 
   case form_result {
-    Error(_) -> wisp.bad_request("Dados inválidos")
+    Error(_) -> wisp.unprocessable_content()
     Ok(login_data) ->
       handle_login(
         request:,
@@ -70,17 +74,12 @@ fn handle_login(
   login_data login_data: LogIn,
   cookie_name cookie_name: String,
 ) -> response.Response(wisp.Body) {
-  let login_result = query_login_token(login: login_data, ctx:)
-  case login_result {
+  case query_login_token(login: login_data, ctx:) {
     Ok(#(json_data, user_uuid)) -> {
-      //   Logs user authentication
+      //  
       log_login(login_data)
-
-      let resp = wisp.json_response(json.to_string(json_data), 200)
-
-      //   Store UUID cookie
       wisp.set_cookie(
-        response: resp,
+        response: wisp.json_response(json.to_string(json_data), 200),
         request: request,
         name: cookie_name,
         value: uuid.to_string(user_uuid),
@@ -90,41 +89,28 @@ fn handle_login(
       )
     }
 
-    //   Handle possible errors
     Error(err) -> handle_error(err)
   }
 }
 
-fn handle_error(err: LoginError) {
+fn handle_error(err: LoginError) -> response.Response(wisp.Body) {
   case err {
-    //   User errors --------------------------------------------------
     InvalidPassword ->
-      //   401 Not Authorized
-      wisp.response(401) |> wisp.set_body(wisp.Text("Senha incorreta"))
-    DataBaseReturnedEmptyRow ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Usuário não cadastrado"))
+      "Senha incorreta"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(401), _)
 
-    //   Server errors ------------------------------------------------
+    UserNotFound ->
+      "Usuário não cadastrado"
+      |> wisp.Text()
+      |> wisp.set_body(wisp.response(404), _)
+
     HashError ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Ocorreu um erro ao encriptografar a senha do usuário",
-      ))
+      "Ocorreu um erro ao encriptografar a senha do usuário"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(401), _)
 
-    //   Database Errors ------------------------------------------------------
-    DataBaseError(db_err) -> {
-      let internal_err_msg = case db_err {
-        pog.QueryTimeout -> "O Banco de Dados demorou muito para responder"
-        pog.ConnectionUnavailable ->
-          "Conexão com o Banco de Dados não disponível"
-        //   Unexpected errors
-        _ -> "Ocorreu um erro ao accessar o Banco de Dados"
-      }
-
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(internal_err_msg))
-    }
+    DataBaseError(err) -> web.handle_database_error(err)
   }
 }
 
@@ -140,7 +126,7 @@ fn log_login(login: LogIn) -> Nil {
 /// Login can fail
 type LoginError {
   ///   Database couldn't find target registration
-  DataBaseReturnedEmptyRow
+  UserNotFound
   ///   Something went wrong on the database
   DataBaseError(pog.QueryError)
   /// 󰣮  Provided password didnt _match_ the one inside our Database
@@ -159,33 +145,17 @@ fn query_login_token(login data: LogIn, ctx ctx: Context) {
 
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(DataBaseReturnedEmptyRow),
+    |> result.replace_error(UserNotFound),
   )
 
-  use is_correct_password <- result.try(
+  use correct_password <- result.try(
     argus.verify(row.password_hash, data.password)
     |> result.replace_error(HashError),
   )
 
-  let user_role =
-    row.user_role
-    |> enum_to_role
+  use <- bool.guard(correct_password == False, Error(InvalidPassword))
 
-  let json_data =
-    json.object([
-      #("id", json.string(uuid.to_string(row.id))),
-      #("role", json.string(role.to_string_pt_br(user_role))),
-    ])
-
-  case is_correct_password {
-    // Return the user's uuid
-    True -> Ok(#(json_data, row.id))
-    False -> Error(InvalidPassword)
-  }
-}
-
-fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
-  case user_role {
+  let user_role = case row.user_role {
     sql.Admin -> role.Admin
     sql.Analyst -> role.Analyst
     sql.Captain -> role.Captain
@@ -193,4 +163,12 @@ fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
     sql.Firefighter -> role.Firefighter
     sql.Sargeant -> role.Sargeant
   }
+
+  let json_data =
+    json.object([
+      #("id", json.string(uuid.to_string(row.id))),
+      #("role", json.string(role.to_string_pt_br(user_role))),
+    ])
+
+  Ok(#(json_data, row.id))
 }
