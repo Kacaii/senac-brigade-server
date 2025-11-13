@@ -293,17 +293,23 @@ fn fetch_brigades(
   list.map(returned.rows, fn(row) { row.brigade_id })
 }
 
-fn fetch_categories(ctx: Context, for: uuid.Uuid) {
+fn fetch_categories(
+  ctx: Context,
+  for: uuid.Uuid,
+) -> Result(List(category.Category), pog.QueryError) {
   use returned <- result.try(notif_sql.query_active_notifications(ctx.db, for))
-  Ok({
-    use row <- list.map(returned.rows)
-    case row.notification_type {
-      notif_sql.Emergency -> category.MedicEmergency
-      notif_sql.Fire -> category.Fire
-      notif_sql.Other -> category.Other
-      notif_sql.Traffic -> category.TrafficAccident
-    }
-  })
+
+  let categories =
+    list.map(returned.rows, fn(row) {
+      case row.notification_type {
+        notif_sql.Emergency -> category.MedicEmergency
+        notif_sql.Fire -> category.Fire
+        notif_sql.Other -> category.Other
+        notif_sql.Traffic -> category.TrafficAccident
+      }
+    })
+
+  Ok(categories)
 }
 
 // ON CLOSE --------------------------------------------------------------------
