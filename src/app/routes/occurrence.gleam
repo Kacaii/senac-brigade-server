@@ -29,9 +29,9 @@ pub fn broadcast(
 
 ///   Call `notify_user_assignment` on multiple users
 pub fn broadcast_assignments(
+  registry registry: group_registry.GroupRegistry(msg.Msg),
   assigned_users id_list: List(uuid.Uuid),
   to occurrence_id: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   use id <- list.each(id_list)
   notify_user_assignment(assigned: id, to: occurrence_id, registry:)
@@ -39,22 +39,22 @@ pub fn broadcast_assignments(
 
 ///   Notify a member that their brigade was assigned to an occurrence.
 pub fn notify_user_assignment(
-  assigned user_id: uuid.Uuid,
-  to occurrence_id: uuid.Uuid,
   registry registry: group_registry.GroupRegistry(msg.Msg),
+  assigned id: uuid.Uuid,
+  to occ: uuid.Uuid,
 ) -> Nil {
-  let members = group_registry.members(registry, uuid.to_string(user_id))
+  let members = group_registry.members(registry, uuid.to_string(id))
   use subject <- list.each(members)
-  process.send(subject, msg.UserAssignedToOccurrence(user_id:, occurrence_id:))
+  process.send(subject, msg.UserAssignedToOccurrence(assigned: id, to: occ))
 }
 
 ///   Notify subscribed users that a new occurrence has been added
 pub fn notify_new_occurrence(
-  new occ_id: uuid.Uuid,
-  of occ_type: category.Category,
   registry registry: group_registry.GroupRegistry(msg.Msg),
+  new id: uuid.Uuid,
+  of category: category.Category,
 ) -> Nil {
   let members = group_registry.members(registry, socket.ws_topic)
   use subject <- list.each(members)
-  process.send(subject, msg.NewOccurrence(occ_id:, occ_type:))
+  process.send(subject, msg.NewOccurrence(id:, category:))
 }

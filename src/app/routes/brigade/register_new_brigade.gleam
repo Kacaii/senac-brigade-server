@@ -8,7 +8,7 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result.{try}
+import gleam/result
 import gleam/time/timestamp
 import group_registry
 import pog
@@ -118,7 +118,7 @@ fn try_register_brigade(
   ctx ctx: Context,
   body body: RequestBody,
 ) -> Result(String, RegisterBrigadeError) {
-  use _ <- try(
+  use _ <- result.try(
     user.check_role_authorization(
       request:,
       ctx:,
@@ -128,7 +128,7 @@ fn try_register_brigade(
     |> result.map_error(AccessError),
   )
 
-  use returned <- try(
+  use returned <- result.try(
     sql.insert_new_brigade(
       ctx.db,
       body.leader_id,
@@ -139,12 +139,12 @@ fn try_register_brigade(
     |> result.map_error(DataBase),
   )
 
-  use row <- try(
+  use row <- result.try(
     list.first(returned.rows)
     |> result.replace_error(BrigadeNotFound),
   )
 
-  use assigned_members <- try(try_assign_members(
+  use assigned_members <- result.map(try_assign_members(
     ctx:,
     to: row.id,
     assign: body.members_id,
@@ -155,13 +155,13 @@ fn try_register_brigade(
       uuid.to_string(member) |> json.string
     })
 
-  json.object([
-    #("id", json.string(uuid.to_string(row.id))),
-    #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
-    #("members", members_json),
-  ])
-  |> json.to_string
-  |> Ok
+  json.to_string(
+    json.object([
+      #("id", json.string(uuid.to_string(row.id))),
+      #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+      #("members", members_json),
+    ]),
+  )
 }
 
 fn try_assign_members(

@@ -27,23 +27,23 @@ pub fn broadcast(
 
 /// 󱥁  Notify an user that they were assigned to a brigade
 pub fn notify_user_assignment(
+  registry registry: group_registry.GroupRegistry(msg.Msg),
   assigned user_id: uuid.Uuid,
   to brigade_id: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   let members = group_registry.members(registry, uuid.to_string(user_id))
 
   use subject <- list.each(members)
-  let msg = msg.UserAssignedToBrigade(user_id:, brigade_id:)
+  let msg = msg.UserAssignedToBrigade(assigned: user_id, to: brigade_id)
   process.send(subject, msg)
 }
 
 ///   Call `notify_user_assignment` on multiple users
 pub fn broadcast_assignments(
+  registry registry: group_registry.GroupRegistry(msg.Msg),
   assigned_members user_id_list: List(uuid.Uuid),
   to brigade_id: uuid.Uuid,
-  registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   use user_id <- list.each(user_id_list)
-  notify_user_assignment(user_id, brigade_id, registry)
+  notify_user_assignment(registry:, assigned: user_id, to: brigade_id)
 }

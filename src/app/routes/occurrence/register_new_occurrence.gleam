@@ -13,7 +13,7 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result.{try}
+import gleam/result
 import gleam/time/timestamp
 import group_registry
 import pog
@@ -153,12 +153,12 @@ fn insert_occurrence(
   ctx ctx: Context,
   body body: RegisterOccurrenceBody,
 ) -> Result(String, RegisterNewOccurrenceError) {
-  use applicant_uuid <- try(
+  use applicant_uuid <- result.try(
     user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessControl),
   )
 
-  use returned <- try(
+  use returned <- result.try(
     sql.insert_new_occurence(
       ctx.db,
       applicant_uuid,
@@ -172,7 +172,7 @@ fn insert_occurrence(
     |> result.map_error(DataBase),
   )
 
-  use row <- try(case list.first(returned.rows) {
+  use row <- result.try(case list.first(returned.rows) {
     Error(_) -> Error(OccurrenceNotCreated)
     Ok(row) -> Ok(row)
   })
@@ -223,7 +223,7 @@ fn try_assign_brigades(
   assign brigades_id: List(uuid.Uuid),
   to occurrence_id: uuid.Uuid,
 ) -> Result(List(uuid.Uuid), RegisterNewOccurrenceError) {
-  use returned <- try(
+  use returned <- result.try(
     sql.assign_brigades_to_occurrence(ctx.db, occurrence_id, brigades_id)
     |> result.map_error(DataBase),
   )
@@ -233,8 +233,8 @@ fn try_assign_brigades(
     row.inserted_brigade_id
   }
 
-  use assigned_users <- try({
-    use returned <- try(
+  use assigned_users <- result.try({
+    use returned <- result.try(
       sql.query_participants(ctx.db, occurrence_id)
       |> result.map_error(DataBase),
     )

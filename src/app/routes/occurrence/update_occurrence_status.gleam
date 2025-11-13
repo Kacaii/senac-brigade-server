@@ -7,7 +7,7 @@ import app/web/socket/message as msg
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result.{try}
+import gleam/result
 import gleam/time/timestamp
 import group_registry
 import pog
@@ -60,17 +60,17 @@ fn try_resolve_occurrence(
   ctx: Context,
   occ_id: String,
 ) -> Result(String, ResolveOccurrenceError) {
-  use _ <- try(
+  use _ <- result.try(
     user.extract_uuid(request: req, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessControl),
   )
 
-  use target <- try(
+  use target <- result.try(
     uuid.from_string(occ_id)
     |> result.replace_error(InvalidUuid(occ_id)),
   )
 
-  use returned <- try(
+  use returned <- result.try(
     sql.resolve_occurrence(ctx.db, target)
     |> result.map_error(DataBaseError),
   )
@@ -79,11 +79,6 @@ fn try_resolve_occurrence(
     list.first(returned.rows)
     |> result.replace_error(OccurrenceNotFound(target)),
   )
-
-  let timestamp_json =
-    json.nullable(row.resolved_at, fn(time) {
-      timestamp.to_unix_seconds(time) |> json.float
-    })
 
   //   Broadcast to all assigned users ----------------------------------------
   let _ =
@@ -95,6 +90,11 @@ fn try_resolve_occurrence(
     )
 
   // RESPONSE
+  let timestamp_json =
+    json.nullable(row.resolved_at, fn(time) {
+      timestamp.to_unix_seconds(time) |> json.float
+    })
+
   json.to_string(
     json.object([
       #("id", json.string(uuid.to_string(row.id))),
@@ -109,17 +109,17 @@ fn try_reopen_occurrence(
   ctx: Context,
   occ_id: String,
 ) -> Result(String, ResolveOccurrenceError) {
-  use _ <- try(
+  use _ <- result.try(
     user.extract_uuid(request: req, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessControl),
   )
 
-  use target <- try(
+  use target <- result.try(
     uuid.from_string(occ_id)
     |> result.replace_error(InvalidUuid(occ_id)),
   )
 
-  use returned <- try(
+  use returned <- result.try(
     sql.reopen_occurrence(ctx.db, target)
     |> result.map_error(DataBaseError),
   )
@@ -128,6 +128,15 @@ fn try_reopen_occurrence(
     list.first(returned.rows)
     |> result.replace_error(OccurrenceNotFound(target)),
   )
+
+  //   Broadcast to all assigned users ----------------------------------------
+  let _ =
+    occurrence.broadcast(
+      ctx:,
+      registry: group_registry.get_registry(ctx.registry_name),
+      occurrence: row.id,
+      message: msg.OccurrenceReopened(id: row.id, when: row.resolved_at),
+    )
 
   let timestamp_json =
     json.nullable(row.resolved_at, fn(time) {

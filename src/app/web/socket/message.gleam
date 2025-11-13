@@ -8,13 +8,15 @@ pub type Msg {
   /// 󱥁  Broadcast a text message
   Broadcast(String)
   /// 󰿄  User was assigned to a brigade
-  UserAssignedToBrigade(user_id: uuid.Uuid, brigade_id: uuid.Uuid)
+  UserAssignedToBrigade(assigned: uuid.Uuid, to: uuid.Uuid)
   /// 󰿄  Member of a brigade was assigned to a occurrence
-  UserAssignedToOccurrence(user_id: uuid.Uuid, occurrence_id: uuid.Uuid)
+  UserAssignedToOccurrence(assigned: uuid.Uuid, to: uuid.Uuid)
   ///   A new occurrence has been created
-  NewOccurrence(occ_id: uuid.Uuid, occ_type: category.Category)
+  NewOccurrence(id: uuid.Uuid, category: category.Category)
   ///   An occurrence has been marked as resolved
   OccurrenceResolved(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
+  ///   An occurrence has been reopened
+  OccurrenceReopened(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
   ///   Everyone replies with pong! Useful for checking active connections
   Ping
 }

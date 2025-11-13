@@ -126,31 +126,31 @@ fn handle_msg(
       )
     }
 
-    msg.UserAssignedToBrigade(user_id:, brigade_id:) ->
+    msg.UserAssignedToBrigade(assigned:, to:) ->
       send_envelope(
         state:,
         conn:,
         data_type: "brigade:assigned",
         data: json.object([
-          #("user_id", uuid.to_string(user_id) |> json.string),
-          #("brigade_id", uuid.to_string(brigade_id) |> json.string),
+          #("user_id", uuid.to_string(assigned) |> json.string),
+          #("brigade_id", uuid.to_string(to) |> json.string),
         ]),
       )
 
-    msg.UserAssignedToOccurrence(user_id:, occurrence_id:) ->
+    msg.UserAssignedToOccurrence(assigned:, to:) ->
       send_envelope(
         state:,
         conn:,
         data_type: "occurrence:assigned",
         data: json.object([
-          #("user_id", uuid.to_string(user_id) |> json.string),
-          #("occurrence_id", uuid.to_string(occurrence_id) |> json.string),
+          #("user_id", uuid.to_string(assigned) |> json.string),
+          #("occurrence_id", uuid.to_string(to) |> json.string),
         ]),
       )
 
-    msg.NewOccurrence(occ_id:, occ_type:) -> {
+    msg.NewOccurrence(id:, category:) -> {
       use <- bool.guard(
-        when: list.any(state.subscribed, fn(sub) { sub == occ_type }),
+        when: list.any(state.subscribed, fn(sub) { sub == category }),
         return: mist.continue(state),
       )
 
@@ -159,22 +159,39 @@ fn handle_msg(
         conn:,
         data_type: "occurrence:new",
         data: json.object([
-          #("id", json.string(uuid.to_string(occ_id))),
-          #("occ_type", json.string(category.to_string_pt_br(occ_type))),
+          #("id", json.string(uuid.to_string(id))),
+          #("occ_type", json.string(category.to_string_pt_br(category))),
         ]),
       )
     }
 
     msg.OccurrenceResolved(id:, when:) -> {
-      let timestamp_json =
-        json.nullable(when, fn(time) {
-          timestamp.to_unix_seconds(time) |> json.float
-        })
+      let timestamp_json = {
+        use time <- json.nullable(when)
+        timestamp.to_unix_seconds(time) |> json.float
+      }
 
       send_envelope(
         state:,
         conn:,
         data_type: "occurrence:resolved",
+        data: json.object([
+          #("id", json.string(uuid.to_string(id))),
+          #("timestamp", timestamp_json),
+        ]),
+      )
+    }
+
+    msg.OccurrenceReopened(id:, when:) -> {
+      let timestamp_json = {
+        use time <- json.nullable(when)
+        timestamp.to_unix_seconds(time) |> json.float
+      }
+
+      send_envelope(
+        state:,
+        conn:,
+        data_type: "occurrence:reopened",
         data: json.object([
           #("id", json.string(uuid.to_string(id))),
           #("timestamp", timestamp_json),

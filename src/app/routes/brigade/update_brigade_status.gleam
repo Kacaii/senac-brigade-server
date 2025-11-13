@@ -5,7 +5,7 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/list
-import gleam/result.{try}
+import gleam/result
 import gleam/time/timestamp
 import pog
 import wisp
@@ -63,11 +63,11 @@ fn try_update_status(
   id: String,
   is_active: Bool,
 ) -> Result(String, UpdateBrigadeStatusError) {
-  use brigade_uuid <- try(
+  use brigade_uuid <- result.try(
     uuid.from_string(id) |> result.replace_error(InvalidUuid(id)),
   )
 
-  use returned <- try(
+  use returned <- result.try(
     sql.update_brigade_status(ctx.db, brigade_uuid, is_active)
     |> result.map_error(DataBase),
   )
