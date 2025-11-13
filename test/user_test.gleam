@@ -52,10 +52,7 @@ pub fn signup_test() {
   let ctx = app_test.global_data()
   use _ <- list.each(list.range(1, app_test.n_tests))
 
-  // START ---------------------------------------------------------------------
   let dummy_password = wisp.random_string(10)
-
-  // Try to create an user for every available user role
   let req =
     simulate.browser_request(http.Post, "/admin/signup")
     |> simulate.form_body([
@@ -90,66 +87,76 @@ pub fn signup_test() {
 
   // 󰃢  CLEANUP ----------------------------------------------------------------
   let assert Ok(_) = dev_sql.soft_truncate_user_account(ctx.db)
+}
 
-  // REGISTRATION ALREADY TAKEN ------------------------------------------------
-  {
-    let taken_registration = "000"
-    let req =
-      simulate.browser_request(http.Post, "/admin/signup")
-      |> simulate.form_body([
-        #("nome", wisp.random_string(10)),
-        #("matricula", taken_registration),
-        #("telefone", int.random(9_999_999_999) |> int.to_string),
-        #("email", wisp.random_string(5) <> "@email.com"),
-        #("senha", dummy_password),
-        #("confirma_senha", dummy_password),
-        #("cargo", role.to_string_pt_br(role.Firefighter)),
-      ])
+pub fn signup_registration_taken_test() {
+  let ctx = app_test.global_data()
 
-    let with_auth = app_test.with_authorization(next: req)
-    let resp = http_router.handle_request(with_auth, ctx)
-    assert resp.status == 409 as "Registration should be unique"
-  }
+  let dummy_pswd = wisp.random_string(10)
+  let taken_registration = "000"
 
-  // EMAIL ALREADY TAKEN -------------------------------------------------------
-  {
-    let taken_email = "admin@email.com"
-    let req =
-      simulate.browser_request(http.Post, "/admin/signup")
-      |> simulate.form_body([
-        #("nome", wisp.random_string(10)),
-        #("matricula", int.random(111) |> int.to_string),
-        #("telefone", int.random(9_999_999_999) |> int.to_string),
-        #("email", taken_email),
-        #("senha", dummy_password),
-        #("confirma_senha", dummy_password),
-        #("cargo", role.to_string_pt_br(role.Firefighter)),
-      ])
+  let req =
+    simulate.browser_request(http.Post, "/admin/signup")
+    |> simulate.form_body([
+      #("nome", wisp.random_string(10)),
+      #("matricula", taken_registration),
+      #("telefone", int.random(9_999_999_999) |> int.to_string),
+      #("email", wisp.random_string(5) <> "@email.com"),
+      #("senha", dummy_pswd),
+      #("confirma_senha", dummy_pswd),
+      #("cargo", role.to_string_pt_br(dummy.random_role())),
+    ])
 
-    let with_auth = app_test.with_authorization(next: req)
-    let resp = http_router.handle_request(with_auth, ctx)
-    assert resp.status == 409 as "Email should be unique"
-  }
+  let with_auth = app_test.with_authorization(next: req)
+  let resp = http_router.handle_request(with_auth, ctx)
 
-  // PHONE ALREADY TAKEN -------------------------------------------------------
-  {
-    let taken_phone = "0000000000"
-    let req =
-      simulate.browser_request(http.Post, "/admin/signup")
-      |> simulate.form_body([
-        #("nome", wisp.random_string(10)),
-        #("matricula", int.random(111) |> int.to_string),
-        #("telefone", taken_phone),
-        #("email", wisp.random_string(5) <> "@email.com"),
-        #("senha", dummy_password),
-        #("confirma_senha", dummy_password),
-        #("cargo", role.to_string_pt_br(role.Firefighter)),
-      ])
+  assert resp.status == 409 as "Registration should be unique"
+}
 
-    let with_auth = app_test.with_authorization(next: req)
-    let resp = http_router.handle_request(with_auth, ctx)
-    assert resp.status == 409 as "Phone should be unique"
-  }
+pub fn signup_email_taken_test() {
+  let ctx = app_test.global_data()
+
+  let dummy_pswd = wisp.random_string(10)
+  let taken_email = "admin@email.com"
+
+  let req =
+    simulate.browser_request(http.Post, "/admin/signup")
+    |> simulate.form_body([
+      #("nome", wisp.random_string(10)),
+      #("matricula", int.random(111) |> int.to_string),
+      #("telefone", int.random(9_999_999_999) |> int.to_string),
+      #("email", taken_email),
+      #("senha", dummy_pswd),
+      #("confirma_senha", dummy_pswd),
+      #("cargo", role.to_string_pt_br(dummy.random_role())),
+    ])
+
+  let with_auth = app_test.with_authorization(next: req)
+  let resp = http_router.handle_request(with_auth, ctx)
+  assert resp.status == 409 as "Email should be unique"
+}
+
+pub fn signup_phone_taken_test() {
+  let ctx = app_test.global_data()
+
+  let dummy_pswd = wisp.random_string(10)
+  let taken_phone = "0000000000"
+
+  let req =
+    simulate.browser_request(http.Post, "/admin/signup")
+    |> simulate.form_body([
+      #("nome", wisp.random_string(10)),
+      #("matricula", int.random(111) |> int.to_string),
+      #("telefone", taken_phone),
+      #("email", wisp.random_string(5) <> "@email.com"),
+      #("senha", dummy_pswd),
+      #("confirma_senha", dummy_pswd),
+      #("cargo", role.to_string_pt_br(dummy.random_role())),
+    ])
+
+  let with_auth = app_test.with_authorization(next: req)
+  let resp = http_router.handle_request(with_auth, ctx)
+  assert resp.status == 409 as "Phone should be unique"
 }
 
 pub fn get_all_users_test() {

@@ -38,21 +38,20 @@ pub fn handle_request(
     |> form.run
 
   case form_result {
-    //   User errors ----------------------------------------------------------
     Error(_) -> wisp.unprocessable_content()
+    Ok(body) -> handle_body(req, body, ctx)
+  }
+}
 
-    //   Valid form
-    Ok(signup) -> {
-      case try_insert_into_database(request: req, ctx:, signup:) {
-        Ok(new_user) -> {
-          log_signup(signup)
-          wisp.json_response(json.to_string(new_user), 201)
-        }
-
-        //   Server errors ----------------------------------------------------
-        Error(err) -> handle_error(req, err)
-      }
+fn handle_body(req: wisp.Request, body: SignUp, ctx: Context) -> wisp.Response {
+  case try_insert_into_database(request: req, ctx:, signup: body) {
+    Ok(new_user) -> {
+      log_signup(body)
+      wisp.json_response(new_user, 201)
     }
+
+    //   Server errors ----------------------------------------------------
+    Error(err) -> handle_error(req, err)
   }
 }
 
@@ -62,7 +61,7 @@ fn try_insert_into_database(
   request request: wisp.Request,
   signup data: SignUp,
   ctx ctx: Context,
-) -> Result(json.Json, SignupError) {
+) -> Result(String, SignupError) {
   use _ <- result.try(
     user.check_role_authorization(
       request:,
@@ -103,6 +102,7 @@ fn try_insert_into_database(
   )
 
   json.object([#("id", json.string(uuid.to_string(row.id)))])
+  |> json.to_string
 }
 
 type SignUp {
