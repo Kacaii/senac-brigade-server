@@ -1,5 +1,7 @@
+import app/routes/notification/sql as notif_sql
 import app/routes/occurrence/category
 import app/routes/user
+import app/routes/user/sql as user_sql
 import app/web/context.{type Context}
 import app/web/socket/envelope
 import app/web/socket/message as msg
@@ -7,7 +9,6 @@ import gleam/bit_array
 import gleam/bool
 import gleam/bytes_tree
 import gleam/crypto
-import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
@@ -19,6 +20,7 @@ import gleam/result
 import gleam/time/timestamp
 import group_registry
 import mist
+import pog
 import youid/uuid
 
 pub const ws_topic = "active_users"
@@ -56,6 +58,8 @@ pub opaque type State {
     user_uuid: uuid.Uuid,
     /// 󱥁  Notifications that the user wants to receive
     subscribed: List(category.Category),
+    ///   Brigades that an user has been assigned to
+    brigade_list: List(uuid.Uuid),
   )
 }
 
@@ -91,12 +95,12 @@ fn ws_handler(
   case msg {
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
-    mist.Custom(msg) -> handle_custom_msg(state, msg, ws_conn, ctx, registry)
+    mist.Custom(msg) -> handle_msg(state, msg, ws_conn, ctx, registry)
     mist.Closed | mist.Shutdown -> mist.stop()
   }
 }
 
-fn handle_custom_msg(
+fn handle_msg(
   state: State,
   msg: msg.Msg,
   conn: mist.WebsocketConnection,
@@ -238,8 +242,8 @@ pub fn extract_uuid_mist(
 
 fn ws_on_init(
   conn _conn: mist.WebsocketConnection,
-  req req: request.Request(mist.Connection),
-  ctx _ctx: Context,
+  req _req: request.Request(mist.Connection),
+  ctx ctx: Context,
   user_uuid user_uuid: uuid.Uuid,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> #(State, option.Option(process.Selector(msg.Msg))) {
@@ -254,24 +258,18 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
-  let subscribed =
-    read_body(req)
-    |> result.unwrap("")
-    |> parse_body
+  let brigade_list =
+    fetch_brigades(ctx, user_uuid)
     |> result.unwrap([])
 
-  #(State(user_uuid:, subscribed:), option.Some(selector))
+  let subscribed =
+    fetch_categories(ctx, user_uuid)
+    |> result.unwrap([])
+
+  #(State(user_uuid:, subscribed:, brigade_list:), option.Some(selector))
 }
 
-fn parse_body(body: String) -> Result(List(category.Category), json.DecodeError) {
-  json.parse(body, {
-    let category_list_decoder = decode.list(category.decoder_pt_br())
-    use subscribe_to <- decode.field("subscribe", category_list_decoder)
-    decode.success(subscribe_to)
-  })
-}
-
-fn read_body(
+pub fn read_body(
   req: request.Request(mist.Connection),
 ) -> Result(String, mist.ReadError) {
   let req_result =
@@ -280,10 +278,32 @@ fn read_body(
     |> result.unwrap(0)
     |> mist.read_body(req, _)
 
-  use req <- result.map(req_result)
-  req.body
-  |> bit_array.to_string
-  |> result.unwrap("")
+  result.map(req_result, fn(req) {
+    req.body
+    |> bit_array.to_string
+    |> result.unwrap("")
+  })
+}
+
+fn fetch_brigades(
+  ctx: Context,
+  for: uuid.Uuid,
+) -> Result(List(uuid.Uuid), pog.QueryError) {
+  use returned <- result.map(user_sql.query_user_brigades(ctx.db, for))
+  list.map(returned.rows, fn(row) { row.brigade_id })
+}
+
+fn fetch_categories(ctx: Context, for: uuid.Uuid) {
+  use returned <- result.try(notif_sql.query_active_notifications(ctx.db, for))
+  Ok({
+    use row <- list.map(returned.rows)
+    case row.notification_type {
+      notif_sql.Emergency -> category.MedicEmergency
+      notif_sql.Fire -> category.Fire
+      notif_sql.Other -> category.Other
+      notif_sql.Traffic -> category.TrafficAccident
+    }
+  })
 }
 
 // ON CLOSE --------------------------------------------------------------------

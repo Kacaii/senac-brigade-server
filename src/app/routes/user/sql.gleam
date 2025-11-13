@@ -286,6 +286,41 @@ WHERE ob.occurrence_id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `query_user_brigades` query
+/// defined in `./src/app/routes/user/sql/query_user_brigades.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryUserBrigadesRow {
+  QueryUserBrigadesRow(brigade_id: Uuid)
+}
+
+///    Find all brigades an user is assigned to
+///
+/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_user_brigades(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(QueryUserBrigadesRow), pog.QueryError) {
+  let decoder = {
+    use brigade_id <- decode.field(0, uuid_decoder())
+    decode.success(QueryUserBrigadesRow(brigade_id:))
+  }
+
+  "--    Find all brigades an user is assigned to
+SELECT bm.brigade_id
+FROM public.brigade_membership AS bm
+WHERE bm.user_id = $1;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `query_user_id_by_registration` query
 /// defined in `./src/app/routes/user/sql/query_user_id_by_registration.sql`.
 ///

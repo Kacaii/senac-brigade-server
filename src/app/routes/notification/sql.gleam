@@ -8,6 +8,43 @@ import gleam/dynamic/decode
 import pog
 import youid/uuid.{type Uuid}
 
+/// A row you get from running the `query_active_notifications` query
+/// defined in `./src/app/routes/notification/sql/query_active_notifications.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type QueryActiveNotificationsRow {
+  QueryActiveNotificationsRow(notification_type: NotificationTypeEnum)
+}
+
+///   Find the active notifications from an user
+///
+/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub fn query_active_notifications(
+  db: pog.Connection,
+  arg_1: Uuid,
+) -> Result(pog.Returned(QueryActiveNotificationsRow), pog.QueryError) {
+  let decoder = {
+    use notification_type <- decode.field(0, notification_type_enum_decoder())
+    decode.success(QueryActiveNotificationsRow(notification_type:))
+  }
+
+  "--   Find the active notifications from an user
+SELECT np.notification_type
+FROM public.user_notification_preference AS np
+WHERE
+    np.user_id = $1
+    AND np.enabled = TRUE;
+"
+  |> pog.query
+  |> pog.parameter(pog.text(uuid.to_string(arg_1)))
+  |> pog.returning(decoder)
+  |> pog.execute(db)
+}
+
 /// A row you get from running the `query_notification_preferences` query
 /// defined in `./src/app/routes/notification/sql/query_notification_preferences.sql`.
 ///

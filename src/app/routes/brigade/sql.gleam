@@ -41,10 +41,9 @@ FROM public.assign_brigade_members($1, $2) AS b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.array(
-    fn(value) { pog.text(uuid.to_string(value)) },
-    arg_2,
-  ))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
@@ -354,10 +353,9 @@ FROM public.replace_brigade_members($1, $2) AS b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
-  |> pog.parameter(pog.array(
-    fn(value) { pog.text(uuid.to_string(value)) },
-    arg_2,
-  ))
+  |> pog.parameter(
+    pog.array(fn(value) { pog.text(uuid.to_string(value)) }, arg_2),
+  )
   |> pog.returning(decoder)
   |> pog.execute(db)
 }
