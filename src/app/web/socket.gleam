@@ -226,7 +226,7 @@ fn handle_msg(
   }
 }
 
-pub fn send_envelope(
+fn send_envelope(
   state state: State,
   conn conn: mist.WebsocketConnection,
   data_type data_type: String,
@@ -250,7 +250,7 @@ pub fn send_envelope(
   }
 }
 
-pub fn extract_uuid_mist(
+fn extract_uuid_mist(
   req: request.Request(mist.Connection),
   ctx: Context,
 ) -> Result(uuid.Uuid, WebSocketError) {
@@ -303,22 +303,7 @@ fn ws_on_init(
   #(state, option.Some(selector))
 }
 
-pub fn read_body(
-  req: request.Request(mist.Connection),
-) -> Result(String, mist.ReadError) {
-  let req_result =
-    request.get_header(req, "content-length")
-    |> result.try(int.parse)
-    |> result.unwrap(0)
-    |> mist.read_body(req, _)
-
-  result.map(req_result, fn(req) {
-    req.body
-    |> bit_array.to_string
-    |> result.unwrap("")
-  })
-}
-
+/// 󰀖  Find all brigades that an user is assigned to
 fn fetch_brigades(
   ctx: Context,
   for: uuid.Uuid,
@@ -327,6 +312,7 @@ fn fetch_brigades(
   list.map(returned.rows, fn(row) { row.brigade_id })
 }
 
+/// 󰩉  Find all occurrence categories an user wants to be notified of
 fn fetch_categories(
   ctx: Context,
   for: uuid.Uuid,
@@ -401,4 +387,20 @@ fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) 
         _ -> build_error_response("Falha ao acessar o banco de dados", 500)
       }
   }
+}
+
+pub fn read_body(
+  req: request.Request(mist.Connection),
+) -> Result(String, mist.ReadError) {
+  let req_result =
+    request.get_header(req, "content-length")
+    |> result.try(int.parse)
+    |> result.unwrap(0)
+    |> mist.read_body(req, _)
+
+  result.map(req_result, fn(req) {
+    req.body
+    |> bit_array.to_string
+    |> result.unwrap("")
+  })
 }
