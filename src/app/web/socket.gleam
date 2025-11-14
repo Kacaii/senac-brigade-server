@@ -35,6 +35,8 @@ pub opaque type WebSocketError {
   InvalidUtf8
   /// 󰘨  Session token has invalid Uuid fomat
   InvalidUuid(String)
+  /// 󰆼  Failed to access the DataBase
+  Database(pog.QueryError)
 }
 
 /// 󱘖  Stabilishes a websocket connection with the client
@@ -69,26 +71,49 @@ fn handle_connection(
   user_uuid: uuid.Uuid,
   registry: group_registry.GroupRegistry(msg.Msg),
 ) -> response.Response(mist.ResponseData) {
-  let handler =
-    mist.websocket(
-      request: req,
-      on_init: ws_on_init(_, req, ctx, user_uuid, registry),
-      on_close: ws_on_close(_, ctx, registry),
-      handler: fn(state, msg, conn) {
-        ws_handler(state, msg, conn, ctx, registry)
-      },
-    )
+  case setup_initial_state(ctx, user_uuid) {
+    Error(err) -> handle_ws_error(err)
+    Ok(state) ->
+      case request.path_segments(req) {
+        ["ws"] ->
+          mist.websocket(
+            request: req,
+            on_init: ws_on_init(_, req:, ctx:, registry:, state:),
+            on_close: ws_on_close(_, ctx:, registry:),
+            handler: fn(state, msg, conn) {
+              ws_handler(state:, msg:, conn:, ctx:, registry:)
+            },
+          )
 
-  case request.path_segments(req) {
-    ["ws"] -> handler
-    _ -> build_error_response("Not found", 404)
+        _ -> build_error_response("Not found", 404)
+      }
   }
+}
+
+/// Queries the Database and builds the initial state of the user
+fn setup_initial_state(
+  ctx: Context,
+  user_uuid: uuid.Uuid,
+) -> Result(State, WebSocketError) {
+  // Brigades that an user is assigned to
+  use brigade_list <- result.try(
+    fetch_brigades(ctx, user_uuid)
+    |> result.map_error(Database),
+  )
+
+  // Categories that the user wants to be notified of
+  use subscribed <- result.try(
+    fetch_categories(ctx, user_uuid)
+    |> result.map_error(Database),
+  )
+
+  Ok(State(user_uuid:, subscribed:, brigade_list:))
 }
 
 fn ws_handler(
   state state: State,
   msg msg: mist.WebsocketMessage(msg.Msg),
-  ws_conn ws_conn: mist.WebsocketConnection,
+  conn conn: mist.WebsocketConnection,
   ctx ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> mist.Next(State, msg.Msg) {
@@ -96,7 +121,7 @@ fn ws_handler(
     mist.Closed | mist.Shutdown | mist.Text(":q") -> mist.stop()
     mist.Text(_) -> mist.continue(state)
     mist.Binary(_) -> mist.continue(state)
-    mist.Custom(msg) -> handle_msg(state, msg, ws_conn, ctx, registry)
+    mist.Custom(msg) -> handle_msg(state, msg, conn, ctx, registry)
   }
 }
 
@@ -260,14 +285,14 @@ pub fn extract_uuid_mist(
 fn ws_on_init(
   conn _conn: mist.WebsocketConnection,
   req _req: request.Request(mist.Connection),
-  ctx ctx: Context,
-  user_uuid user_uuid: uuid.Uuid,
+  ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
+  state state: State,
 ) -> #(State, option.Option(process.Selector(msg.Msg))) {
   let self = process.self()
   let group_subject = group_registry.join(registry, ws_topic, self)
 
-  let user_topic = uuid.to_string(user_uuid)
+  let user_topic = uuid.to_string(state.user_uuid)
   let user_subject = group_registry.join(registry, user_topic, self)
 
   let selector =
@@ -275,15 +300,7 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
-  let brigade_list =
-    fetch_brigades(ctx, user_uuid)
-    |> result.unwrap([])
-
-  let subscribed =
-    fetch_categories(ctx, user_uuid)
-    |> result.unwrap([])
-
-  #(State(user_uuid:, subscribed:, brigade_list:), option.Some(selector))
+  #(state, option.Some(selector))
 }
 
 pub fn read_body(
@@ -362,5 +379,26 @@ fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) 
     InvalidUtf8 ->
       build_error_response("Token de acesso possui formato inválido", 404)
     MissingCookie -> build_error_response("Cookie de autorização ausente", 401)
+
+    Database(err) ->
+      case err {
+        pog.ConnectionUnavailable ->
+          "Conexão com o banco de dados não dsponível"
+          |> build_error_response(500)
+
+        pog.PostgresqlError(code:, name:, message:) ->
+          json.object([
+            #("code", json.string(code)),
+            #("name", json.string(name)),
+            #("message", json.string(message)),
+          ])
+          |> json.to_string
+          |> build_error_response(500)
+
+        pog.QueryTimeout ->
+          build_error_response("O servidor demorou muito pra responder", 500)
+
+        _ -> build_error_response("Falha ao acessar o banco de dados", 500)
+      }
   }
 }
