@@ -5,6 +5,8 @@ import youid/uuid
 
 /// 󱔔  Message broadcasted to all active users
 pub type Msg {
+  ///   Everyone replies with pong! Useful for checking active connections
+  Ping
   /// 󱥁  Broadcast a text message
   Broadcast(String)
   /// 󰿄  User was assigned to a brigade
@@ -17,6 +19,4 @@ pub type Msg {
   OccurrenceResolved(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
   ///   An occurrence has been reopened
   OccurrenceReopened(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
-  ///   Everyone replies with pong! Useful for checking active connections
-  Ping
 }
