@@ -292,7 +292,7 @@ fn ws_on_init(
   let self = process.self()
   let group_subject = group_registry.join(registry, ws_topic, self)
 
-  let user_topic = uuid.to_string(state.user_uuid)
+  let user_topic = "user:" <> uuid.to_string(state.user_uuid)
   let user_subject = group_registry.join(registry, user_topic, self)
 
   let selector =

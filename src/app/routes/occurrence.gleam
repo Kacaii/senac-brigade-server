@@ -20,8 +20,8 @@ pub fn broadcast(
   use returned <- result.map(sql.query_participants(ctx.db, occ_id))
   use row <- list.each(returned.rows)
 
-  let user_id = row.user_id
-  let members = group_registry.members(registry, uuid.to_string(user_id))
+  let topic = "user:" <> uuid.to_string(row.user_id)
+  let members = group_registry.members(registry, topic)
 
   use member <- list.each(members)
   process.send(member, message)
@@ -40,12 +40,17 @@ pub fn broadcast_assignments(
 ///   Notify a member that their brigade was assigned to an occurrence.
 pub fn notify_user_assignment(
   registry registry: group_registry.GroupRegistry(msg.Msg),
-  assigned id: uuid.Uuid,
+  assigned user_id: uuid.Uuid,
   to occ: uuid.Uuid,
 ) -> Nil {
-  let members = group_registry.members(registry, uuid.to_string(id))
+  let topic = "user:" <> uuid.to_string(user_id)
+  let members = group_registry.members(registry, topic)
+
   use subject <- list.each(members)
-  process.send(subject, msg.UserAssignedToOccurrence(assigned: id, to: occ))
+  process.send(
+    subject,
+    msg.UserAssignedToOccurrence(assigned: user_id, to: occ),
+  )
 }
 
 ///   Notify subscribed users that a new occurrence has been added

@@ -18,8 +18,8 @@ pub fn broadcast(
   use returned <- result.map(sql.query_members_id(ctx.db, brigade_id))
   use row <- list.each(returned.rows)
 
-  let user_id = row.id
-  let members = group_registry.members(registry, uuid.to_string(user_id))
+  let topic = "user:" <> uuid.to_string(row.id)
+  let members = group_registry.members(registry, topic)
 
   use member <- list.each(members)
   process.send(member, message)
@@ -31,7 +31,8 @@ pub fn notify_user_assignment(
   assigned user_id: uuid.Uuid,
   to brigade_id: uuid.Uuid,
 ) -> Nil {
-  let members = group_registry.members(registry, uuid.to_string(user_id))
+  let topic = "user:" <> uuid.to_string(user_id)
+  let members = group_registry.members(registry, topic)
 
   use subject <- list.each(members)
   let msg = msg.UserAssignedToBrigade(assigned: user_id, to: brigade_id)
