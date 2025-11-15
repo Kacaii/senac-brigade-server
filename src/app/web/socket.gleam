@@ -347,7 +347,7 @@ fn ws_on_init(
 
   let selector = {
     use acc, value <- list.fold(over: state.subscribed, from: selector)
-    let topic = "occurrence:on_new_" <> category.to_string(value)
+    let topic = "occurrence:new_" <> category.to_string(value)
 
     let occ_subj = group_registry.join(registry, topic, self)
     process.select(acc, occ_subj)
@@ -397,9 +397,10 @@ fn ws_on_close(
   // Default topic
   group_registry.leave(registry, ws_topic, [self])
   // Personal topic
-  group_registry.leave(registry, uuid.to_string(state.user_uuid), [self])
+  let user_topic = "user:" <> uuid.to_string(state.user_uuid)
+  group_registry.leave(registry, user_topic, [self])
 
-  // Leave occurrence subscription
+  // Unsubscribe from occurrence notifications
   list.each(state.subscribed, fn(subscribed_to) {
     let topic = "occurrence:new_" <> category.to_string(subscribed_to)
     group_registry.leave(registry, topic, [self])
@@ -440,7 +441,7 @@ fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) 
     Database(err) ->
       case err {
         pog.ConnectionUnavailable ->
-          "Conexão com o banco de dados não dsponível"
+          "Conexão com o banco de dados não disponível"
           |> build_error_response(500)
 
         pog.PostgresqlError(code:, name:, message:) ->
