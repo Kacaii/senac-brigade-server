@@ -1,7 +1,7 @@
 import app/routes/occurrence/category
 import app/routes/occurrence/sql
+import app/routes/user
 import app/web/context.{type Context}
-import app/web/socket
 import app/web/socket/message as msg
 import gleam/erlang/process
 import gleam/list
@@ -20,37 +20,7 @@ pub fn broadcast(
   use returned <- result.map(sql.query_participants(ctx.db, occ_id))
   use row <- list.each(returned.rows)
 
-  let topic = "user:" <> uuid.to_string(row.user_id)
-  let members = group_registry.members(registry, topic)
-
-  use member <- list.each(members)
-  process.send(member, message)
-}
-
-///   Call `notify_user_assignment` on multiple users
-pub fn broadcast_assignments(
-  registry registry: group_registry.GroupRegistry(msg.Msg),
-  assigned_users id_list: List(uuid.Uuid),
-  to occurrence_id: uuid.Uuid,
-) -> Nil {
-  use id <- list.each(id_list)
-  notify_user_assignment(assigned: id, to: occurrence_id, registry:)
-}
-
-///   Notify a member that their brigade was assigned to an occurrence.
-pub fn notify_user_assignment(
-  registry registry: group_registry.GroupRegistry(msg.Msg),
-  assigned user_id: uuid.Uuid,
-  to occ: uuid.Uuid,
-) -> Nil {
-  let topic = "user:" <> uuid.to_string(user_id)
-  let members = group_registry.members(registry, topic)
-
-  use subject <- list.each(members)
-  process.send(
-    subject,
-    msg.UserAssignedToOccurrence(assigned: user_id, to: occ),
-  )
+  user.broadcast(registry, row.user_id, message)
 }
 
 ///   Notify subscribed users that a new occurrence has been added
@@ -59,7 +29,9 @@ pub fn notify_new_occurrence(
   new id: uuid.Uuid,
   of category: category.Category,
 ) -> Nil {
-  let members = group_registry.members(registry, socket.ws_topic)
+  let topic = "occurrence:new_" <> category.to_string(category)
+  let members = group_registry.members(registry, topic)
+
   use subject <- list.each(members)
   process.send(subject, msg.NewOccurrence(id:, category:))
 }

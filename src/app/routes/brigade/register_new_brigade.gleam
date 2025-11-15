@@ -1,9 +1,9 @@
-import app/routes/brigade
 import app/routes/brigade/sql
 import app/routes/role
 import app/routes/user
 import app/web
 import app/web/context.{type Context}
+import app/web/socket/message as msg
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
@@ -181,7 +181,10 @@ fn try_assign_members(
 
   //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
-  brigade.broadcast_assignments(assigned_members:, to: brigade_id, registry:)
+  list.each(assigned_members, fn(user_id) {
+    let body = msg.UserAssignedToBrigade(user_id: user_id, brigade_id:)
+    user.broadcast(registry, user_id, body)
+  })
 
   assigned_members
 }

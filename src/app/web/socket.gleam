@@ -58,6 +58,8 @@ pub opaque type State {
   State(
     ///   User connected to this socket
     user_uuid: uuid.Uuid,
+    ///   Selector being used for the process
+    selector: option.Option(process.Selector(msg.Msg)),
     /// 󱥁  Notifications that the user wants to receive
     subscribed: List(category.Category),
     ///   Brigades that an user has been assigned to
@@ -107,7 +109,7 @@ fn setup_initial_state(
     |> result.map_error(Database),
   )
 
-  Ok(State(user_uuid:, subscribed:, brigade_list:))
+  Ok(State(user_uuid:, subscribed:, brigade_list:, selector: option.None))
 }
 
 fn ws_handler(
@@ -130,7 +132,7 @@ fn handle_msg(
   msg: msg.Msg,
   conn: mist.WebsocketConnection,
   _ctx: Context,
-  _registry: group_registry.GroupRegistry(msg.Msg),
+  registry: group_registry.GroupRegistry(msg.Msg),
 ) -> mist.Next(State, msg.Msg) {
   case msg {
     msg.Ping ->
@@ -151,25 +153,25 @@ fn handle_msg(
       )
     }
 
-    msg.UserAssignedToBrigade(assigned:, to:) ->
+    msg.UserAssignedToBrigade(user_id:, brigade_id:) ->
       send_envelope(
         state:,
         conn:,
         data_type: "brigade:assigned",
         data: json.object([
-          #("user_id", uuid.to_string(assigned) |> json.string),
-          #("brigade_id", uuid.to_string(to) |> json.string),
+          #("user_id", uuid.to_string(user_id) |> json.string),
+          #("brigade_id", uuid.to_string(brigade_id) |> json.string),
         ]),
       )
 
-    msg.UserAssignedToOccurrence(assigned:, to:) ->
+    msg.UserAssignedToOccurrence(user_id:, occurrence_id:) ->
       send_envelope(
         state:,
         conn:,
         data_type: "occurrence:assigned",
         data: json.object([
-          #("user_id", uuid.to_string(assigned) |> json.string),
-          #("occurrence_id", uuid.to_string(to) |> json.string),
+          #("user_id", uuid.to_string(user_id) |> json.string),
+          #("occurrence_id", uuid.to_string(occurrence_id) |> json.string),
         ]),
       )
 
@@ -222,6 +224,49 @@ fn handle_msg(
           #("timestamp", timestamp_json),
         ]),
       )
+    }
+
+    msg.ChannelCommand(msg) -> handle_channel_msg(msg, state, registry)
+  }
+}
+
+fn handle_channel_msg(
+  command: msg.ChannelMsg,
+  state: State,
+  registry: group_registry.GroupRegistry(msg.Msg),
+) -> mist.Next(State, msg.Msg) {
+  case command {
+    msg.Join(channel_id:) -> {
+      let self = process.self()
+
+      case state.selector {
+        option.None -> mist.continue(state)
+        option.Some(current_selector) -> {
+          let topic = "channel:" <> uuid.to_string(channel_id)
+          let subj = group_registry.join(registry, topic, self)
+
+          process.select(current_selector, subj)
+          |> process.merge_selector(current_selector, _)
+          |> mist.with_selector(mist.continue(state), _)
+        }
+      }
+    }
+
+    msg.Leave(channel_id:) -> {
+      case state.selector {
+        option.None -> mist.continue(state)
+        option.Some(current_selector) -> {
+          let topic = "channel:" <> uuid.to_string(channel_id)
+          let members = group_registry.members(registry, topic)
+
+          let new_selector = {
+            use acc, subj <- list.fold(members, current_selector)
+            process.deselect(acc, subj)
+          }
+
+          mist.with_selector(mist.continue(state), new_selector)
+        }
+      }
     }
   }
 }
@@ -300,6 +345,14 @@ fn ws_on_init(
     |> process.select(group_subject)
     |> process.select(user_subject)
 
+  let selector = {
+    use acc, value <- list.fold(over: state.subscribed, from: selector)
+    let topic = "occurrence:on_new_" <> category.to_string(value)
+
+    let occ_subj = group_registry.join(registry, topic, self)
+    process.select(acc, occ_subj)
+  }
+
   #(state, option.Some(selector))
 }
 
@@ -340,11 +393,29 @@ fn ws_on_close(
   registry registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Nil {
   let self = process.self()
+
+  // Default topic
   group_registry.leave(registry, ws_topic, [self])
+  // Personal topic
   group_registry.leave(registry, uuid.to_string(state.user_uuid), [self])
+
+  // Leave occurrence subscription
+  list.each(state.subscribed, fn(subscribed_to) {
+    let topic = "occurrence:new_" <> category.to_string(subscribed_to)
+    group_registry.leave(registry, topic, [self])
+  })
 }
 
 // HELPERS ---------------------------------------------------------------------
+
+///   Broadcast a message to all active users
+pub fn broadcast(
+  registry registry: group_registry.GroupRegistry(msg.Msg),
+  message message: msg.Msg,
+) -> Nil {
+  let members = group_registry.members(registry, ws_topic)
+  list.each(members, process.send(_, message))
+}
 
 fn build_error_response(
   error_msg: String,

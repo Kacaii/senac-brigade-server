@@ -9,6 +9,7 @@ import app/routes/occurrence/subcategory
 import app/routes/user
 import app/web
 import app/web/context.{type Context}
+import app/web/socket/message as msg
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
@@ -245,11 +246,10 @@ fn try_assign_brigades(
 
   //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
-  occurrence.broadcast_assignments(
-    assigned_users:,
-    to: occurrence_id,
-    registry:,
-  )
+  list.each(assigned_users, fn(user_id) {
+    let body = msg.UserAssignedToOccurrence(user_id:, occurrence_id:)
+    user.broadcast(registry, user_id, body)
+  })
 
   Ok(assigned_brigades)
 }

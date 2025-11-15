@@ -2,9 +2,12 @@ import app/routes/role
 import app/routes/user/sql
 import app/web
 import app/web/context.{type Context}
+import app/web/socket/message as msg
+import gleam/erlang/process
 import gleam/json
 import gleam/list
 import gleam/result
+import group_registry
 import pog
 import wisp
 import youid/uuid
@@ -35,6 +38,18 @@ pub type AuthenticationError {
   MissingCookie
   /// 󰘨  User doesn't have a valid UUID
   InvalidUUID(String)
+}
+
+///   Broadcast a message to an user
+pub fn broadcast(
+  registry: group_registry.GroupRegistry(msg.Msg),
+  user_id: uuid.Uuid,
+  message: msg.Msg,
+) -> Nil {
+  let topic = "user:" <> uuid.to_string(user_id)
+  let members = group_registry.members(registry, topic)
+
+  list.each(members, process.send(_, message))
 }
 
 ///   Query the database to find the user's role name
