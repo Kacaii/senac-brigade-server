@@ -187,7 +187,7 @@ fn handle_domain_event(
         ]),
       )
 
-    msg.NewOccurrence(id:, category:) -> {
+    msg.OccurrenceCreated(id:, category:) -> {
       use <- bool.guard(
         when: list.any(state.subscribed, fn(sub) { sub == category }),
         return: mist.continue(state),

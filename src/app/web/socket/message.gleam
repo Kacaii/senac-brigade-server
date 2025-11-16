@@ -19,7 +19,7 @@ pub type DomainEvent {
   /// 󰿄  Member of a brigade was assigned to a occurrence
   UserAssignedToOccurrence(user_id: uuid.Uuid, occurrence_id: uuid.Uuid)
   ///   A new occurrence has been created
-  NewOccurrence(id: uuid.Uuid, category: category.Category)
+  OccurrenceCreated(id: uuid.Uuid, category: category.Category)
   ///   An occurrence has been marked as resolved
   OccurrenceResolved(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
   ///   An occurrence has been reopened

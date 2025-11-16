@@ -33,5 +33,5 @@ pub fn notify_new_occurrence(
   let members = group_registry.members(registry, topic)
 
   use subject <- list.each(members)
-  process.send(subject, msg.Domain(msg.NewOccurrence(id:, category:)))
+  process.send(subject, msg.Domain(msg.OccurrenceCreated(id:, category:)))
 }
