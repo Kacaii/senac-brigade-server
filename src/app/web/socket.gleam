@@ -153,6 +153,18 @@ fn handle_msg(
       )
     }
 
+    msg.Domain(event) -> handle_domain_event(state, conn, event)
+
+    msg.Channel(event) -> handle_channel_event(event, state, registry)
+  }
+}
+
+fn handle_domain_event(
+  state: State,
+  conn: mist.WebsocketConnection,
+  msg: msg.DomainEvent,
+) -> mist.Next(State, msg.Msg) {
+  case msg {
     msg.UserAssignedToBrigade(user_id:, brigade_id:) ->
       send_envelope(
         state:,
@@ -225,17 +237,15 @@ fn handle_msg(
         ]),
       )
     }
-
-    msg.ChannelCommand(msg) -> handle_channel_msg(msg, state, registry)
   }
 }
 
-fn handle_channel_msg(
-  command: msg.ChannelMsg,
+fn handle_channel_event(
+  event: msg.ChannelEvent,
   state: State,
   registry: group_registry.GroupRegistry(msg.Msg),
 ) -> mist.Next(State, msg.Msg) {
-  case command {
+  case event {
     msg.Join(channel_id:) -> {
       let self = process.self()
 

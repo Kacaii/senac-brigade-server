@@ -86,7 +86,10 @@ fn try_resolve_occurrence(
       ctx:,
       registry: group_registry.get_registry(ctx.registry_name),
       occurrence: row.id,
-      message: msg.OccurrenceResolved(id: row.id, when: row.resolved_at),
+      message: msg.Domain(msg.OccurrenceResolved(
+        id: row.id,
+        when: row.resolved_at,
+      )),
     )
 
   // RESPONSE
@@ -135,7 +138,10 @@ fn try_reopen_occurrence(
       ctx:,
       registry: group_registry.get_registry(ctx.registry_name),
       occurrence: row.id,
-      message: msg.OccurrenceReopened(id: row.id, when: row.resolved_at),
+      message: msg.Domain(msg.OccurrenceReopened(
+        id: row.id,
+        when: row.resolved_at,
+      )),
     )
 
   let timestamp_json =

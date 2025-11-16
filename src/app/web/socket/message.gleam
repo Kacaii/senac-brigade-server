@@ -9,6 +9,11 @@ pub type Msg {
   Ping
   /// 󱥁  Broadcast a text message
   Broadcast(String)
+  Domain(DomainEvent)
+  Channel(ChannelEvent)
+}
+
+pub type DomainEvent {
   /// 󰿄  User was assigned to a brigade
   UserAssignedToBrigade(user_id: uuid.Uuid, brigade_id: uuid.Uuid)
   /// 󰿄  Member of a brigade was assigned to a occurrence
@@ -19,12 +24,10 @@ pub type Msg {
   OccurrenceResolved(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
   ///   An occurrence has been reopened
   OccurrenceReopened(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
-  ///   Channel related commands
-  ChannelCommand(ChannelMsg)
 }
 
 ///   Users can join private channels
-pub type ChannelMsg {
+pub type ChannelEvent {
   /// 󰿄  Joins a channel
   Join(channel_id: uuid.Uuid)
   /// 󰿅  Exits a channel

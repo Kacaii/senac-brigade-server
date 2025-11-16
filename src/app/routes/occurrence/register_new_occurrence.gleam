@@ -247,7 +247,8 @@ fn try_assign_brigades(
   //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
   list.each(assigned_users, fn(user_id) {
-    let body = msg.UserAssignedToOccurrence(user_id:, occurrence_id:)
+    let body =
+      msg.Domain(msg.UserAssignedToOccurrence(user_id:, occurrence_id:))
     user.broadcast(registry, user_id, body)
   })
 

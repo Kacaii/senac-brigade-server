@@ -182,7 +182,8 @@ fn try_assign_members(
   //   BROADCAST --------------------------------------------------------------
   let registry = group_registry.get_registry(ctx.registry_name)
   list.each(assigned_members, fn(user_id) {
-    let body = msg.UserAssignedToBrigade(user_id: user_id, brigade_id:)
+    let body =
+      msg.Domain(msg.UserAssignedToBrigade(user_id: user_id, brigade_id:))
     user.broadcast(registry, user_id, body)
   })
 
