@@ -1,4 +1,4 @@
-import app/routes/occurrence/category
+import app/domain/occurrence/category
 import gleam/option
 import gleam/time/timestamp
 import youid/uuid

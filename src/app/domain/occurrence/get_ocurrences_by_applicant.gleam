@@ -1,0 +1,304 @@
+//// Handler for retrieving occurrences reported by a specific applicant.
+////
+//// It returns a list of occurrences (incidents/reports) that were submitted
+//// by the specified user, including detailed information about each occurrence.
+
+import app/domain/occurrence/category
+import app/domain/occurrence/priority
+import app/domain/occurrence/sql
+import app/web
+import app/web/context.{type Context}
+import gleam/dynamic/decode
+import gleam/http
+import gleam/json
+import gleam/list
+import gleam/option
+import gleam/result
+import gleam/time/timestamp
+import pog
+import wisp
+import youid/uuid
+
+/// 󰡦  Find all occurrences/applications associated with a specific user
+/// returns them as formatted JSON data
+pub fn handle_request(
+  request request: wisp.Request,
+  ctx ctx: Context,
+  id user_id: String,
+) -> wisp.Response {
+  use <- wisp.require_method(request, http.Get)
+
+  case query_occurrences(ctx:, user_id:) {
+    Ok(resp) -> wisp.json_response(resp, 200)
+    Error(err) -> handle_error(err)
+  }
+}
+
+fn query_occurrences(
+  ctx ctx: Context,
+  user_id user_id: String,
+) -> Result(String, GetOccurrencesByApplicantError) {
+  use user_uuid <- result.try(
+    uuid.from_string(user_id)
+    |> result.replace_error(InvalidUUID(user_id)),
+  )
+
+  use returned <- result.try(
+    sql.query_occurences_by_applicant(ctx.db, user_uuid)
+    |> result.map_error(DataBaseError),
+  )
+
+  let payload_result = {
+    use row <- list.try_map(returned.rows)
+
+    // DECODER FOR BRIGADES
+    use brigade_list <- result.map(
+      brigade_list_decoder(row.brigade_list)
+      |> result.map_error(BrigadeListDecodeError),
+    )
+
+    Payload(
+      id: row.id,
+      status: case row.resolved_at {
+        option.None -> "Em andamento"
+        option.Some(_) -> "Finalizada"
+      },
+      priority: enum_to_priority(row.priority),
+      call: PayloadCall(
+        category: enum_to_category(row.occurrence_category),
+        details: row.details,
+        applicant_name: row.applicant_name,
+      ),
+      occurrence_location: row.occurrence_location,
+      timestamp: PayloadTimestamp(
+        created_at: row.created_at,
+        arrival_in_place: row.arrived_at,
+        resolved_at: row.resolved_at,
+      ),
+      metadata: PayloadMetadata(
+        applicant_id: row.applicant_id,
+        applicant_registration: row.applicant_registration,
+        applicant_name: row.applicant_name,
+      ),
+      brigade_list: brigade_list,
+    )
+    |> payload_to_json()
+  }
+
+  case payload_result {
+    Ok(value) -> Ok(json.preprocessed_array(value) |> json.to_string)
+    Error(value) -> Error(value)
+  }
+}
+
+fn brigade_list_decoder(
+  data: String,
+) -> Result(List(PayloadBrigade), json.DecodeError) {
+  json.parse(data, {
+    // UUID Decoder
+    let brigade_uuid_decoder = {
+      use maybe_uuid <- decode.then(decode.string)
+      case uuid.from_string(maybe_uuid) {
+        Error(_) -> decode.failure(uuid.v7(), "brigade_uuid")
+        Ok(value) -> decode.success(value)
+      }
+    }
+
+    decode.list({
+      use brigade_id <- decode.field("id", brigade_uuid_decoder)
+      use brigade_name <- decode.field("brigade_name", decode.string)
+      use leader_name <- decode.field("leader_full_name", decode.string)
+      use vehicle_code <- decode.field("vehicle_code", decode.string)
+
+      decode.success(PayloadBrigade(
+        id: brigade_id,
+        brigade_name: brigade_name,
+        vehicle_code: vehicle_code,
+        leader_name: leader_name,
+      ))
+    })
+  })
+}
+
+fn handle_error(err: GetOccurrencesByApplicantError) -> wisp.Response {
+  case err {
+    InvalidUUID(user_id) ->
+      wisp.bad_request("ID de usuário inválido: " <> user_id)
+    DataBaseError(err) -> web.handle_database_error(err)
+    BrigadeListDecodeError(_) ->
+      wisp.internal_server_error()
+      |> wisp.set_body(wisp.Text(
+        "Não foi possível decodificar a lista de equipes",
+      ))
+  }
+}
+
+fn enum_to_priority(enum: sql.OccurrencePriorityEnum) -> priority.Priority {
+  case enum {
+    sql.High -> priority.High
+    sql.Low -> priority.Low
+    sql.Medium -> priority.Medium
+  }
+}
+
+fn enum_to_category(enum: sql.OccurrenceCategoryEnum) -> category.Category {
+  case enum {
+    sql.Other -> category.Other
+    sql.TrafficAccident -> category.TrafficAccident
+    sql.Fire -> category.Fire
+    sql.MedicEmergency -> category.MedicEmergency
+  }
+}
+
+/// Querying the occurrence list can fail
+type GetOccurrencesByApplicantError {
+  /// The applicant has invalid UUID
+  InvalidUUID(String)
+  /// An error occurred when querying the database
+  DataBaseError(pog.QueryError)
+  /// An error occurred while decoding the brigade list
+  BrigadeListDecodeError(json.DecodeError)
+}
+
+// PAYLOAD -------------------------------------------------------------------------------------------------------------
+
+/// Data retrieved from the database
+pub type Payload {
+  Payload(
+    /// Occurrence UUID
+    id: uuid.Uuid,
+    /// Occurrence status
+    status: String,
+    /// Occurrence priority
+    priority: priority.Priority,
+    /// Details about the occurrence
+    call: PayloadCall,
+    /// Occurrence coordenates
+    occurrence_location: option.Option(List(Float)),
+    /// Timestamps related
+    timestamp: PayloadTimestamp,
+    /// Details about the applicant
+    metadata: PayloadMetadata,
+    /// List containing details about the brigades associated
+    /// with the occurrence
+    brigade_list: List(PayloadBrigade),
+  )
+}
+
+fn payload_to_json(data: Payload) -> json.Json {
+  let occurrence_location_json =
+    json.nullable(data.occurrence_location, fn(location) {
+      json.array(location, json.float)
+    })
+
+  json.object([
+    #("id", json.string(uuid.to_string(data.id))),
+    #("status", json.string(data.status)),
+    #("prioridade", json.string(priority.to_string_pt_br(data.priority))),
+    #("chamado", payload_call_to_json(data.call)),
+    #("coordenadas", occurrence_location_json),
+    #("timestamps", payload_timestamp_to_json(data.timestamp)),
+    #("metadata", payload_metadata_to_json(data.metadata)),
+    #("equipes", payload_brigade_list_to_json(data.brigade_list)),
+  ])
+}
+
+/// Details about the occurrence
+pub opaque type PayloadCall {
+  PayloadCall(
+    /// Category assigned to the occurrence
+    category: category.Category,
+    /// Details about the occurrence
+    details: option.Option(String),
+    /// Name of the occurrence applicant
+    applicant_name: String,
+  )
+}
+
+fn payload_call_to_json(data: PayloadCall) -> json.Json {
+  json.object([
+    #("tipo", json.string(category.to_string_pt_br(data.category))),
+    #("detalhes", json.string(option.unwrap(data.details, ""))),
+    #("solicitante", json.object([#("nome", json.string(data.applicant_name))])),
+  ])
+}
+
+/// Timestamps related to the occurrence
+pub opaque type PayloadTimestamp {
+  PayloadTimestamp(
+    /// When the occurrence was created
+    created_at: timestamp.Timestamp,
+    /// When a team arrived at the occurrence place
+    arrival_in_place: option.Option(timestamp.Timestamp),
+    /// When the occurrence was resolved
+    resolved_at: option.Option(timestamp.Timestamp),
+  )
+}
+
+fn payload_timestamp_to_json(data: PayloadTimestamp) -> json.Json {
+  json.object([
+    #("abertura", json.float(timestamp.to_unix_seconds(data.created_at))),
+    #(
+      "chegadaNoLocal",
+      json.nullable(
+        option.map(data.arrival_in_place, timestamp.to_unix_seconds),
+        json.float,
+      ),
+    ),
+    #(
+      "finalizacao",
+      json.nullable(
+        option.map(data.resolved_at, timestamp.to_unix_seconds),
+        json.float,
+      ),
+    ),
+  ])
+}
+
+/// Details about the applicant
+pub opaque type PayloadMetadata {
+  PayloadMetadata(
+    /// UUID of the user that created the occurrence
+    applicant_id: uuid.Uuid,
+    /// Registration of the user that created the occurrence
+    applicant_registration: String,
+    /// Name of the user that created the occurrence
+    applicant_name: String,
+  )
+}
+
+fn payload_metadata_to_json(data: PayloadMetadata) -> json.Json {
+  json.object([
+    #("nomeUsuario", json.string(data.applicant_name)),
+    #("matriculaUsuario", json.string(data.applicant_registration)),
+    #("usuarioId", json.string(uuid.to_string(data.applicant_id))),
+  ])
+}
+
+/// List containing details about the brigades associated
+/// with the occurrence
+pub opaque type PayloadBrigade {
+  PayloadBrigade(
+    /// Brigade UUID
+    id: uuid.Uuid,
+    /// Name of the brigade
+    brigade_name: String,
+    /// Vehicle code designated to that brigade
+    vehicle_code: String,
+    /// Name of the leader from that brigade
+    leader_name: String,
+  )
+}
+
+fn payload_brigade_list_to_json(data: List(PayloadBrigade)) -> json.Json {
+  json.preprocessed_array(
+    list.map(data, fn(row) {
+      json.object([
+        #("id", json.string(uuid.to_string(row.id))),
+        #("nomeEquipe", json.string(row.brigade_name)),
+        #("lider", json.string(row.leader_name)),
+        #("codigoViatura", json.string(row.vehicle_code)),
+      ])
+    }),
+  )
+}

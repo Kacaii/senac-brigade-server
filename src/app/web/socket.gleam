@@ -1,7 +1,7 @@
-import app/routes/notification/sql as notif_sql
-import app/routes/occurrence/category
-import app/routes/user
-import app/routes/user/sql as user_sql
+import app/domain/notification/sql as notif_sql
+import app/domain/occurrence/category
+import app/domain/user
+import app/domain/user/sql as user_sql
 import app/web/context.{type Context}
 import app/web/socket/envelope
 import app/web/socket/message as msg

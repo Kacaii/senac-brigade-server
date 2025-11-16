@@ -10,7 +10,7 @@
 //// 2. An HTTP server using Mist (with Wisp handling the web layer)
 
 import app/http_router
-import app/routes/admin/sql as admin_sql
+import app/domain/admin/sql as admin_sql
 import app/supervision_tree
 import app/web
 import app/web/context.{type Context, Context}

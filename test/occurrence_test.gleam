@@ -1,8 +1,8 @@
 import app/http_router
-import app/routes/occurrence/category
-import app/routes/occurrence/priority
-import app/routes/occurrence/sql as o_sql
-import app/routes/occurrence/subcategory
+import app/domain/occurrence/category
+import app/domain/occurrence/priority
+import app/domain/occurrence/sql as o_sql
+import app/domain/occurrence/subcategory
 import app_dev/sql as dev_sql
 import app_test
 import dummy

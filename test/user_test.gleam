@@ -1,6 +1,6 @@
 import app/http_router
-import app/routes/role
-import app/routes/user
+import app/domain/role
+import app/domain/user
 import app_dev/sql as dev_sql
 import app_test
 import dummy

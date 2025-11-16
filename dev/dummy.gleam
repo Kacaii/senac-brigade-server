@@ -1,12 +1,12 @@
 //// For testing purposes only
 
-import app/routes/brigade/sql as b_sql
-import app/routes/occurrence/category
-import app/routes/occurrence/priority
-import app/routes/occurrence/sql as o_sql
-import app/routes/occurrence/subcategory
-import app/routes/role
-import app/routes/user/sql as u_sql
+import app/domain/brigade/sql as b_sql
+import app/domain/occurrence/category
+import app/domain/occurrence/priority
+import app/domain/occurrence/sql as o_sql
+import app/domain/occurrence/subcategory
+import app/domain/role
+import app/domain/user/sql as u_sql
 import gleam/float
 import gleam/list
 import gleam/set

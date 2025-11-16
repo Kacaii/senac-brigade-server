@@ -7,30 +7,30 @@
 //// All requests are processed through the web middleware pipeline before routing.
 //// Unmatched routes return a 404 Not Found response.
 
-import app/routes/admin/admin_update_user
-import app/routes/admin/setup_first_admin
-import app/routes/brigade/delete_brigade
-import app/routes/brigade/get_all_brigades
-import app/routes/brigade/get_brigade_members
-import app/routes/brigade/register_new_brigade
-import app/routes/brigade/update_brigade_status
-import app/routes/dashboard
-import app/routes/notification/get_notification_preferences
-import app/routes/notification/update_notification_preferences
-import app/routes/occurrence/delete_occurrence
-import app/routes/occurrence/get_ocurrences_by_applicant
-import app/routes/occurrence/register_new_occurrence
-import app/routes/occurrence/update_occurrence_status
-import app/routes/role/get_role_list
-import app/routes/user/delete_user
-import app/routes/user/get_all_user_profiles
-import app/routes/user/get_crew_members
-import app/routes/user/get_user_profile
-import app/routes/user/login
-import app/routes/user/signup
-import app/routes/user/update_user_password
-import app/routes/user/update_user_profile
-import app/routes/user/update_user_status
+import app/domain/admin/admin_update_user
+import app/domain/admin/setup_first_admin
+import app/domain/brigade/delete_brigade
+import app/domain/brigade/get_all_brigades
+import app/domain/brigade/get_brigade_members
+import app/domain/brigade/register_new_brigade
+import app/domain/brigade/update_brigade_status
+import app/domain/dashboard
+import app/domain/notification/get_notification_preferences
+import app/domain/notification/update_notification_preferences
+import app/domain/occurrence/delete_occurrence
+import app/domain/occurrence/get_ocurrences_by_applicant
+import app/domain/occurrence/register_new_occurrence
+import app/domain/occurrence/update_occurrence_status
+import app/domain/role/get_role_list
+import app/domain/user/delete_user
+import app/domain/user/get_all_user_profiles
+import app/domain/user/get_crew_members
+import app/domain/user/get_user_profile
+import app/domain/user/login
+import app/domain/user/signup
+import app/domain/user/update_user_password
+import app/domain/user/update_user_profile
+import app/domain/user/update_user_status
 import app/web
 import app/web/context.{type Context}
 import gleam/http

@@ -1,5 +1,5 @@
 import app/http_router
-import app/routes/role
+import app/domain/role
 import app_test
 import gleam/dynamic/decode
 import gleam/http
