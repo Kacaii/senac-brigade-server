@@ -9,6 +9,7 @@ import gleam/bit_array
 import gleam/bool
 import gleam/bytes_tree
 import gleam/crypto
+import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
@@ -17,6 +18,7 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/string
 import gleam/time/timestamp
 import group_registry
 import mist
@@ -37,6 +39,12 @@ pub opaque type WebSocketError {
   InvalidUuid(String)
   /// 󰆼  Failed to access the DataBase
   Database(pog.QueryError)
+  ///   Content-length header is missing
+  MissingContentLength
+  ///   Content-length header is not a valid integer value
+  InvalidContentLength(String)
+  ///   Failed to read the request body
+  ReadError(mist.ReadError)
 }
 
 /// 󱘖  Stabilishes a websocket connection with the client
@@ -45,10 +53,9 @@ pub fn handle_request(
   ctx: Context,
 ) -> response.Response(mist.ResponseData) {
   let registry = group_registry.get_registry(ctx.registry_name)
-  let maybe_uuid = extract_uuid_mist(req, ctx)
 
-  case maybe_uuid {
-    Error(err) -> handle_ws_error(err)
+  case extract_uuid(req, ctx) {
+    Error(err) -> handle_error(err)
     Ok(user_uuid) -> handle_connection(req, ctx, user_uuid, registry)
   }
 }
@@ -74,7 +81,7 @@ fn handle_connection(
   registry: group_registry.GroupRegistry(msg.Msg),
 ) -> response.Response(mist.ResponseData) {
   case setup_initial_state(ctx, user_uuid) {
-    Error(err) -> handle_ws_error(err)
+    Error(err) -> handle_error(err)
     Ok(state) ->
       case request.path_segments(req) {
         ["ws"] ->
@@ -87,7 +94,7 @@ fn handle_connection(
             },
           )
 
-        _ -> build_error_response("Not found", 404)
+        _ -> send_response("Not found", 404)
       }
   }
 }
@@ -97,19 +104,9 @@ fn setup_initial_state(
   ctx: Context,
   user_uuid: uuid.Uuid,
 ) -> Result(State, WebSocketError) {
-  // Brigades that an user is assigned to
-  use brigade_list <- result.try(
-    fetch_brigades(ctx, user_uuid)
-    |> result.map_error(Database),
-  )
-
-  // Categories that the user wants to be notified of
-  use subscribed <- result.try(
-    fetch_categories(ctx, user_uuid)
-    |> result.map_error(Database),
-  )
-
-  Ok(State(user_uuid:, subscribed:, brigade_list:, selector: option.None))
+  use brigade_list <- result.try(fetch_brigades(ctx, user_uuid))
+  use subscribed <- result.map(fetch_categories(ctx, user_uuid))
+  State(user_uuid:, subscribed:, brigade_list:, selector: option.None)
 }
 
 fn ws_handler(
@@ -305,7 +302,7 @@ fn send_envelope(
   }
 }
 
-fn extract_uuid_mist(
+fn extract_uuid(
   req: request.Request(mist.Connection),
   ctx: Context,
 ) -> Result(uuid.Uuid, WebSocketError) {
@@ -370,8 +367,12 @@ fn ws_on_init(
 fn fetch_brigades(
   ctx: Context,
   for: uuid.Uuid,
-) -> Result(List(uuid.Uuid), pog.QueryError) {
-  use returned <- result.map(user_sql.query_user_brigades(ctx.db, for))
+) -> Result(List(uuid.Uuid), WebSocketError) {
+  use returned <- result.map(
+    user_sql.query_user_brigades(ctx.db, for)
+    |> result.map_error(Database),
+  )
+
   list.map(returned.rows, fn(row) { row.brigade_id })
 }
 
@@ -379,20 +380,19 @@ fn fetch_brigades(
 fn fetch_categories(
   ctx: Context,
   for: uuid.Uuid,
-) -> Result(List(category.Category), pog.QueryError) {
-  use returned <- result.try(notif_sql.query_active_notifications(ctx.db, for))
+) -> Result(List(category.Category), WebSocketError) {
+  use returned <- result.map(
+    notif_sql.query_active_notifications(ctx.db, for)
+    |> result.map_error(Database),
+  )
 
-  let categories =
-    list.map(returned.rows, fn(row) {
-      case row.notification_type {
-        notif_sql.Emergency -> category.MedicEmergency
-        notif_sql.Fire -> category.Fire
-        notif_sql.Other -> category.Other
-        notif_sql.Traffic -> category.TrafficAccident
-      }
-    })
-
-  Ok(categories)
+  use row <- list.map(returned.rows)
+  case row.notification_type {
+    notif_sql.Emergency -> category.MedicEmergency
+    notif_sql.Fire -> category.Fire
+    notif_sql.Other -> category.Other
+    notif_sql.Traffic -> category.TrafficAccident
+  }
 }
 
 // ON CLOSE --------------------------------------------------------------------
@@ -411,10 +411,9 @@ fn ws_on_close(
   group_registry.leave(registry, user_topic, [self])
 
   // Unsubscribe from occurrence notifications
-  list.each(state.subscribed, fn(subscribed_to) {
-    let topic = "occurrence:new_" <> category.to_string(subscribed_to)
-    group_registry.leave(registry, topic, [self])
-  })
+  use subscribed_to <- list.each(state.subscribed)
+  let topic = "occurrence:new_" <> category.to_string(subscribed_to)
+  group_registry.leave(registry, topic, [self])
 }
 
 // HELPERS ---------------------------------------------------------------------
@@ -425,64 +424,143 @@ pub fn broadcast(
   message message: msg.Msg,
 ) -> Nil {
   let members = group_registry.members(registry, ws_topic)
-  list.each(members, process.send(_, message))
+  members |> list.each(process.send(_, message))
 }
 
-fn build_error_response(
-  error_msg: String,
+fn send_response(
+  body: String,
   status: Int,
 ) -> response.Response(mist.ResponseData) {
-  error_msg
+  body
   |> bytes_tree.from_string
   |> mist.Bytes
   |> response.set_body(response.new(status), _)
 }
 
-fn handle_ws_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
+fn handle_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
   case err {
-    InvalidUuid(id) ->
-      build_error_response("Usuário possui Uuid inválido: " <> id, 401)
+    InvalidUuid(id) -> {
+      let body = "Usuário possui Uuid inválido: " <> id
+      send_response(body, 401)
+    }
+
     InvalidSignature ->
-      build_error_response("Falha ao desencriptografar o token de acesso", 401)
+      "Falha ao desencriptografar o token de acesso"
+      |> send_response(401)
+
     InvalidUtf8 ->
-      build_error_response("Token de acesso possui formato inválido", 404)
-    MissingCookie -> build_error_response("Cookie de autorização ausente", 401)
+      "Token de acesso possui formato inválido"
+      |> send_response(404)
 
-    Database(err) ->
-      case err {
-        pog.ConnectionUnavailable ->
-          "Conexão com o banco de dados não disponível"
-          |> build_error_response(500)
+    MissingCookie ->
+      "Cookie de autorização se encontra ausente"
+      |> send_response(401)
 
-        pog.PostgresqlError(code:, name:, message:) ->
-          json.object([
-            #("code", json.string(code)),
-            #("name", json.string(name)),
-            #("message", json.string(message)),
-          ])
-          |> json.to_string
-          |> build_error_response(500)
+    InvalidContentLength(header) -> {
+      let body = "Header content-length inválido: " <> header
+      send_response(body, 400)
+    }
 
-        pog.QueryTimeout ->
-          build_error_response("O servidor demorou muito pra responder", 500)
+    MissingContentLength ->
+      "Header content-length ausente"
+      |> send_response(404)
 
-        _ -> build_error_response("Falha ao acessar o banco de dados", 500)
-      }
+    ReadError(mist.ExcessBody) ->
+      "Corpo do request é longo demais"
+      |> send_response(400)
+
+    ReadError(mist.MalformedBody) ->
+      "Corpo do request se encontra mal construído"
+      |> send_response(422)
+
+    Database(err) -> handle_database_error(err)
   }
 }
 
-pub fn read_body(
-  req: request.Request(mist.Connection),
-) -> Result(String, mist.ReadError) {
-  let req_result =
-    request.get_header(req, "content-length")
-    |> result.try(int.parse)
-    |> result.unwrap(0)
-    |> mist.read_body(req, _)
+fn handle_database_error(
+  err: pog.QueryError,
+) -> response.Response(mist.ResponseData) {
+  case err {
+    pog.ConnectionUnavailable ->
+      "Conexão com o banco de dados não disponível"
+      |> send_response(500)
 
-  result.map(req_result, fn(req) {
-    req.body
-    |> bit_array.to_string
-    |> result.unwrap("")
-  })
+    pog.PostgresqlError(code:, name:, message:) ->
+      json.object([
+        #("code", json.string(code)),
+        #("name", json.string(name)),
+        #("message", json.string(message)),
+      ])
+      |> json.to_string
+      |> send_response(500)
+
+    pog.QueryTimeout ->
+      "O servidor demorou muito pra responder"
+      |> send_response(500)
+
+    pog.ConstraintViolated(message:, constraint:, detail:) ->
+      json.object([
+        #("message", json.string(message)),
+        #("constraint", json.string(constraint)),
+        #("detail", json.string(detail)),
+      ])
+      |> json.to_string()
+      |> send_response(409)
+
+    pog.UnexpectedArgumentCount(expected:, got:) -> {
+      json.object([
+        #("expected", json.int(expected)),
+        #("got", json.int(got)),
+      ])
+      |> json.to_string()
+      |> send_response(400)
+    }
+
+    pog.UnexpectedArgumentType(expected:, got:) -> {
+      json.object([
+        #("expected", json.string(expected)),
+        #("got", json.string(got)),
+      ])
+      |> json.to_string()
+      |> send_response(400)
+    }
+
+    pog.UnexpectedResultType(err_list) -> handle_decode_error(err_list)
+  }
+}
+
+pub fn handle_decode_error(
+  decode_errors: List(decode.DecodeError),
+) -> response.Response(mist.ResponseData) {
+  case list.first(decode_errors) {
+    Error(_) -> send_response("Ok", 200)
+    Ok(err) ->
+      json.object([
+        #("expected", json.string(err.expected)),
+        #("found", json.string(err.found)),
+        #("path", json.string(string.join(err.path, "/"))),
+      ])
+      |> json.to_string
+      |> send_response(400)
+  }
+}
+
+pub fn read_body(req: request.Request(mist.Connection)) {
+  use header <- result.try(
+    request.get_header(req, "content-length")
+    |> result.replace_error(MissingContentLength),
+  )
+
+  use content_length <- result.try(
+    int.parse(header)
+    |> result.replace_error(InvalidContentLength(header)),
+  )
+
+  use req <- result.try(
+    mist.read_body(req, content_length)
+    |> result.map_error(ReadError),
+  )
+
+  bit_array.to_string(req.body)
+  |> result.replace_error(InvalidUtf8)
 }

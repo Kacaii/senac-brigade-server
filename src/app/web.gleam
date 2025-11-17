@@ -20,6 +20,7 @@ import cors_builder as cors
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
+import gleam/list
 import gleam/string
 import glight
 import pog
@@ -32,17 +33,15 @@ pub fn middleware(
   context ctx: context.Context,
   next handle_request: fn(wisp.Request) -> wisp.Response,
 ) -> wisp.Response {
+  let path = "/static"
   let request = wisp.method_override(req)
+
   use <- wisp.log_request(request)
   use <- wisp.rescue_crashes()
   use request <- wisp.handle_head(request)
   use request <- cors.wisp_middleware(request, cors_config())
-  use <- wisp.serve_static(
-    request,
-    under: "/static",
-    from: ctx.static_directory,
-  )
 
+  use <- wisp.serve_static(request, under: path, from: ctx.static_directory)
   handle_request(request)
 }
 
@@ -79,81 +78,72 @@ fn cors_config() -> cors.Cors {
   |> cors.allow_credentials()
 }
 
-pub fn handle_decode_error(err: List(decode.DecodeError)) -> wisp.Response {
-  case err {
-    [] -> wisp.ok()
-    [err, ..] -> {
-      let body =
-        json.to_string(
-          json.object([
-            #("expected", json.string(err.expected)),
-            #("found", json.string(err.found)),
-            #("path", json.string(string.join(err.path, "/"))),
-          ]),
-        )
-
-      wisp.json_response(body, 422)
-    }
+pub fn handle_decode_error(
+  decode_errors: List(decode.DecodeError),
+) -> wisp.Response {
+  case list.first(decode_errors) {
+    Error(_) -> wisp.ok()
+    Ok(err) ->
+      json.object([
+        #("expected", json.string(err.expected)),
+        #("found", json.string(err.found)),
+        #("path", json.string(string.join(err.path, "/"))),
+      ])
+      |> json.to_string
+      |> wisp.bad_request()
   }
 }
 
 pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   case err {
     pog.ConnectionUnavailable ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text("Conexão com o Banco de Dados não disponível"))
+      "Conexão com o Banco de Dados não disponível"
+      |> wisp.Text
+      |> wisp.set_body(wisp.internal_server_error(), _)
 
     pog.ConstraintViolated(message:, constraint:, detail:) -> {
-      let body =
-        json.object([
-          #("message", json.string(message)),
-          #("constrain", json.string(constraint)),
-          #("detail", json.string(detail)),
-        ])
-        |> json.to_string()
-
-      wisp.json_response(body, 500)
+      json.object([
+        #("message", json.string(message)),
+        #("constraint", json.string(constraint)),
+        #("detail", json.string(detail)),
+      ])
+      |> json.to_string()
+      |> wisp.json_response(500)
     }
 
     pog.QueryTimeout ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "O Banco de Dados demorou muito para responder",
-      ))
+      "O Banco de Dados demorou muito para responder"
+      |> wisp.Text
+      |> wisp.set_body(wisp.internal_server_error(), _)
 
     pog.PostgresqlError(code:, name:, message:) -> {
-      let body =
-        json.object([
-          #("code", json.string(code)),
-          #("name", json.string(name)),
-          #("message", json.string(message)),
-        ])
-        |> json.to_string()
-
-      wisp.json_response(body, 500)
+      json.object([
+        #("code", json.string(code)),
+        #("name", json.string(name)),
+        #("message", json.string(message)),
+      ])
+      |> json.to_string()
+      |> wisp.json_response(500)
     }
 
     pog.UnexpectedArgumentCount(expected:, got:) -> {
-      let body =
-        json.object([
-          #("expected", json.int(expected)),
-          #("got", json.int(got)),
-        ])
-        |> json.to_string()
-
-      wisp.json_response(body, 500)
+      json.object([
+        #("expected", json.int(expected)),
+        #("got", json.int(got)),
+      ])
+      |> json.to_string()
+      |> wisp.json_response(500)
     }
 
     pog.UnexpectedArgumentType(expected:, got:) -> {
-      let body =
-        json.object([
-          #("expected", json.string(expected)),
-          #("got", json.string(got)),
-        ])
-        |> json.to_string()
-
-      wisp.json_response(body, 500)
+      json.object([
+        #("expected", json.string(expected)),
+        #("got", json.string(got)),
+      ])
+      |> json.to_string()
+      |> wisp.json_response(500)
     }
+
     pog.UnexpectedResultType(err) -> handle_decode_error(err)
   }
 }
