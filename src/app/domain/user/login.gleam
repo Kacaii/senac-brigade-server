@@ -19,12 +19,27 @@ import pog
 import wisp
 import youid/uuid
 
-type LogIn {
-  LogIn(registration: String, password: String)
+type RequestBody {
+  RequestBody(registration: String, password: String)
+}
+
+type LoginError {
+  ///   Database couldn't find target registration
+  UserNotFound
+  ///   Something went wrong on the database
+  DataBaseError(pog.QueryError)
+  /// 󰣮  Provided password didnt _match_ the one inside our Database
+  InvalidPassword
+  /// 󱔼  Hashing went wrong
+  HashError
+}
+
+type LoginToken {
+  LoginToken(body: String, user_id: uuid.Uuid)
 }
 
 /// 󱐁  A form that decodes the `LogIn` value.
-fn login_form() -> form.Form(LogIn) {
+fn login_form() -> form.Form(RequestBody) {
   form.new({
     use registration <- form.field("matricula", {
       form.parse_string |> form.check_not_empty()
@@ -34,7 +49,7 @@ fn login_form() -> form.Form(LogIn) {
       form.parse_string |> form.check_not_empty()
     })
 
-    form.success(LogIn(registration:, password:))
+    form.success(RequestBody(registration:, password:))
   })
 }
 
@@ -58,39 +73,41 @@ pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
 
   case form_result {
     Error(_) -> wisp.unprocessable_content()
-    Ok(login_data) ->
-      handle_login(
-        request:,
-        ctx:,
-        login_data:,
-        cookie_name: user.uuid_cookie_name,
-      )
+    Ok(data) -> {
+      let cookie_name = user.uuid_cookie_name
+      handle_login(request:, ctx:, data:, cookie_name:)
+    }
   }
 }
 
 fn handle_login(
   request request: wisp.Request,
   ctx ctx: Context,
-  login_data login_data: LogIn,
+  data data: RequestBody,
   cookie_name cookie_name: String,
 ) -> response.Response(wisp.Body) {
-  case query_login_token(login: login_data, ctx:) {
-    Ok(#(json_data, user_uuid)) -> {
-      //  
-      log_login(login_data)
-      wisp.set_cookie(
-        response: wisp.json_response(json.to_string(json_data), 200),
-        request: request,
-        name: cookie_name,
-        value: uuid.to_string(user_uuid),
-        security: wisp.Signed,
-        //   Cookie lasts 1 hour in total
-        max_age: 60 * 60,
-      )
-    }
-
+  case query_login_token(data:, ctx:) {
     Error(err) -> handle_error(err)
+    Ok(resp) -> set_token(data, resp, request, cookie_name)
   }
+}
+
+fn set_token(
+  data: RequestBody,
+  resp: LoginToken,
+  request: wisp.Request,
+  cookie_name: String,
+) -> wisp.Response {
+  log_login(data)
+  wisp.set_cookie(
+    response: wisp.json_response(resp.body, 200),
+    request: request,
+    name: cookie_name,
+    value: uuid.to_string(resp.user_id),
+    security: wisp.Signed,
+    //   Cookie lasts 1 hour in total
+    max_age: 60 * 60,
+  )
 }
 
 fn handle_error(err: LoginError) -> response.Response(wisp.Body) {
@@ -115,7 +132,7 @@ fn handle_error(err: LoginError) -> response.Response(wisp.Body) {
 }
 
 ///   Logs user registration
-fn log_login(login: LogIn) -> Nil {
+fn log_login(login: RequestBody) -> Nil {
   glight.logger()
   |> glight.with("registration", login.registration)
   |> glight.info("login")
@@ -123,21 +140,12 @@ fn log_login(login: LogIn) -> Nil {
   Nil
 }
 
-/// Login can fail
-type LoginError {
-  ///   Database couldn't find target registration
-  UserNotFound
-  ///   Something went wrong on the database
-  DataBaseError(pog.QueryError)
-  /// 󰣮  Provided password didnt _match_ the one inside our Database
-  InvalidPassword
-  /// 󱔼  Hashing went wrong
-  HashError
-}
-
 ///   Check if the provided password matches the one inside our database
 /// Returns the user's UUID if successfull.
-fn query_login_token(login data: LogIn, ctx ctx: Context) {
+fn query_login_token(
+  data data: RequestBody,
+  ctx ctx: Context,
+) -> Result(LoginToken, LoginError) {
   use returned <- result.try(
     sql.query_login_token(ctx.db, data.registration)
     |> result.map_error(DataBaseError),
@@ -164,11 +172,11 @@ fn query_login_token(login data: LogIn, ctx ctx: Context) {
     sql.Sargeant -> role.Sargeant
   }
 
-  let json_data =
-    json.object([
-      #("id", json.string(uuid.to_string(row.id))),
-      #("role", json.string(role.to_string_pt_br(user_role))),
-    ])
-
-  Ok(#(json_data, row.id))
+  json.object([
+    #("id", json.string(uuid.to_string(row.id))),
+    #("role", json.string(role.to_string_pt_br(user_role))),
+  ])
+  |> json.to_string
+  |> LoginToken(body: _, user_id: row.id)
+  |> Ok
 }
