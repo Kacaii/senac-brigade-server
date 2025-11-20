@@ -129,7 +129,7 @@ fn handle_msg(
   msg: msg.Msg,
   conn: mist.WebsocketConnection,
   _ctx: Context,
-  registry: group_registry.GroupRegistry(msg.Msg),
+  _registry: group_registry.GroupRegistry(msg.Msg),
 ) -> mist.Next(State, msg.Msg) {
   case msg {
     msg.Ping ->
@@ -151,8 +151,6 @@ fn handle_msg(
     }
 
     msg.Domain(event) -> handle_domain_event(state, conn, event)
-
-    msg.Channel(event) -> handle_channel_event(event, state, registry)
   }
 }
 
@@ -233,47 +231,6 @@ fn handle_domain_event(
           #("timestamp", timestamp_json),
         ]),
       )
-    }
-  }
-}
-
-fn handle_channel_event(
-  event: msg.ChannelEvent,
-  state: State,
-  registry: group_registry.GroupRegistry(msg.Msg),
-) -> mist.Next(State, msg.Msg) {
-  case event {
-    msg.Join(channel_id:) -> {
-      let self = process.self()
-
-      case state.selector {
-        option.None -> mist.continue(state)
-        option.Some(current_selector) -> {
-          let topic = "channel:" <> uuid.to_string(channel_id)
-          let subj = group_registry.join(registry, topic, self)
-
-          process.select(current_selector, subj)
-          |> process.merge_selector(current_selector, _)
-          |> mist.with_selector(mist.continue(state), _)
-        }
-      }
-    }
-
-    msg.Leave(channel_id:) -> {
-      case state.selector {
-        option.None -> mist.continue(state)
-        option.Some(current_selector) -> {
-          let topic = "channel:" <> uuid.to_string(channel_id)
-          let members = group_registry.members(registry, topic)
-
-          let new_selector = {
-            use acc, subj <- list.fold(members, current_selector)
-            process.deselect(acc, subj)
-          }
-
-          mist.with_selector(mist.continue(state), new_selector)
-        }
-      }
     }
   }
 }

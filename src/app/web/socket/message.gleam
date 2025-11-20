@@ -11,8 +11,6 @@ pub type Msg {
   Broadcast(String)
   /// 󰢫  Broadcast a domain-specific event related to SIGO's business logic
   Domain(DomainEvent)
-  ///   Broadcast a event related to private channels
-  Channel(ChannelEvent)
 }
 
 /// 󰢫  Domain-level events emitted when something meaningful happens in the system
@@ -27,13 +25,4 @@ pub type DomainEvent {
   OccurrenceResolved(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
   ///   A previously resolved occurrence has been reopened
   OccurrenceReopened(id: uuid.Uuid, when: option.Option(timestamp.Timestamp))
-}
-
-///   Channel-scoped events for private communication groups
-/// Users can join and leave channels dynamically, allowing target websockets broadcasts
-pub type ChannelEvent {
-  /// 󰿄  The client requsts to join a private channel
-  Join(channel_id: uuid.Uuid)
-  /// 󰿅  The client requsts to leave a private channel
-  Leave(channel_id: uuid.Uuid)
 }
