@@ -4,6 +4,7 @@ import app/web
 import app/web/context.{type Context}
 import argus
 import formal/form
+import gleam/bool
 import gleam/http
 import gleam/list
 import gleam/result
@@ -44,7 +45,7 @@ pub fn handle_request(
 fn handle_form_data(
   request request: wisp.Request,
   ctx ctx: Context,
-  form_data form_data: UpdatePasswordForm,
+  form_data form_data: RequestBody,
 ) -> wisp.Response {
   case update_user_password(request:, ctx:, form_data:) {
     Error(err) -> handle_error(err)
@@ -62,30 +63,32 @@ fn handle_error(err: UpdatePasswordError) -> wisp.Response {
   case err {
     AccessError(err) -> user.handle_authentication_error(err)
     UserNotFound(id) -> {
-      let resp = wisp.not_found()
       let body = "Usuário não encontrado: " <> uuid.to_string(id)
 
       wisp.Text(body)
-      |> wisp.set_body(resp, _)
+      |> wisp.set_body(wisp.not_found(), _)
     }
-    HashError -> {
-      let resp = wisp.internal_server_error()
 
+    HashError ->
       "Ocorreu um erro ao encriptografar a senha do usuário"
       |> wisp.Text
-      |> wisp.set_body(resp, _)
-    }
+      |> wisp.set_body(wisp.internal_server_error(), _)
+
     WrongPassword -> wisp.bad_request("Senha incorreta")
+
     DataBaseError(err) -> web.handle_database_error(err)
+
     MustBeDifferent ->
-      wisp.bad_request("A senha nova precisa ser diferente da antiga")
+      "A senha nova precisa ser diferente da antiga"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
   }
 }
 
 fn update_user_password(
   request request: wisp.Request,
   ctx ctx: Context,
-  form_data form_data: UpdatePasswordForm,
+  form_data form_data: RequestBody,
 ) -> Result(Nil, UpdatePasswordError) {
   use user_uuid <- result.try(
     user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
@@ -96,49 +99,43 @@ fn update_user_password(
   use current_password_hash <- result.try(query_user_password(ctx:, user_uuid:))
 
   // Compare the current password with the hash
-  use match_current_password <- result.try(
+  use typed_correct_password <- result.try(
     argus.verify(current_password_hash, form_data.current_password)
     |> result.replace_error(HashError),
   )
 
   // Compare the new password with the hash
-  use match_new_password <- result.try(
+  use same_as_current_password <- result.try(
     argus.verify(current_password_hash, form_data.new_password)
     |> result.replace_error(HashError),
   )
 
-  case match_current_password, match_new_password {
-    // 1.  User typed correct password 
-    // 2.  The new password is different from the stored hash 
-    True, False -> {
-      // 󱔼  Hash the password first before updating
-      use hashed_password <- result.try(
-        argus.hasher()
-        |> argus.hash(form_data.new_password, argus.gen_salt())
-        |> result.replace_error(HashError),
-      )
+  // User typed the wrong password
+  use <- bool.guard(
+    when: typed_correct_password == False,
+    return: Error(WrongPassword),
+  )
 
-      // 󰚰  Update their password
-      use _ <- result.try(
-        sql.update_user_password(
-          ctx.db,
-          user_uuid,
-          hashed_password.encoded_hash,
-        )
-        |> result.map_error(DataBaseError),
-      )
+  // New password is the same as the current one
+  use <- bool.guard(
+    when: same_as_current_password == True,
+    return: Error(MustBeDifferent),
+  )
 
-      //   All done!
-      log_password_update(user_uuid)
-      Ok(Nil)
-    }
+  use hashed_password <- result.try(
+    argus.hasher()
+    |> argus.hash(form_data.new_password, argus.gen_salt())
+    |> result.replace_error(HashError),
+  )
 
-    // User typed wrong password
-    False, _ -> Error(WrongPassword)
+  // 󰚰  Update their password
+  use _ <- result.map(
+    sql.update_user_password(ctx.db, user_uuid, hashed_password.encoded_hash)
+    |> result.map_error(DataBaseError),
+  )
 
-    // New password is the same as the stored hash
-    _, True -> Error(MustBeDifferent)
-  }
+  //   All done!
+  log_password_update(user_uuid)
 }
 
 fn query_user_password(
@@ -159,7 +156,7 @@ fn query_user_password(
   row.password_hash
 }
 
-fn update_password_form() -> form.Form(UpdatePasswordForm) {
+fn update_password_form() -> form.Form(RequestBody) {
   form.new({
     use current_password <- form.field("senhaAtual", {
       form.parse_string |> form.check_not_empty()
@@ -180,12 +177,13 @@ fn update_password_form() -> form.Form(UpdatePasswordForm) {
     })
 
     // Success!
-    form.success(UpdatePasswordForm(current_password:, new_password:))
+    RequestBody(current_password:, new_password:)
+    |> form.success()
   })
 }
 
-type UpdatePasswordForm {
-  UpdatePasswordForm(current_password: String, new_password: String)
+type RequestBody {
+  RequestBody(current_password: String, new_password: String)
 }
 
 ///   Updating an user's password can fail
