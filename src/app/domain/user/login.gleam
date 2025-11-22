@@ -73,10 +73,9 @@ pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
 
   case form_result {
     Error(_) -> wisp.unprocessable_content()
-    Ok(data) -> {
-      let cookie_name = user.uuid_cookie_name
-      handle_login(request:, ctx:, data:, cookie_name:)
-    }
+    Ok(data) ->
+      user.uuid_cookie_name
+      |> handle_login(request:, ctx:, data:, cookie_name: _)
   }
 }
 
