@@ -160,7 +160,10 @@ fn handle_domain_event(
   msg: msg.DomainEvent,
 ) -> mist.Next(State, msg.Msg) {
   case msg {
-    msg.UserAssignedToBrigade(user_id:, brigade_id:) ->
+    msg.UserAssignedToBrigade(user_id:, brigade_id:) -> {
+      let brigade_list = [brigade_id, ..state.brigade_list]
+      let state = State(..state, brigade_list:)
+
       send_envelope(
         state:,
         conn:,
@@ -170,6 +173,7 @@ fn handle_domain_event(
           #("brigade_id", uuid.to_string(brigade_id) |> json.string),
         ]),
       )
+    }
 
     msg.UserAssignedToOccurrence(user_id:, occurrence_id:) ->
       send_envelope(
@@ -202,7 +206,7 @@ fn handle_domain_event(
     msg.OccurrenceResolved(id:, when:) -> {
       let timestamp_json = {
         use time <- json.nullable(when)
-        timestamp.to_unix_seconds(time) |> json.float
+        json.float(timestamp.to_unix_seconds(time))
       }
 
       send_envelope(
@@ -219,7 +223,7 @@ fn handle_domain_event(
     msg.OccurrenceReopened(id:, when:) -> {
       let timestamp_json = {
         use time <- json.nullable(when)
-        timestamp.to_unix_seconds(time) |> json.float
+        json.float(timestamp.to_unix_seconds(time))
       }
 
       send_envelope(
