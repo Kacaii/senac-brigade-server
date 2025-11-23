@@ -9,8 +9,8 @@
 //// 1. A PostgreSQL database connection pool using Pog
 //// 2. An HTTP server using Mist (with Wisp handling the web layer)
 
-import app/http_router
 import app/domain/admin/sql as admin_sql
+import app/http_router
 import app/supervision_tree
 import app/web
 import app/web/context.{type Context, Context}
