@@ -41,16 +41,20 @@ pub fn handle_request(
   id occurrence_id: String,
 ) -> wisp.Response {
   case req.method {
+    // Mark an occurrence as resolved
     http.Post ->
       case try_resolve_occurrence(req, ctx, occurrence_id) {
         Error(err) -> handle_error(err)
         Ok(body) -> wisp.json_response(body, 200)
       }
+
+    // Reopen a resolved occurrence
     http.Delete ->
       case try_reopen_occurrence(req, ctx, occurrence_id) {
         Error(err) -> handle_error(err)
         Ok(body) -> wisp.json_response(body, 200)
       }
+
     _ -> wisp.method_not_allowed([http.Post, http.Delete])
   }
 }
