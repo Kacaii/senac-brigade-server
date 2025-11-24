@@ -76,7 +76,7 @@ fn handle_error(err: UpdatePasswordError) -> wisp.Response {
 
     WrongPassword -> wisp.bad_request("Senha incorreta")
 
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
 
     MustBeDifferent ->
       "A senha nova precisa ser diferente da antiga"
@@ -131,7 +131,7 @@ fn update_user_password(
   // 󰚰  Update their password
   use _ <- result.map(
     sql.update_user_password(ctx.db, user_uuid, hashed_password.encoded_hash)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   //   All done!
@@ -144,7 +144,7 @@ fn query_user_password(
 ) -> Result(String, UpdatePasswordError) {
   use returned <- result.try(
     sql.query_user_password(ctx.db, user_uuid)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.map(
@@ -193,7 +193,7 @@ type UpdatePasswordError {
   ///   User was not found in the database
   UserNotFound(uuid.Uuid)
   /// 󱙀  Failed to access the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   ///   User typed the wrong password
   WrongPassword
   ///   Failed to hash the user's password

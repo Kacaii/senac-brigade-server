@@ -42,7 +42,7 @@ type UpdateNotificationPreferencesError {
   /// Authentication failed
   AccessControl(user.AuthenticationError)
   /// Failed to query Database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }
 
 fn handle_data(
@@ -78,7 +78,7 @@ fn body_decoder() -> decode.Decoder(dict.Dict(category.Category, Bool)) {
 fn handle_error(err: UpdateNotificationPreferencesError) -> wisp.Response {
   case err {
     AccessControl(err) -> user.handle_authentication_error(err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -101,5 +101,5 @@ fn try_update(
   }
 
   sql.update_notification_preferences(ctx.db, user_uuid, key, value)
-  |> result.map_error(DataBaseError)
+  |> result.map_error(DataBase)
 }

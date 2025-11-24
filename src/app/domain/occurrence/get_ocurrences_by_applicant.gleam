@@ -45,7 +45,7 @@ fn query_occurrences(
 
   use returned <- result.try(
     sql.query_occurences_by_applicant(ctx.db, user_uuid)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   let payload_result = {
@@ -124,7 +124,7 @@ fn handle_error(err: GetOccurrencesByApplicantError) -> wisp.Response {
   case err {
     InvalidUUID(user_id) ->
       wisp.bad_request("ID de usuário inválido: " <> user_id)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     BrigadeListDecodeError(_) ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
@@ -155,7 +155,7 @@ type GetOccurrencesByApplicantError {
   /// The applicant has invalid UUID
   InvalidUUID(String)
   /// An error occurred when querying the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// An error occurred while decoding the brigade list
   BrigadeListDecodeError(json.DecodeError)
 }

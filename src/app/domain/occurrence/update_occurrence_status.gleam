@@ -21,7 +21,7 @@ type ResolveOccurrenceError {
   /// Occurrence was not found in the DataBase
   OccurrenceNotFound(uuid.Uuid)
   /// An error occurred whe naccessing the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// Errors related to authentication / authorization
   AccessControl(user.AuthenticationError)
 }
@@ -76,7 +76,7 @@ fn try_resolve_occurrence(
 
   use returned <- result.try(
     sql.resolve_occurrence(ctx.db, target)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.map(
@@ -128,7 +128,7 @@ fn try_reopen_occurrence(
 
   use returned <- result.try(
     sql.reopen_occurrence(ctx.db, target)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.map(
@@ -165,7 +165,7 @@ fn try_reopen_occurrence(
 fn handle_error(err: ResolveOccurrenceError) -> wisp.Response {
   case err {
     AccessControl(err) -> user.handle_authentication_error(err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     InvalidUuid(id) ->
       wisp.bad_request("Ocorrência possui Uuid inválido: " <> id)
     OccurrenceNotFound(occ_id) ->

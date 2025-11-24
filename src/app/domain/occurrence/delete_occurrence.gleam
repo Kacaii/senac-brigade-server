@@ -17,7 +17,7 @@ type DeleteOccurrenceError {
   ///   Authentication failed
   AuthenticationError(user.AuthenticationError)
   /// 󱙀  Failed to query the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// 󱪘  Occurrence was not found in the system 
   OccurrenceNotFound(uuid.Uuid)
 }
@@ -63,7 +63,7 @@ fn try_delete_occurrence(
 
   use returned <- result.try(
     sql.delete_occurrence_by_id(ctx.db, occ_uuid)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   case list.first(returned.rows) {
@@ -82,7 +82,7 @@ fn handle_error(err: DeleteOccurrenceError) -> wisp.Response {
       // 404 Bad Request
       wisp.bad_request("UUID inválido: " <> uuid_string)
     AuthenticationError(auth_err) -> user.handle_authentication_error(auth_err)
-    DataBaseError(db_err) -> web.handle_database_error(db_err)
+    DataBase(db_err) -> web.handle_database_error(db_err)
     OccurrenceNotFound(occ_uuid) -> {
       // 404 not found
       let resp = wisp.not_found()

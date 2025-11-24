@@ -27,7 +27,7 @@ type LoginError {
   ///   Database couldn't find target registration
   UserNotFound
   ///   Something went wrong on the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// 󰣮  Provided password didnt _match_ the one inside our Database
   InvalidPassword
   /// 󱔼  Hashing went wrong
@@ -126,7 +126,7 @@ fn handle_error(err: LoginError) -> response.Response(wisp.Body) {
       |> wisp.Text
       |> wisp.set_body(wisp.response(401), _)
 
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -147,7 +147,7 @@ fn query_login_token(
 ) -> Result(LoginToken, LoginError) {
   use returned <- result.try(
     sql.query_login_token(ctx.db, data.registration)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.try(

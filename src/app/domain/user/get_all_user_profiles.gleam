@@ -52,13 +52,13 @@ type GetAllUsersError {
   ///   Errors related to user authentication / authorization
   AccessError(user.AccessControlError)
   /// 󱙀  An error occurred while querying the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }
 
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   case err {
     AccessError(err) -> user.handle_access_control_error(req, err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -78,7 +78,7 @@ fn try_query_database(
 
   use returned <- result.try(
     sql.get_complete_user_profiles(ctx.db)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   json.preprocessed_array({

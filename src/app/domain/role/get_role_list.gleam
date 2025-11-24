@@ -36,12 +36,12 @@ pub fn handle_request(
 ///   Gathering the role list can fail
 type GetRoleListError {
   /// 󱘺  An error occurred while querying the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }
 
 fn handle_error(err: GetRoleListError) -> wisp.Response {
   case err {
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -49,7 +49,7 @@ fn handle_error(err: GetRoleListError) -> wisp.Response {
 fn query_user_roles(ctx: Context) -> Result(json.Json, GetRoleListError) {
   use returned <- result.try(
     sql.query_available_user_roles(ctx.db)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   let available_roles =

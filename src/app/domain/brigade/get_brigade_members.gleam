@@ -57,14 +57,14 @@ type GetBrigadeMembersError {
   /// 󱔼  The provided brigade ID is not a valid UUID format
   InvalidUUID(String)
   /// 󱙀  An error occurred while accessing the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }
 
 fn handle_error(err: GetBrigadeMembersError) -> wisp.Response {
   case err {
     InvalidUUID(id) ->
       wisp.bad_request("ID de Brigada de Incêndio inválido:" <> id)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -79,7 +79,7 @@ fn query_brigade_members(
 
   use returned <- result.try(
     sql.query_members_info(ctx.db, brigade_uuid)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   // Building response body

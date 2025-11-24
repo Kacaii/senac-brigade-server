@@ -93,7 +93,7 @@ fn try_insert_into_database(
       hashed_password.encoded_hash,
       role_to_enum(user_role),
     )
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.map(
@@ -202,7 +202,7 @@ fn handle_error(req: wisp.Request, err: SignupError) {
       wisp.internal_server_error()
       |> wisp.set_body(body)
     }
-    DataBaseError(err) -> handle_database_error(err)
+    DataBase(err) -> handle_database_error(err)
     InvalidRole(unknown) ->
       wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
     AccessError(err) -> user.handle_access_control_error(req, err)
@@ -219,7 +219,7 @@ type SignupError {
   /// 󱔼  Hashing went wrong
   HashError
   ///   Something went wrong on the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   ///   Unknown user role
   InvalidRole(String)
   ///   User / Role related issues

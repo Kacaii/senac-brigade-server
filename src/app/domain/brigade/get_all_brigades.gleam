@@ -46,14 +46,14 @@ pub fn handle_request(
 
 fn handle_error(err: QueryAllBrigadesError) -> wisp.Response {
   case err {
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
 fn query_database(ctx ctx: Context) -> Result(String, QueryAllBrigadesError) {
   use returned <- result.try(
     sql.query_all_brigades(ctx.db)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   // 󰅨  Return JSON array
@@ -73,5 +73,5 @@ fn query_database(ctx ctx: Context) -> Result(String, QueryAllBrigadesError) {
 /// 󰤏  Querying a brigade can fail
 type QueryAllBrigadesError {
   /// 󱙀  An error occurred while accessing the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }

@@ -35,7 +35,7 @@ pub fn handle_request(
 ///   Deleting an user can fail
 type DeleteUserError {
   /// 󱙀  An error occurred while accessing the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// 󰘨  Target user has invalid Uuid
   InvalidUserUuid(String)
   /// 󱋟  Errors related to authentication and authorization
@@ -53,7 +53,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
     UserNotFound(user_uuid) ->
       wisp.bad_request("Usuário não encontrado: " <> uuid.to_string(user_uuid))
     AccessError(err) -> user.handle_access_control_error(req, err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     CantDeleteSelf -> wisp.bad_request("Um usuário não deve remover a si mesmo")
   }
 }
@@ -85,7 +85,7 @@ fn try_delete_user(
     False -> {
       use returned <- result.try(
         sql.delete_user_by_id(ctx.db, target_user_uuid)
-        |> result.map_error(DataBaseError),
+        |> result.map_error(DataBase),
       )
 
       case list.first(returned.rows) {

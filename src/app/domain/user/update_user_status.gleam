@@ -50,7 +50,7 @@ type UpdateUserStatusError {
   /// 󱔼  UUID is not valid
   InvalidUuid(String)
   /// 󱘱  Failed to query the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }
 
 fn try_update_user_status(
@@ -76,7 +76,7 @@ fn try_update_user_status(
 
   use returned <- result.try(
     sql.update_user_status(ctx.db, user_uuid, is_active)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   case list.first(returned.rows) {
@@ -94,7 +94,7 @@ fn try_update_user_status(
 fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response {
   case err {
     AccessError(err) -> user.handle_access_control_error(req, err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     InvalidUuid(user_id) ->
       wisp.response(401)
       |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))

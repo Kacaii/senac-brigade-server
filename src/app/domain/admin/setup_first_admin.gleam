@@ -54,7 +54,7 @@ fn insert_first_admin(ctx: Context) -> wisp.Response {
         hashed_password.encoded_hash,
         user_sql.Admin,
       )
-      |> result.map_error(DataBaseError),
+      |> result.map_error(DataBase),
     )
 
     // No need to return anything from this function
@@ -98,7 +98,7 @@ fn handle_error(err: SetupAdminError) -> wisp.Response {
         "A variável de ambiente necessária para o acesso a este endpoint se encontra ausente",
       ))
 
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -110,7 +110,7 @@ fn validate_admin_key(ctx: Context, key: String) -> Result(Nil, SetupAdminError)
 
   use returned <- result.try(
     sql.count_total_users(ctx.db)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.try(
@@ -137,7 +137,7 @@ type SetupAdminError {
   /// Env has not been found
   MissingEnvToken
   /// An error occurred while accessing the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// Failed to count how many users are registered
   DataBaseReturnedEmptyRow(Nil)
   /// Database needs to be empty

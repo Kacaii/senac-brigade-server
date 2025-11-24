@@ -44,7 +44,7 @@ pub fn handle_request(
 ///   Finding information about an user profile can fail
 pub type GetUserProfileError {
   /// 󱙀  An error occurred while accessing the database
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   ///   User not found in the DataBase
   UserNotFound(uuid.Uuid)
   ///   Authentication failed
@@ -54,7 +54,7 @@ pub type GetUserProfileError {
 fn handle_error(err: GetUserProfileError) {
   case err {
     AccessControl(err) -> user.handle_authentication_error(err)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
     UserNotFound(id) -> {
       // HTTP 404 Not Found
       let resp = wisp.not_found()
@@ -74,7 +74,7 @@ pub fn query_user_data(ctx: Context, request: wisp.Request) {
 
   use returned <- result.try(
     sql.query_user_profile(ctx.db, user_id)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   use row <- result.try(

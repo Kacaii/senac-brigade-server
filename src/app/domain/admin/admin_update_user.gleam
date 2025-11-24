@@ -57,7 +57,7 @@ fn handle_body(
 
 type AdminUpdateUserError {
   /// Failed to access the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// User has invalid Uuid format
   InvalidUuid(String)
   /// Authentication / Authorization failed
@@ -80,7 +80,7 @@ fn handle_error(
       wisp.Text("Usuário não encontrado: " <> uuid.to_string(id))
       |> wisp.set_body(wisp.not_found(), _)
 
-    DataBaseError(err) -> {
+    DataBase(err) -> {
       case err {
         pog.ConstraintViolated(_, _, constraint: "user_account_email_key") ->
           wisp.Text("Email já está sendo utilizado: " <> body.email)
@@ -132,7 +132,7 @@ fn try_update_user(
       body.registration,
       body.is_active,
     )
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
 
   case list.first(returned.rows) {

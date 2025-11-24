@@ -39,7 +39,7 @@ fn get_dashboard_data(
   //  QUERY THE DATABASE ----------------------------------------------------
   use returned <- result.try(
     sql.query_dashboard_stats(ctx.db)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
   use row <- result.try(
     list.first(returned.rows)
@@ -59,7 +59,7 @@ fn handle_error(err err: GetDashboardStatsError) -> wisp.Response {
       ))
     }
 
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -85,5 +85,5 @@ pub type GetDashboardStatsError {
   /// DataBase could not find the data
   DataBaseReturnedNoResults
   /// DataBase query went wrong
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
 }

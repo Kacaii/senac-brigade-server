@@ -37,7 +37,7 @@ fn handle_error(err: DeleteBrigadeError) -> wisp.Response {
   case err {
     InvalidUuid(id) -> wisp.bad_request("Equipe possui UUID inválido: " <> id)
     BrigadeNotFound(id) -> wisp.bad_request("Equipe não econtrada: " <> id)
-    DataBaseError(err) -> web.handle_database_error(err)
+    DataBase(err) -> web.handle_database_error(err)
   }
 }
 
@@ -52,7 +52,7 @@ fn delete_from_database(
 
   use returned <- result.try(
     sql.delete_brigade_by_id(ctx.db, brigade_uuid)
-    |> result.map_error(DataBaseError),
+    |> result.map_error(DataBase),
   )
   use row <- result.map(
     list.first(returned.rows)
@@ -70,7 +70,7 @@ type DeleteBrigadeError {
   /// Session token has invalid Uuid fornmat
   InvalidUuid(String)
   /// An error occurred when accessing the DataBase
-  DataBaseError(pog.QueryError)
+  DataBase(pog.QueryError)
   /// Brigade not found in the DataBase
   BrigadeNotFound(String)
 }
