@@ -8,6 +8,13 @@ import gleam/result
 import pog
 import wisp
 
+pub type GetDashboardStatsError {
+  /// Found no results
+  NotFound
+  /// Failed to query the DataBase
+  DataBase(pog.QueryError)
+}
+
 /// 󰡦  Retrieve dashboard stats from the DataBase and returns them
 /// as formatted JSON data
 ///
@@ -28,62 +35,47 @@ pub fn handle_request(
   use <- wisp.require_method(request, http.Get)
 
   case get_dashboard_data(ctx:) {
-    Ok(value) -> wisp.json_response(json.to_string(value), 200)
-    Error(err) -> handle_error(err:)
+    Ok(body) -> wisp.json_response(body, 200)
+    Error(err) -> handle_error(err)
   }
 }
 
 fn get_dashboard_data(
   ctx ctx: Context,
-) -> Result(json.Json, GetDashboardStatsError) {
+) -> Result(String, GetDashboardStatsError) {
   //  QUERY THE DATABASE ----------------------------------------------------
   use returned <- result.try(
     sql.query_dashboard_stats(ctx.db)
     |> result.map_error(DataBase),
   )
-  use row <- result.try(
+
+  use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(DataBaseReturnedNoResults),
+    |> result.replace_error(NotFound),
   )
 
-  Ok(get_dashboard_stats_row_to_json(row))
+  row
+  |> row_to_json
+  |> json.to_string
 }
 
-fn handle_error(err err: GetDashboardStatsError) -> wisp.Response {
+fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
   case err {
     // 󱋬  DataBase couldn't find the required information for the dashboard
-    DataBaseReturnedNoResults -> {
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "O Banco de dados não encontrou os dados solicitados",
-      ))
-    }
+    NotFound ->
+      "O Banco de dados não encontrou os dados solicitados"
+      |> wisp.Text()
+      |> wisp.set_body(wisp.not_found(), _)
 
     DataBase(err) -> web.handle_database_error(err)
   }
 }
 
-fn get_dashboard_stats_row_to_json(
-  get_dashboard_stats_row: sql.QueryDashboardStatsRow,
-) -> json.Json {
-  let sql.QueryDashboardStatsRow(
-    active_brigades_count:,
-    total_occurrences_count:,
-    active_occurrences_count:,
-    recent_occurrences_count:,
-  ) = get_dashboard_stats_row
+fn row_to_json(row: sql.QueryDashboardStatsRow) -> json.Json {
   json.object([
-    #("totalOcorrencias", json.int(total_occurrences_count)),
-    #("ocorrenciasHoje", json.int(recent_occurrences_count)),
-    #("emAndamento", json.int(active_occurrences_count)),
-    #("equipesAtivas", json.int(active_brigades_count)),
+    #("totalOcorrencias", json.int(row.total_occurrences_count)),
+    #("ocorrenciasHoje", json.int(row.recent_occurrences_count)),
+    #("emAndamento", json.int(row.active_occurrences_count)),
+    #("equipesAtivas", json.int(row.active_brigades_count)),
   ])
-}
-
-/// Querying the endpoint can fail
-pub type GetDashboardStatsError {
-  /// DataBase could not find the data
-  DataBaseReturnedNoResults
-  /// DataBase query went wrong
-  DataBase(pog.QueryError)
 }
