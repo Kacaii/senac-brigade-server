@@ -69,7 +69,7 @@ fn try_insert_into_database(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   use hashed_password <- result.try(
@@ -205,7 +205,7 @@ fn handle_error(req: wisp.Request, err: SignupError) {
     DataBase(err) -> handle_database_error(err)
     InvalidRole(unknown) ->
       wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
-    AccessError(err) -> user.handle_access_control_error(req, err)
+    AccessControl(err) -> user.handle_access_control_error(req, err)
     MissingSignupConfirmation ->
       wisp.internal_server_error()
       |> wisp.set_body(wisp.Text(
@@ -223,7 +223,7 @@ type SignupError {
   ///   Unknown user role
   InvalidRole(String)
   ///   User / Role related issues
-  AccessError(user.AccessControlError)
+  AccessControl(user.AccessControlError)
   /// 󰡦  Database didnt return information about the new user
   MissingSignupConfirmation
 }

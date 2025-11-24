@@ -50,14 +50,14 @@ pub fn handle_request(
 /// 󰀖  Gathering the user list can fail
 type GetAllUsersError {
   ///   Errors related to user authentication / authorization
-  AccessError(user.AccessControlError)
+  AccessControl(user.AccessControlError)
   /// 󱙀  An error occurred while querying the DataBase
   DataBase(pog.QueryError)
 }
 
 fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   case err {
-    AccessError(err) -> user.handle_access_control_error(req, err)
+    AccessControl(err) -> user.handle_access_control_error(req, err)
     DataBase(err) -> web.handle_database_error(err)
   }
 }
@@ -73,7 +73,7 @@ fn try_query_database(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   use returned <- result.try(

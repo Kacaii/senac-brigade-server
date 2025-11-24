@@ -61,7 +61,7 @@ fn handle_form_data(
 
 fn handle_error(err: UpdatePasswordError) -> wisp.Response {
   case err {
-    AccessError(err) -> user.handle_authentication_error(err)
+    AccessControl(err) -> user.handle_authentication_error(err)
     UserNotFound(id) -> {
       let body = "Usuário não encontrado: " <> uuid.to_string(id)
 
@@ -92,7 +92,7 @@ fn update_user_password(
 ) -> Result(Nil, UpdatePasswordError) {
   use user_uuid <- result.try(
     user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   // Fetch the password hash from the DataBase
@@ -189,7 +189,7 @@ type RequestBody {
 ///   Updating an user's password can fail
 type UpdatePasswordError {
   ///   Authentication failed
-  AccessError(user.AuthenticationError)
+  AccessControl(user.AuthenticationError)
   ///   User was not found in the database
   UserNotFound(uuid.Uuid)
   /// 󱙀  Failed to access the DataBase

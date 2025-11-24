@@ -70,7 +70,7 @@ type RegisterBrigadeError {
   /// Brigade not found in the Database
   BrigadeNotFound
   /// Error related to Authentication / Authorization
-  AccessError(user.AccessControlError)
+  AccessControl(user.AccessControlError)
 }
 
 fn body_decoder() {
@@ -125,7 +125,7 @@ fn try_register_brigade(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   use returned <- result.try(
@@ -195,7 +195,7 @@ fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response
     InvalidUuid(user_id) ->
       wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
     DataBase(err) -> web.handle_database_error(err)
-    AccessError(err) -> user.handle_access_control_error(request, err)
+    AccessControl(err) -> user.handle_access_control_error(request, err)
     BrigadeNotFound ->
       "O Banco de Dados não retornou informações sobre a nova equipe após a inserção"
       |> wisp.Text

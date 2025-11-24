@@ -39,7 +39,7 @@ type DeleteUserError {
   /// 󰘨  Target user has invalid Uuid
   InvalidUserUuid(String)
   /// 󱋟  Errors related to authentication and authorization
-  AccessError(user.AccessControlError)
+  AccessControl(user.AccessControlError)
   /// 󰀒  User was not found in the Database
   UserNotFound(uuid.Uuid)
   /// 󱅞  An user should not be able to delete theirself
@@ -52,7 +52,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
       wisp.bad_request("Usuário possui Uuid Inválido: " <> invalid_uuid)
     UserNotFound(user_uuid) ->
       wisp.bad_request("Usuário não encontrado: " <> uuid.to_string(user_uuid))
-    AccessError(err) -> user.handle_access_control_error(req, err)
+    AccessControl(err) -> user.handle_access_control_error(req, err)
     DataBase(err) -> web.handle_database_error(err)
     CantDeleteSelf -> wisp.bad_request("Um usuário não deve remover a si mesmo")
   }
@@ -76,7 +76,7 @@ fn try_delete_user(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   // Check if the authenticated user is trying to delete theirself

@@ -44,7 +44,7 @@ pub fn handle_request(
 ///   Updating an user status can fail
 type UpdateUserStatusError {
   ///   Error related to authentication / authorization
-  AccessError(user.AccessControlError)
+  AccessControl(user.AccessControlError)
   ///   User not found in the DataBase
   UserNotFound(String)
   /// 󱔼  UUID is not valid
@@ -66,7 +66,7 @@ fn try_update_user_status(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   use user_uuid <- result.try(
@@ -93,7 +93,7 @@ fn try_update_user_status(
 
 fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response {
   case err {
-    AccessError(err) -> user.handle_access_control_error(req, err)
+    AccessControl(err) -> user.handle_access_control_error(req, err)
     DataBase(err) -> web.handle_database_error(err)
     InvalidUuid(user_id) ->
       wisp.response(401)

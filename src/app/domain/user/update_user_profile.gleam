@@ -49,7 +49,7 @@ fn handle_body(
 
 fn handle_error(err: UpdateProfileError) -> wisp.Response {
   case err {
-    AccessError(err) -> user.handle_authentication_error(err)
+    AccessControl(err) -> user.handle_authentication_error(err)
     UserNotFound(user_uuid) -> {
       let resp = wisp.not_found()
       let body =
@@ -91,7 +91,7 @@ fn try_update_user(
 ) -> Result(String, UpdateProfileError) {
   use maybe_id <- result.try(
     user.extract_uuid(req, user.uuid_cookie_name)
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   use returned <- result.try(
@@ -122,7 +122,7 @@ fn try_update_user(
 /// Updating an user profile can fail
 type UpdateProfileError {
   /// Authentication failed
-  AccessError(user.AuthenticationError)
+  AccessControl(user.AuthenticationError)
   /// An error occurred when accessing the DataBase
   DatabaseError(pog.QueryError)
   /// User was not found in the DataBase

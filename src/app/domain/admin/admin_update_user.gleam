@@ -61,7 +61,7 @@ type AdminUpdateUserError {
   /// User has invalid Uuid format
   InvalidUuid(String)
   /// Authentication / Authorization failed
-  AccessError(user.AccessControlError)
+  AccessControl(user.AccessControlError)
   /// User not found in the DataBase
   UserNotFound(uuid.Uuid)
 }
@@ -72,26 +72,37 @@ fn handle_error(
   err: AdminUpdateUserError,
 ) -> wisp.Response {
   case err {
-    AccessError(err) -> user.handle_access_control_error(req, err)
+    AccessControl(err) -> user.handle_access_control_error(req, err)
 
     InvalidUuid(id) -> wisp.bad_request("Usuário possui Uuid inválido: " <> id)
 
-    UserNotFound(id) ->
-      wisp.Text("Usuário não encontrado: " <> uuid.to_string(id))
+    UserNotFound(id) -> {
+      let body = "Usuário não encontrado: " <> uuid.to_string(id)
+
+      body
+      |> wisp.Text
       |> wisp.set_body(wisp.not_found(), _)
+    }
 
     DataBase(err) -> {
       case err {
-        pog.ConstraintViolated(_, _, constraint: "user_account_email_key") ->
-          wisp.Text("Email já está sendo utilizado: " <> body.email)
+        pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
+          let body = "Email já está sendo utilizado: " <> body.email
+
+          body
+          |> wisp.Text
           |> wisp.set_body(wisp.response(409), _)
+        }
 
         pog.ConstraintViolated(
           _,
           _,
           constraint: "user_account_registration_key",
         ) -> {
-          wisp.Text("Matrícula já está sendo utilizada: " <> body.registration)
+          let body = "Matrícula já está sendo utilizada: " <> body.registration
+
+          body
+          |> wisp.Text
           |> wisp.set_body(wisp.response(409), _)
         }
 
@@ -114,7 +125,7 @@ fn try_update_user(
       cookie_name: user.uuid_cookie_name,
       authorized_roles: [role.Admin, role.Developer],
     )
-    |> result.map_error(AccessError),
+    |> result.map_error(AccessControl),
   )
 
   use user_uuid <- result.try(
