@@ -6,7 +6,6 @@ import app/web
 import app/web/context.{type Context}
 import gleam/http
 import gleam/json
-import gleam/list
 import gleam/result
 import pog
 import wisp
@@ -52,6 +51,13 @@ pub fn handle_request(
   }
 }
 
+type GetCrewMembersError {
+  /// User has invalid Uuid fornmat
+  InvalidUUID(String)
+  /// An error occurred while accessing the DataBase
+  DataBase(pog.QueryError)
+}
+
 fn try_query_database(
   ctx ctx: Context,
   user_id user_id: String,
@@ -61,31 +67,27 @@ fn try_query_database(
     |> result.replace_error(InvalidUUID(user_id)),
   )
 
-  use returned <- result.try(
+  use returned <- result.map(
     sql.query_crew_members(ctx.db, user_uuid)
     |> result.map_error(DataBase),
   )
 
-  let fellow_members_list = {
-    use fellow_brigade_member <- list.map(returned.rows)
-    get_crew_members_row_to_json(fellow_brigade_member)
-  }
-
-  json.preprocessed_array(fellow_members_list)
+  returned.rows
+  |> json.array(row_to_json)
   |> json.to_string
-  |> Ok
 }
 
-fn get_crew_members_row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
+fn row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
   let role_name =
-    role.to_string_pt_br(case row.user_role {
+    case row.user_role {
       sql.Admin -> role.Admin
       sql.Analyst -> role.Analyst
       sql.Captain -> role.Captain
       sql.Developer -> role.Developer
       sql.Firefighter -> role.Firefighter
       sql.Sargeant -> role.Sargeant
-    })
+    }
+    |> role.to_string_pt_br
 
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
@@ -95,17 +97,9 @@ fn get_crew_members_row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
   ])
 }
 
-fn handle_err(err: GetCrewMembersError) {
+fn handle_err(err: GetCrewMembersError) -> wisp.Response {
   case err {
     InvalidUUID(id) -> wisp.bad_request("ID de usuário inválido: " <> id)
     DataBase(err) -> web.handle_database_error(err)
   }
-}
-
-/// Finding the user's crew can fail
-type GetCrewMembersError {
-  /// User has invalid Uuid fornmat
-  InvalidUUID(String)
-  /// An error occurred while accessing the DataBase
-  DataBase(pog.QueryError)
 }

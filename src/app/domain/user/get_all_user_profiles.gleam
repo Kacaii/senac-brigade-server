@@ -5,7 +5,6 @@ import app/web
 import app/web/context.{type Context}
 import gleam/http
 import gleam/json
-import gleam/list
 import gleam/result
 import pog
 import wisp
@@ -76,17 +75,14 @@ fn try_query_database(
     |> result.map_error(AccessControl),
   )
 
-  use returned <- result.try(
+  use returned <- result.map(
     sql.get_complete_user_profiles(ctx.db)
     |> result.map_error(DataBase),
   )
 
-  json.preprocessed_array({
-    use row <- list.map(returned.rows)
-    row_to_json(row)
-  })
+  returned.rows
+  |> json.array(row_to_json)
   |> json.to_string
-  |> Ok
 }
 
 fn row_to_json(row: sql.GetCompleteUserProfilesRow) -> json.Json {

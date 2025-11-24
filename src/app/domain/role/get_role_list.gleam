@@ -4,7 +4,6 @@ import app/web
 import app/web/context.{type Context}
 import gleam/http
 import gleam/json
-import gleam/list
 import gleam/result
 import pog
 import wisp
@@ -23,12 +22,8 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
-  // 󰡦  Find available roles
   case query_user_roles(ctx) {
-    // Send data back to the Client
-    Ok(role_list) -> wisp.json_response(json.to_string(role_list), 200)
-
-    // Handle possible errors
+    Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_error(err)
   }
 }
@@ -46,23 +41,22 @@ fn handle_error(err: GetRoleListError) -> wisp.Response {
 }
 
 /// 󰆼  Queries the database to collect all available role names
-fn query_user_roles(ctx: Context) -> Result(json.Json, GetRoleListError) {
-  use returned <- result.try(
+fn query_user_roles(ctx: Context) -> Result(String, GetRoleListError) {
+  use returned <- result.map(
     sql.query_available_user_roles(ctx.db)
     |> result.map_error(DataBase),
   )
 
-  let available_roles =
-    {
-      use row <- list.map(returned.rows)
-      row.available_role
-      |> enum_to_role()
-      |> role.to_string_pt_br()
-      |> json.string
-    }
-    |> json.preprocessed_array
+  returned.rows
+  |> json.array(row_to_json)
+  |> json.to_string
+}
 
-  Ok(available_roles)
+fn row_to_json(row: sql.QueryAvailableUserRolesRow) -> json.Json {
+  row.available_role
+  |> enum_to_role()
+  |> role.to_string_pt_br()
+  |> json.string
 }
 
 fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {

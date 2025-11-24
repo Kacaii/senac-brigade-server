@@ -9,7 +9,6 @@ import app/web
 import app/web/context.{type Context}
 import gleam/http
 import gleam/json
-import gleam/list
 import gleam/result
 import pog
 import wisp
@@ -77,31 +76,31 @@ fn query_brigade_members(
     |> result.replace_error(InvalidUUID(brigade_id)),
   )
 
-  use returned <- result.try(
+  use returned <- result.map(
     sql.query_members_info(ctx.db, brigade_uuid)
     |> result.map_error(DataBase),
   )
 
-  // Building response body
-  json.preprocessed_array({
-    use row <- list.map(returned.rows)
-    let user_role =
-      case row.user_role {
-        sql.Admin -> role.Admin
-        sql.Analyst -> role.Analyst
-        sql.Captain -> role.Captain
-        sql.Developer -> role.Developer
-        sql.Firefighter -> role.Firefighter
-        sql.Sargeant -> role.Sargeant
-      }
-      |> role.to_string_pt_br()
-
-    json.object([
-      #("id", json.string(uuid.to_string(row.id))),
-      #("full_name", json.string(row.full_name)),
-      #("user_role", json.string(user_role)),
-    ])
-  })
+  returned.rows
+  |> json.array(row_to_json)
   |> json.to_string
-  |> Ok
+}
+
+fn row_to_json(row: sql.QueryMembersInfoRow) -> json.Json {
+  let user_role =
+    case row.user_role {
+      sql.Admin -> role.Admin
+      sql.Analyst -> role.Analyst
+      sql.Captain -> role.Captain
+      sql.Developer -> role.Developer
+      sql.Firefighter -> role.Firefighter
+      sql.Sargeant -> role.Sargeant
+    }
+    |> role.to_string_pt_br()
+
+  json.object([
+    #("id", json.string(uuid.to_string(row.id))),
+    #("full_name", json.string(row.full_name)),
+    #("user_role", json.string(user_role)),
+  ])
 }

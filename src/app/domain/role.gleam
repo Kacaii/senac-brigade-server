@@ -1,6 +1,5 @@
 import gleam/dynamic/decode
 import gleam/json
-import gleam/list
 import gleam/string
 import glight
 import wisp
@@ -78,19 +77,23 @@ pub fn log_unauthorized_access_attempt(
   user_role user_role: Role,
   required required: List(Role),
 ) -> Nil {
-  let required_roles_string =
-    json.preprocessed_array({
-      use user_role <- list.map(required)
-      json.string(to_string(user_role))
-    })
+  let required_roles =
+    required
+    |> json.array(to_json)
     |> json.to_string
 
   glight.logger()
   |> glight.with("path", request.path)
   |> glight.with("user", uuid.to_string(user_uuid))
   |> glight.with("role", to_string(user_role))
-  |> glight.with("required", required_roles_string)
+  |> glight.with("required", required_roles)
   |> glight.notice("unauthorized_access_attempt")
 
   Nil
+}
+
+pub fn to_json(role: Role) -> json.Json {
+  role
+  |> to_string
+  |> json.string
 }

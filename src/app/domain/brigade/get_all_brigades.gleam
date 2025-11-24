@@ -3,7 +3,6 @@ import app/web
 import app/web/context.{type Context}
 import gleam/http
 import gleam/json
-import gleam/list
 import gleam/result
 import pog
 import wisp
@@ -20,13 +19,13 @@ import youid/uuid
 /// [
 ///   {
 ///     "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
-///     "name": "Brigada A",
+///     "brigade_name": "Brigada A",
 ///     "leader_name": "Pedro Anthony",
 ///     "is_active": true,
 ///   },
 ///   {
 ///     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-///     "name": "Brigada B",
+///     "brigade_name": "Brigada B",
 ///     "leader_name": "Anderson Silva",
 ///     "is_active": false,
 ///   }
@@ -38,7 +37,7 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
-  case query_database(ctx:) {
+  case query_database(ctx) {
     Error(err) -> handle_error(err)
     Ok(resp) -> wisp.json_response(resp, 200)
   }
@@ -50,24 +49,24 @@ fn handle_error(err: QueryAllBrigadesError) -> wisp.Response {
   }
 }
 
-fn query_database(ctx ctx: Context) -> Result(String, QueryAllBrigadesError) {
-  use returned <- result.try(
+fn query_database(ctx: Context) -> Result(String, QueryAllBrigadesError) {
+  use returned <- result.map(
     sql.query_all_brigades(ctx.db)
     |> result.map_error(DataBase),
   )
 
-  // 󰅨  Return JSON array
-  json.preprocessed_array({
-    use row <- list.map(returned.rows)
-    json.object([
-      #("id", json.string(uuid.to_string(row.id))),
-      #("brigade_name", json.string(row.brigade_name)),
-      #("leader_name", json.nullable(row.leader_name, json.string)),
-      #("is_active", json.bool(row.is_active)),
-    ])
-  })
+  returned.rows
+  |> json.array(row_to_json)
   |> json.to_string
-  |> Ok
+}
+
+fn row_to_json(row: sql.QueryAllBrigadesRow) {
+  json.object([
+    #("id", json.string(uuid.to_string(row.id))),
+    #("brigade_name", json.string(row.brigade_name)),
+    #("leader_name", json.nullable(row.leader_name, json.string)),
+    #("is_active", json.bool(row.is_active)),
+  ])
 }
 
 /// 󰤏  Querying a brigade can fail

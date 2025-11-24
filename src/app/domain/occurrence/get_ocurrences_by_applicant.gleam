@@ -28,15 +28,15 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
-  case query_occurrences(ctx:, user_id:) {
+  case query_occurrences(ctx, user_id) {
     Ok(resp) -> wisp.json_response(resp, 200)
     Error(err) -> handle_error(err)
   }
 }
 
 fn query_occurrences(
-  ctx ctx: Context,
-  user_id user_id: String,
+  ctx: Context,
+  user_id: String,
 ) -> Result(String, GetOccurrencesByApplicantError) {
   use user_uuid <- result.try(
     uuid.from_string(user_id)
@@ -51,7 +51,6 @@ fn query_occurrences(
   let payload_result = {
     use row <- list.try_map(returned.rows)
 
-    // DECODER FOR BRIGADES
     use brigade_list <- result.map(
       brigade_list_decoder(row.brigade_list)
       |> result.map_error(BrigadeListDecodeError),
@@ -86,7 +85,11 @@ fn query_occurrences(
   }
 
   case payload_result {
-    Ok(value) -> Ok(json.preprocessed_array(value) |> json.to_string)
+    Ok(payload) ->
+      json.preprocessed_array(payload)
+      |> json.to_string
+      |> Ok
+
     Error(value) -> Error(value)
   }
 }
@@ -95,7 +98,6 @@ fn brigade_list_decoder(
   data: String,
 ) -> Result(List(PayloadBrigade), json.DecodeError) {
   json.parse(data, {
-    // UUID Decoder
     let brigade_uuid_decoder = {
       use maybe_uuid <- decode.then(decode.string)
       case uuid.from_string(maybe_uuid) {
@@ -199,7 +201,7 @@ fn payload_to_json(data: Payload) -> json.Json {
     #("coordenadas", occurrence_location_json),
     #("timestamps", payload_timestamp_to_json(data.timestamp)),
     #("metadata", payload_metadata_to_json(data.metadata)),
-    #("equipes", payload_brigade_list_to_json(data.brigade_list)),
+    #("equipes", json.array(data.brigade_list, payload_brigade_to_json)),
   ])
 }
 
@@ -290,15 +292,11 @@ pub opaque type PayloadBrigade {
   )
 }
 
-fn payload_brigade_list_to_json(data: List(PayloadBrigade)) -> json.Json {
-  json.preprocessed_array(
-    list.map(data, fn(row) {
-      json.object([
-        #("id", json.string(uuid.to_string(row.id))),
-        #("nomeEquipe", json.string(row.brigade_name)),
-        #("lider", json.string(row.leader_name)),
-        #("codigoViatura", json.string(row.vehicle_code)),
-      ])
-    }),
-  )
+fn payload_brigade_to_json(row: PayloadBrigade) -> json.Json {
+  json.object([
+    #("id", json.string(uuid.to_string(row.id))),
+    #("nomeEquipe", json.string(row.brigade_name)),
+    #("lider", json.string(row.leader_name)),
+    #("codigoViatura", json.string(row.vehicle_code)),
+  ])
 }
