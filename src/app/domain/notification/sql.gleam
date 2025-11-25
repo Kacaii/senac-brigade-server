@@ -86,6 +86,19 @@ WHERE np.user_id = $1;
   |> pog.execute(db)
 }
 
+/// A row you get from running the `update_notification_preferences` query
+/// defined in `./src/app/domain/notification/sql/update_notification_preferences.sql`.
+///
+/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
+///
+pub type UpdateNotificationPreferencesRow {
+  UpdateNotificationPreferencesRow(
+    notification_type: NotificationTypeEnum,
+    enabled: Bool,
+  )
+}
+
 ///   Update user notification preference
 ///
 /// > 🐿️ This function was generated automatically using v4.5.0 of
@@ -96,8 +109,15 @@ pub fn update_notification_preferences(
   arg_1: Uuid,
   arg_2: NotificationTypeEnum,
   arg_3: Bool,
-) -> Result(pog.Returned(Nil), pog.QueryError) {
-  let decoder = decode.map(decode.dynamic, fn(_) { Nil })
+) -> Result(pog.Returned(UpdateNotificationPreferencesRow), pog.QueryError) {
+  let decoder = {
+    use notification_type <- decode.field(0, notification_type_enum_decoder())
+    use enabled <- decode.field(1, decode.bool)
+    decode.success(UpdateNotificationPreferencesRow(
+      notification_type:,
+      enabled:,
+    ))
+  }
 
   "--   Update user notification preference
 UPDATE public.user_notification_preference AS np
@@ -106,7 +126,10 @@ SET
     updated_at = CURRENT_TIMESTAMP
 WHERE
     np.user_id = $1
-    AND np.notification_type = $2;
+    AND np.notification_type = $2
+RETURNING
+    new.notification_type,
+    new.enabled;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))

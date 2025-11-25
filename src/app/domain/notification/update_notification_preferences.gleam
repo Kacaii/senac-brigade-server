@@ -43,6 +43,7 @@ type UpdateNotificationPreferencesError {
   AccessControl(user.AuthenticationError)
   /// Failed to query Database
   DataBase(pog.QueryError)
+  NotFound
 }
 
 fn handle_data(
@@ -50,10 +51,10 @@ fn handle_data(
   ctx: Context,
   data: dict.Dict(category.Category, Bool),
 ) -> wisp.Response {
-  case try_update(req, ctx, data) {
+  case try_update_preferences(req, ctx, data) {
     Error(err) -> handle_error(err)
-    Ok(_) ->
-      json.dict(data, category.to_string_pt_br, json.bool)
+    Ok(updated_values) ->
+      json.dict(updated_values, category.to_string_pt_br, json.bool)
       |> json.to_string
       |> wisp.json_response(200)
   }
@@ -79,20 +80,31 @@ fn handle_error(err: UpdateNotificationPreferencesError) -> wisp.Response {
   case err {
     AccessControl(err) -> user.handle_authentication_error(err)
     DataBase(err) -> web.handle_database_error(err)
+    NotFound ->
+      "O banco de dados não retornou resultados após atualizar as preferências"
+      |> wisp.Text
+      |> wisp.set_body(wisp.not_found(), _)
   }
 }
 
-fn try_update(
+fn try_update_preferences(
   req: wisp.Request,
   ctx: Context,
   preferences: dict.Dict(category.Category, Bool),
-) -> Result(List(pog.Returned(Nil)), UpdateNotificationPreferencesError) {
+) -> Result(
+  dict.Dict(category.Category, Bool),
+  UpdateNotificationPreferencesError,
+) {
   use user_uuid <- result.try(
     user.extract_uuid(request: req, cookie_name: user.uuid_cookie_name)
     |> result.map_error(AccessControl),
   )
 
-  use #(key, value) <- list.try_map(dict.to_list(preferences))
+  use acc, #(key, value) <- list.try_fold(
+    over: dict.to_list(preferences),
+    from: dict.new(),
+  )
+
   let key = case key {
     category.Fire -> sql.Fire
     category.MedicEmergency -> sql.Emergency
@@ -100,6 +112,22 @@ fn try_update(
     category.TrafficAccident -> sql.Traffic
   }
 
-  sql.update_notification_preferences(ctx.db, user_uuid, key, value)
-  |> result.map_error(DataBase)
+  use returned <- result.try(
+    sql.update_notification_preferences(ctx.db, user_uuid, key, value)
+    |> result.map_error(DataBase),
+  )
+
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(NotFound),
+  )
+
+  let new_key = case row.notification_type {
+    sql.Emergency -> category.MedicEmergency
+    sql.Fire -> category.Fire
+    sql.Other -> category.Other
+    sql.Traffic -> category.TrafficAccident
+  }
+
+  dict.insert(acc, new_key, row.enabled)
 }
