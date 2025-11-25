@@ -9,9 +9,9 @@ import pog
 import wisp
 
 pub type GetDashboardStatsError {
-  /// Found no results
+  ///   Found no results
   NotFound
-  /// Failed to query the DataBase
+  /// 󰆼  Failed to query the DataBase
   DataBase(pog.QueryError)
 }
 
@@ -34,16 +34,13 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
 
-  case get_dashboard_data(ctx:) {
+  case query_dashboard_stats(ctx) {
     Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_error(err)
   }
 }
 
-fn get_dashboard_data(
-  ctx ctx: Context,
-) -> Result(String, GetDashboardStatsError) {
-  //  QUERY THE DATABASE ----------------------------------------------------
+fn query_dashboard_stats(ctx: Context) -> Result(String, GetDashboardStatsError) {
   use returned <- result.try(
     sql.query_dashboard_stats(ctx.db)
     |> result.map_error(DataBase),
@@ -61,7 +58,6 @@ fn get_dashboard_data(
 
 fn handle_error(err: GetDashboardStatsError) -> wisp.Response {
   case err {
-    // 󱋬  DataBase couldn't find the required information for the dashboard
     NotFound ->
       "O Banco de dados não encontrou os dados solicitados"
       |> wisp.Text()
