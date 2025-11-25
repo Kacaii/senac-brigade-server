@@ -27,7 +27,6 @@ import youid/uuid
 
 pub const ws_topic = "active_users"
 
-/// Connecting to a websocket can fail
 pub opaque type WebSocketError {
   /// 󱛪  Session cookie was not found
   MissingCookie
@@ -285,12 +284,8 @@ fn extract_uuid(
     |> result.replace_error(InvalidUtf8),
   )
 
-  use user_uuid <- result.try(
-    uuid.from_string(maybe_uuid_str)
-    |> result.replace_error(InvalidUuid(maybe_uuid_str)),
-  )
-
-  Ok(user_uuid)
+  uuid.from_string(maybe_uuid_str)
+  |> result.replace_error(InvalidUuid(maybe_uuid_str))
 }
 
 // ON INIT ---------------------------------------------------------------------
@@ -365,13 +360,11 @@ fn ws_on_close(
 ) -> Nil {
   let self = process.self()
 
-  // Default topic
   group_registry.leave(registry, ws_topic, [self])
-  // Personal topic
+
   let user_topic = "user:" <> uuid.to_string(state.user_uuid)
   group_registry.leave(registry, user_topic, [self])
 
-  // Unsubscribe from occurrence notifications
   use subscribed_to <- list.each(state.subscribed)
   let topic = "occurrence:new_" <> category.to_string(subscribed_to)
   group_registry.leave(registry, topic, [self])
@@ -465,7 +458,7 @@ fn handle_database_error(
         #("constraint", json.string(constraint)),
         #("detail", json.string(detail)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> send_response(409)
 
     pog.UnexpectedArgumentCount(expected:, got:) -> {
@@ -473,7 +466,7 @@ fn handle_database_error(
         #("expected", json.int(expected)),
         #("got", json.int(got)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> send_response(400)
     }
 
@@ -482,7 +475,7 @@ fn handle_database_error(
         #("expected", json.string(expected)),
         #("got", json.string(got)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> send_response(400)
     }
 
