@@ -19,18 +19,6 @@ update:
 squirrel:
     gleam run -m squirrel
 
-# 󰙨  Run unit tests
-[group('  gleam')]
-[group('  dev')]
-test:
-    gleam test
-
-# 󱌢  Run dev script
-[group('  gleam')]
-[group('  dev')]
-dev:
-    gleam dev
-
 # 󰏓  Builds the project for production
 [group('  ship')]
 [group('  gleam')]
