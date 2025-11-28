@@ -2,7 +2,7 @@ import gleam/json
 import gleam/time/timestamp
 import youid/uuid
 
-/// 󰛮  Wrapper for data sent a websocket connection
+/// 󰛮  Wrapper for data sent through a websocket connection
 pub type Envelope {
   Envelope(
     /// 󱤇  Used by the client to determine the type of message

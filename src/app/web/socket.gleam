@@ -79,7 +79,7 @@ fn handle_connection(
   user_uuid: uuid.Uuid,
   registry: group_registry.GroupRegistry(msg.Msg),
 ) -> response.Response(mist.ResponseData) {
-  case setup_initial_state(ctx, user_uuid) {
+  case fetch_user_data(ctx, user_uuid) {
     Error(err) -> handle_error(err)
     Ok(state) ->
       case request.path_segments(req) {
@@ -99,7 +99,7 @@ fn handle_connection(
 }
 
 /// Queries the Database and builds the initial state of the user
-fn setup_initial_state(
+fn fetch_user_data(
   ctx: Context,
   user_uuid: uuid.Uuid,
 ) -> Result(State, WebSocketError) {
@@ -238,6 +238,20 @@ fn handle_domain_event(
   }
 }
 
+/// 󱃜  Build and send a `json` response through the socket connection.
+///
+/// ## Example
+///
+/// ```jsonc
+/// {
+/// "data_type": "occurrence:new",
+/// "data": {}, // <- Response data
+/// "meta": {
+///   "timestamp": 1764288924,
+///   "request_id": "9f6cc07b-3542-4adc-8edc-016056da9e53"
+///   }
+/// }
+/// ```
 fn send_envelope(
   state state: State,
   conn conn: mist.WebsocketConnection,
