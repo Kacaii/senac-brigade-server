@@ -49,7 +49,9 @@ pub fn broadcast(
   let topic = "user:" <> uuid.to_string(user_id)
   let members = group_registry.members(registry, topic)
 
-  list.each(members, process.send(_, message))
+  use member <- list.each(members)
+  use <- process.spawn
+  process.send(member, message)
 }
 
 ///   Query the database to find the user's role name

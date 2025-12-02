@@ -392,7 +392,10 @@ pub fn broadcast(
   message message: msg.Msg,
 ) -> Nil {
   let members = group_registry.members(registry, ws_topic)
-  members |> list.each(process.send(_, message))
+
+  use member <- list.each(members)
+  use <- process.spawn
+  process.send(member, message)
 }
 
 fn send_response(

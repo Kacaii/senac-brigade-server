@@ -18,8 +18,9 @@ pub fn broadcast(
   message message: msg.Msg,
 ) -> Result(Nil, pog.QueryError) {
   use returned <- result.map(sql.query_participants(ctx.db, occ_id))
-  use row <- list.each(returned.rows)
 
+  use row <- list.each(returned.rows)
+  use <- process.spawn
   user.broadcast(registry, row.user_id, message)
 }
 
@@ -33,5 +34,6 @@ pub fn notify_new_occurrence(
   let members = group_registry.members(registry, topic)
 
   use subject <- list.each(members)
+  use <- process.spawn
   process.send(subject, msg.Domain(msg.OccurrenceCreated(id:, category:)))
 }
