@@ -394,8 +394,7 @@ pub fn broadcast(
   let members = group_registry.members(registry, ws_topic)
 
   use member <- list.each(members)
-  use <- process.spawn
-  process.send(member, message)
+  process.spawn(fn() { process.send(member, message) })
 }
 
 fn send_response(

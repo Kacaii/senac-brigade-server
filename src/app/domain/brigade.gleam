@@ -19,6 +19,5 @@ pub fn broadcast(
   use returned <- result.map(sql.query_members_id(ctx.db, brigade_id))
 
   use row <- list.each(returned.rows)
-  use <- process.spawn
-  user.broadcast(registry, row.id, message)
+  process.spawn(fn() { user.broadcast(registry, row.id, message) })
 }
