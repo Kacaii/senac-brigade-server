@@ -10,10 +10,12 @@ import app/web/context.{type Context}
 import argus
 import formal/form
 import gleam/bool
+import gleam/float
 import gleam/http/response
 import gleam/json
 import gleam/list
 import gleam/result
+import gleam/time/duration
 import glight
 import pog
 import wisp
@@ -87,26 +89,28 @@ fn handle_login(
 ) -> response.Response(wisp.Body) {
   case query_login_token(data:, ctx:) {
     Error(err) -> handle_error(err)
-    Ok(resp) -> set_token(data, resp, request, cookie_name)
+    Ok(resp) -> {
+      log_login(data)
+      set_token(resp, request, cookie_name)
+    }
   }
 }
 
 fn set_token(
-  data: RequestBody,
   resp: LoginToken,
   request: wisp.Request,
-  cookie_name: String,
+  cookie_name name: String,
 ) -> wisp.Response {
-  log_login(data)
-  wisp.set_cookie(
-    response: wisp.json_response(resp.body, 200),
-    request: request,
-    name: cookie_name,
-    value: uuid.to_string(resp.user_id),
-    security: wisp.Signed,
-    //   Cookie lasts 1 hour in total
-    max_age: 60 * 60,
-  )
+  let response = wisp.json_response(resp.body, 200)
+  let value = uuid.to_string(resp.user_id)
+  let security = wisp.Signed
+
+  let max_age =
+    duration.hours(1)
+    |> duration.to_seconds
+    |> float.round
+
+  wisp.set_cookie(response:, request:, name:, value:, security:, max_age:)
 }
 
 fn handle_error(err: LoginError) -> response.Response(wisp.Body) {
