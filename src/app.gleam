@@ -82,7 +82,7 @@ pub fn read_connection_uri(
   use postgres_url <- result.try(envoy.get("DATABASE_URL"))
 
   // Disable SSL when not in production
-  case envoy.get("SSL_ENABLED") {
+  case envoy.get("SIGO_PROD") {
     Error(_) -> pog.url_config(name, postgres_url)
     Ok(_) -> {
       use config <- result.map(pog.url_config(name, postgres_url))

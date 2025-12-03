@@ -17,6 +17,7 @@
 
 import app/web/context
 import cors_builder as cors
+import envoy
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
@@ -64,18 +65,22 @@ fn log_directory() -> String {
   priv_directory <> "/log"
 }
 
+///   Disable CORS when not in production
 fn cors_config() -> cors.Cors {
-  cors.new()
-  |> cors.allow_origin("http://localhost:5173")
-  |> cors.allow_origin("https://sigo.cbpm.vercel.app")
-  |> cors.allow_method(http.Get)
-  |> cors.allow_method(http.Post)
-  |> cors.allow_method(http.Put)
-  |> cors.allow_method(http.Delete)
-  |> cors.allow_header("authorization")
-  |> cors.allow_header("content-type")
-  |> cors.allow_header("origin")
-  |> cors.allow_credentials()
+  case envoy.get("SIGO_PROD") {
+    Error(_) -> cors.new()
+    Ok(_) ->
+      cors.new()
+      |> cors.allow_origin("https://sigo.cbpm.vercel.app")
+      |> cors.allow_method(http.Get)
+      |> cors.allow_method(http.Post)
+      |> cors.allow_method(http.Put)
+      |> cors.allow_method(http.Delete)
+      |> cors.allow_header("authorization")
+      |> cors.allow_header("content-type")
+      |> cors.allow_header("origin")
+      |> cors.allow_credentials()
+  }
 }
 
 pub fn handle_decode_error(
