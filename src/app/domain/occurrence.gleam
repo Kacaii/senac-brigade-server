@@ -34,7 +34,6 @@ pub fn notify_new_occurrence(
 
   use subject <- list.each(members)
   process.spawn(fn() {
-    msg.Domain(msg.OccurrenceCreated(id:, category:))
-    |> process.send(subject, _)
+    process.send(subject, msg.Domain(msg.OccurrenceCreated(id:, category:)))
   })
 }
