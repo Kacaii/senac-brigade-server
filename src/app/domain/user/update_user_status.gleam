@@ -29,24 +29,31 @@ pub fn handle_request(
   id user_id: String,
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Put)
-  use json_data <- wisp.require_json(req)
+  use body <- wisp.require_json(req)
 
-  case decode.run(json_data, body_decoder()) {
+  case decode.run(body, decoder()) {
     Error(err) -> web.handle_decode_error(err)
-    Ok(is_active) ->
-      case try_update_user_status(req:, ctx:, user_id:, is_active:) {
-        Error(err) -> handle_error(req, err)
-        Ok(resp) -> wisp.json_response(resp, 200)
-      }
+    Ok(is_active) -> handle_body(req, ctx, user_id, is_active)
   }
 }
 
-///   Updating an user status can fail
+fn handle_body(
+  req: wisp.Request,
+  ctx: Context,
+  user_id: String,
+  is_active: Bool,
+) -> wisp.Response {
+  case try_update_user_status(req:, ctx:, user_id:, is_active:) {
+    Error(err) -> handle_error(req, err)
+    Ok(resp) -> wisp.json_response(resp, 200)
+  }
+}
+
 type UpdateUserStatusError {
   ///   Error related to authentication / authorization
   AccessControl(user.AccessControlError)
   ///   User not found in the DataBase
-  UserNotFound(String)
+  NotFound(String)
   /// 󱔼  UUID is not valid
   InvalidUuid(String)
   /// 󱘱  Failed to query the DataBase
@@ -79,36 +86,37 @@ fn try_update_user_status(
     |> result.map_error(DataBase),
   )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(UserNotFound(user_id))
-    Ok(row) ->
-      json.object([
-        #("id", json.string(uuid.to_string(row.id))),
-        #("is_active", json.bool(row.is_active)),
-      ])
-      |> json.to_string
-      |> Ok
-  }
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(NotFound(user_id)),
+  )
+
+  [
+    #("id", json.string(uuid.to_string(row.id))),
+    #("is_active", json.bool(row.is_active)),
+  ]
+  |> json.object
+  |> json.to_string
 }
 
 fn handle_error(req: wisp.Request, err: UpdateUserStatusError) -> wisp.Response {
   case err {
     AccessControl(err) -> user.handle_access_control_error(req, err)
     DataBase(err) -> web.handle_database_error(err)
-    InvalidUuid(user_id) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Usuário possui UUID inválido: " <> user_id))
-    UserNotFound(id) -> {
-      let resp = wisp.not_found()
-      let body = "Usuário não encontrado: " <> id
-
+    InvalidUuid(user_id) -> {
+      let body = "Usuário possui UUID inválido: " <> user_id
       wisp.Text(body)
-      |> wisp.set_body(resp, _)
+      |> wisp.set_body(wisp.response(401), _)
+    }
+    NotFound(id) -> {
+      let body = "Usuário não encontrado: " <> id
+      wisp.Text(body)
+      |> wisp.set_body(wisp.not_found(), _)
     }
   }
 }
 
-fn body_decoder() -> decode.Decoder(Bool) {
+fn decoder() -> decode.Decoder(Bool) {
   use is_active <- decode.field("status", decode.bool)
   decode.success(is_active)
 }
