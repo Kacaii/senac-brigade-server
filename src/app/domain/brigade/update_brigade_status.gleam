@@ -32,28 +32,34 @@ pub fn handle_request(
   let decoder = body_decoder()
   case decode.run(data, decoder) {
     Error(err) -> web.handle_decode_error(err)
-    Ok(is_active) ->
-      case try_update_status(ctx, brigade_id, is_active) {
-        Ok(body) -> wisp.json_response(body, 200)
-        Error(err) -> handle_error(err)
-      }
+    Ok(is_active) -> handle_body(ctx, brigade_id, is_active)
   }
 }
 
-///   Updating a brigade status can fail
+fn handle_body(
+  ctx: Context,
+  brigade_id: String,
+  is_active: Bool,
+) -> wisp.Response {
+  case try_update_status(ctx, brigade_id, is_active) {
+    Ok(body) -> wisp.json_response(body, 200)
+    Error(err) -> handle_error(err)
+  }
+}
+
 type UpdateBrigadeStatusError {
   /// Brigade contains invalid Uuid
   InvalidUuid(String)
   /// An error occurred while accessing the DataBase
   DataBase(pog.QueryError)
   /// Brigade not found in the DataBase
-  BrigadeNotFound(String)
+  NotFound(String)
 }
 
 fn handle_error(err: UpdateBrigadeStatusError) -> wisp.Response {
   case err {
     InvalidUuid(id) -> wisp.bad_request("Equipe possui UUID Inválido: " <> id)
-    BrigadeNotFound(id) -> wisp.bad_request("Equipe não encontrada: " <> id)
+    NotFound(id) -> wisp.bad_request("Equipe não encontrada: " <> id)
     DataBase(err) -> web.handle_database_error(err)
   }
 }
@@ -64,7 +70,8 @@ fn try_update_status(
   is_active: Bool,
 ) -> Result(String, UpdateBrigadeStatusError) {
   use brigade_uuid <- result.try(
-    uuid.from_string(id) |> result.replace_error(InvalidUuid(id)),
+    uuid.from_string(id)
+    |> result.replace_error(InvalidUuid(id)),
   )
 
   use returned <- result.try(
@@ -74,16 +81,16 @@ fn try_update_status(
 
   use row <- result.map(
     list.first(returned.rows)
-    |> result.replace_error(BrigadeNotFound(id)),
+    |> result.replace_error(NotFound(id)),
   )
 
-  json.to_string(
-    json.object([
-      #("id", json.string(uuid.to_string(row.id))),
-      #("is_active", json.bool(row.is_active)),
-      #("updated_at", json.float(timestamp.to_unix_seconds(row.updated_at))),
-    ]),
-  )
+  [
+    #("id", json.string(uuid.to_string(row.id))),
+    #("is_active", json.bool(row.is_active)),
+    #("updated_at", json.float(timestamp.to_unix_seconds(row.updated_at))),
+  ]
+  |> json.object
+  |> json.to_string
 }
 
 fn body_decoder() -> decode.Decoder(Bool) {
