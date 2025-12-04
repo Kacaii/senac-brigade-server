@@ -47,11 +47,8 @@ pub fn handle_request(
   use <- wisp.require_method(request, http.Post)
   use body <- wisp.require_json(request)
 
-  // Decode the request's body
   case decode.run(body, body_decoder()) {
-    // Handle possible errors
     Error(err) -> web.handle_decode_error(err)
-    // Process the parsed data
     Ok(body) -> handle_body(request:, ctx:, body:)
   }
 }
@@ -59,22 +56,16 @@ pub fn handle_request(
 fn handle_body(
   request request: wisp.Request,
   ctx ctx: Context,
-  body body: RegisterOccurrenceBody,
+  body body: RequestBody,
 ) -> wisp.Response {
-  // Insert the occurrence on the DataBase
   case insert_occurrence(request:, ctx:, body:) {
-    //   Handle possible errors
     Error(err) -> handle_error(err)
-    //   Send a response to the client 
-    Ok(data) -> {
-      wisp.json_response(data, 201)
-    }
+    Ok(data) -> wisp.json_response(data, 201)
   }
 }
 
-/// 󱐁  Form data submitted by the client
-pub opaque type RegisterOccurrenceBody {
-  RegisterOccurrenceBody(
+pub opaque type RequestBody {
+  RequestBody(
     ///   Occurrence category
     occurrence_category: category.Category,
     ///   Occurrence subcategory
@@ -92,7 +83,6 @@ pub opaque type RegisterOccurrenceBody {
   )
 }
 
-/// Registering a new occurrence can fail
 type RegisterNewOccurrenceError {
   /// Failed to authenticate the user
   AccessControl(user.AuthenticationError)
@@ -108,18 +98,19 @@ fn handle_error(err: RegisterNewOccurrenceError) -> wisp.Response {
   case err {
     AccessControl(err) -> user.handle_authentication_error(err)
     DataBase(err) -> web.handle_database_error(err)
-    FailedToAssignBrigade(id) ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível designar a equipe: " <> uuid.to_string(id),
-      ))
+    FailedToAssignBrigade(id) -> {
+      let body = "Não foi possível designar a equipe: " <> uuid.to_string(id)
+      wisp.Text(body)
+      |> wisp.set_body(wisp.internal_server_error(), _)
+    }
     OccurrenceNotCreated ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text("A ocorrência não foi registrada"))
+      "A ocorrência não foi registrada"
+      |> wisp.Text
+      |> wisp.set_body(wisp.internal_server_error(), _)
   }
 }
 
-fn body_decoder() -> decode.Decoder(RegisterOccurrenceBody) {
+fn body_decoder() -> decode.Decoder(RequestBody) {
   let brigade_uuid_decoder = {
     use maybe_uuid <- decode.then(decode.string)
     case uuid.from_string(maybe_uuid) {
@@ -138,7 +129,7 @@ fn body_decoder() -> decode.Decoder(RegisterOccurrenceBody) {
     decode.list(brigade_uuid_decoder),
   )
 
-  decode.success(RegisterOccurrenceBody(
+  decode.success(RequestBody(
     occurrence_category: occ_category,
     occurrence_subcategory: occ_subcategory,
     priority: occ_priority,
@@ -152,7 +143,7 @@ fn body_decoder() -> decode.Decoder(RegisterOccurrenceBody) {
 fn insert_occurrence(
   request request: wisp.Request,
   ctx ctx: Context,
-  body body: RegisterOccurrenceBody,
+  body body: RequestBody,
 ) -> Result(String, RegisterNewOccurrenceError) {
   use applicant_uuid <- result.try(
     user.extract_uuid(request:, cookie_name: user.uuid_cookie_name)
@@ -173,10 +164,10 @@ fn insert_occurrence(
     |> result.map_error(DataBase),
   )
 
-  use row <- result.try(case list.first(returned.rows) {
-    Error(_) -> Error(OccurrenceNotCreated)
-    Ok(row) -> Ok(row)
-  })
+  use row <- result.try(
+    list.first(returned.rows)
+    |> result.replace_error(OccurrenceNotCreated),
+  )
 
   use assigned_brigades <- result.map(try_assign_brigades(
     ctx:,
@@ -208,15 +199,14 @@ fn insert_occurrence(
   let registry = group_registry.get_registry(ctx.registry_name)
   occurrence.notify_new_occurrence(new: row.id, of: occ_category, registry:)
 
-  json.to_string(
-    json.object([
-      #("id", uuid.to_string(row.id) |> json.string),
-      #("applicant_id", uuid.to_string(row.id) |> json.string),
-      #("priority", json.string(occurrence_priority)),
-      #("assigned_brigades", assigned_brigades_json),
-      #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
-    ]),
-  )
+  json.object([
+    #("id", uuid.to_string(row.id) |> json.string),
+    #("applicant_id", uuid.to_string(row.id) |> json.string),
+    #("priority", json.string(occurrence_priority)),
+    #("assigned_brigades", assigned_brigades_json),
+    #("created_at", json.float(timestamp.to_unix_seconds(row.created_at))),
+  ])
+  |> json.to_string
 }
 
 fn try_assign_brigades(
@@ -235,13 +225,13 @@ fn try_assign_brigades(
   }
 
   use assigned_users <- result.try({
-    use returned <- result.try(
+    use returned <- result.map(
       sql.query_participants(ctx.db, occurrence_id)
       |> result.map_error(DataBase),
     )
 
-    list.map(returned.rows, fn(row) { row.user_id })
-    |> Ok
+    use row <- list.map(returned.rows)
+    row.user_id
   })
 
   //   BROADCAST --------------------------------------------------------------
@@ -263,7 +253,7 @@ fn priority_to_enum(priority: priority.Priority) -> sql.OccurrencePriorityEnum {
   }
 }
 
-fn category_to_enum(category: category.Category) {
+fn category_to_enum(category: category.Category) -> sql.OccurrenceCategoryEnum {
   case category {
     category.Fire -> sql.Fire
     category.MedicEmergency -> sql.MedicEmergency
@@ -272,7 +262,9 @@ fn category_to_enum(category: category.Category) {
   }
 }
 
-fn subcategory_to_enum(subcategory: subcategory.Subcategory) {
+fn subcategory_to_enum(
+  subcategory: subcategory.Subcategory,
+) -> sql.OccurrenceSubcategoryEnum {
   case subcategory {
     subcategory.Collision -> sql.Collision
     subcategory.Comercial -> sql.Comercial
