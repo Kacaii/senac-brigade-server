@@ -28,9 +28,9 @@ pub fn handle_request(
   ctx ctx: Context,
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Put)
-  use json_body <- wisp.require_json(req)
+  use body <- wisp.require_json(req)
 
-  case decode.run(json_body, request_body_decoder()) {
+  case decode.run(body, body_decoder()) {
     Error(err) -> web.handle_decode_error(err)
     Ok(body) -> handle_body(req, ctx, body)
   }
@@ -42,40 +42,33 @@ fn handle_body(
   body: RequestBody,
 ) -> wisp.Response {
   case try_update_user(req, ctx, body) {
-    Ok(resp) -> wisp.json_response(resp, 200)
     Error(err) -> handle_error(err)
+    Ok(resp) -> wisp.json_response(resp, 200)
   }
 }
 
 fn handle_error(err: UpdateProfileError) -> wisp.Response {
   case err {
-    AccessControl(err) -> user.handle_authentication_error(err)
-    UserNotFound(user_uuid) -> {
-      let resp = wisp.not_found()
-      let body =
-        wisp.Text(
-          "Usuário não encontrado no Banco de Dados: "
-          <> uuid.to_string(user_uuid),
-        )
+    Authentication(err) -> user.handle_authentication_error(err)
 
-      wisp.set_body(resp, body)
+    NotFound(id) -> {
+      let body = "Usuário não encontrado" <> uuid.to_string(id)
+      wisp.Text(body)
+      |> wisp.set_body(wisp.not_found(), _)
     }
-    DatabaseError(err) -> {
+
+    Database(err) -> {
       case err {
         pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
-          let resp = wisp.response(409)
-          let body =
-            wisp.Text("Email já cadastrado. Por favor, utilize um diferente")
-
-          wisp.set_body(resp, body)
+          "Email já cadastrado. Por favor, utilize um diferente"
+          |> wisp.Text
+          |> wisp.set_body(wisp.response(409), _)
         }
 
         pog.ConstraintViolated(_, _, constraint: "user_account_phone_key") -> {
-          let resp = wisp.response(409)
-          let body =
-            wisp.Text("Telefone já cadastrado. Por favor, utilize um diferente")
-
-          wisp.set_body(resp, body)
+          "Telefone já cadastrado. Por favor, utilize um diferente"
+          |> wisp.Text
+          |> wisp.set_body(wisp.response(409), _)
         }
 
         err -> web.handle_database_error(err)
@@ -91,7 +84,7 @@ fn try_update_user(
 ) -> Result(String, UpdateProfileError) {
   use maybe_id <- result.try(
     user.extract_uuid(req, user.uuid_cookie_name)
-    |> result.map_error(AccessControl),
+    |> result.map_error(Authentication),
   )
 
   use returned <- result.try(
@@ -102,38 +95,37 @@ fn try_update_user(
       body.email,
       body.phone,
     )
-    |> result.map_error(DatabaseError),
+    |> result.map_error(Database),
   )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(UserNotFound(maybe_id))
-    Ok(row) -> {
-      json.object([
-        #("full_name", json.string(row.full_name)),
-        #("email", json.string(row.email)),
-        #("phone", json.nullable(row.phone, json.string)),
-      ])
-      |> json.to_string
-      |> Ok
-    }
-  }
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(NotFound(maybe_id)),
+  )
+
+  [
+    #("full_name", json.string(row.full_name)),
+    #("email", json.string(row.email)),
+    #("phone", json.nullable(row.phone, json.string)),
+  ]
+  |> json.object
+  |> json.to_string
 }
 
-/// Updating an user profile can fail
 type UpdateProfileError {
   /// Authentication failed
-  AccessControl(user.AuthenticationError)
+  Authentication(user.AuthenticationError)
   /// An error occurred when accessing the DataBase
-  DatabaseError(pog.QueryError)
+  Database(pog.QueryError)
   /// User was not found in the DataBase
-  UserNotFound(uuid.Uuid)
+  NotFound(uuid.Uuid)
 }
 
 type RequestBody {
   RequestBody(full_name: String, email: String, phone: String)
 }
 
-fn request_body_decoder() -> decode.Decoder(RequestBody) {
+fn body_decoder() -> decode.Decoder(RequestBody) {
   use full_name <- decode.field("full_name", decode.string)
   use email <- decode.field("email", decode.string)
   use phone <- decode.field("phone", decode.string)

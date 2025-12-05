@@ -87,12 +87,8 @@ pub fn extract_uuid(
     |> result.replace_error(MissingCookie),
   )
 
-  use user_uuid <- result.try(
-    uuid.from_string(maybe_uuid)
-    |> result.replace_error(InvalidUUID(maybe_uuid)),
-  )
-
-  Ok(user_uuid)
+  uuid.from_string(maybe_uuid)
+  |> result.replace_error(InvalidUUID(maybe_uuid))
 }
 
 /// 󰡦  Extracts the user UUID from the request and query the DataBase
@@ -103,17 +99,17 @@ pub fn check_role_authorization(
   cookie_name cookie_name: String,
   authorized_roles authorized_roles: List(role.Role),
 ) -> Result(#(uuid.Uuid, role.Role), AccessControlError) {
-  //   Indentify who is sending the request -----------------------------------
+  //   Indentify who is sending the request
   use user_uuid <- result.try(
     extract_uuid(request:, cookie_name:)
     |> result.map_error(Authentication),
   )
 
-  // 󰯦  Query the User's role --------------------------------------------------
+  // 󰯦  Query the User's role
   use user_role <- result.try(get_user_role(ctx, user_uuid))
 
-  // 󰈞  Check if that role has authorization -----------------------------------
-  use user_role <- result.try(
+  // 󰈞  Check if that role has authorization
+  use user_role <- result.map(
     list.find(authorized_roles, fn(authorized) { user_role == authorized })
     |> result.replace_error(Authorization(
       user_uuid:,
@@ -122,7 +118,7 @@ pub fn check_role_authorization(
     )),
   )
 
-  Ok(#(user_uuid, user_role))
+  #(user_uuid, user_role)
 }
 
 pub fn handle_authentication_error(err: AuthenticationError) {
@@ -138,27 +134,20 @@ pub fn handle_authentication_error(err: AuthenticationError) {
 
 pub fn handle_access_control_error(req: wisp.Request, err: AccessControlError) {
   case err {
-    Authentication(auth_err) -> handle_authentication_error(auth_err)
-    DataBase(db_err) -> web.handle_database_error(db_err)
-    RoleNotFound -> {
-      // 401 Unauthorized
-      let resp = wisp.response(401)
-      // Body
-      let body =
-        wisp.Text("Não foi possível confirmar o Cargo do usuário autenticado")
+    Authentication(err) -> handle_authentication_error(err)
+    DataBase(err) -> web.handle_database_error(err)
+    RoleNotFound ->
+      "Não foi possível confirmar o Cargo do usuário autenticado"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(401), _)
 
-      // 󱃜  Send response
-      wisp.set_body(resp, body)
+    InvalidRole(str) -> {
+      let body = "Usuário autenticado possui cargo inválido: " <> str
+      wisp.Text(body)
+      |> wisp.set_body(wisp.response(401), _)
     }
 
-    InvalidRole(role_string) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text(
-        "Usuário autenticado possui cargo inválido: " <> role_string,
-      ))
-
     Authorization(user_uuid:, user_role:, authorized_roles:) -> {
-      //   LOG
       role.log_unauthorized_access_attempt(
         request: req,
         user_uuid:,
@@ -166,22 +155,14 @@ pub fn handle_access_control_error(req: wisp.Request, err: AccessControlError) {
         required: authorized_roles,
       )
 
-      // JSON BODY
-      let role_to_json = fn(role: role.Role) {
-        role.to_string_pt_br(role) |> json.string
-      }
-
-      // Response
-      let resp = wisp.response(403)
-      let body =
-        json.object([
-          #("id", json.string(uuid.to_string(user_uuid))),
-          #("user_role", json.string(role.to_string_pt_br(user_role:))),
-          #("required", json.array(authorized_roles, role_to_json)),
-        ])
-        |> json.to_string
-
-      wisp.json_response(body, resp.status)
+      [
+        #("id", json.string(uuid.to_string(user_uuid))),
+        #("user_role", json.string(role.to_string_pt_br(user_role:))),
+        #("required", json.array(authorized_roles, role.to_json)),
+      ]
+      |> json.object
+      |> json.to_string
+      |> wisp.json_response(403)
     }
   }
 }
