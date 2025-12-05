@@ -13,7 +13,7 @@ import wisp
 /// ## Response
 ///
 /// ```json
-/// {["desenvolvedor", "bombeiro", "capitão", "analista"]}
+/// ["desenvolvedor", "bombeiro", "capitão", "analista"]
 /// ```
 ///
 pub fn handle_request(
@@ -28,9 +28,8 @@ pub fn handle_request(
   }
 }
 
-///   Gathering the role list can fail
 type GetRoleListError {
-  /// 󱘺  An error occurred while querying the DataBase
+  /// Failed to query the DataBase
   DataBase(pog.QueryError)
 }
 
@@ -47,25 +46,25 @@ fn query_user_roles(ctx: Context) -> Result(String, GetRoleListError) {
     |> result.map_error(DataBase),
   )
 
+  let enum_to_role = fn(role: sql.UserRoleEnum) {
+    case role {
+      sql.Admin -> role.Admin
+      sql.Analyst -> role.Analyst
+      sql.Captain -> role.Captain
+      sql.Developer -> role.Developer
+      sql.Firefighter -> role.Firefighter
+      sql.Sargeant -> role.Sargeant
+    }
+  }
+
+  let row_to_json = fn(row: sql.QueryAvailableUserRolesRow) {
+    row.available_role
+    |> enum_to_role()
+    |> role.to_string_pt_br()
+    |> json.string
+  }
+
   returned.rows
   |> json.array(row_to_json)
   |> json.to_string
-}
-
-fn row_to_json(row: sql.QueryAvailableUserRolesRow) -> json.Json {
-  row.available_role
-  |> enum_to_role()
-  |> role.to_string_pt_br()
-  |> json.string
-}
-
-fn enum_to_role(user_role: sql.UserRoleEnum) -> role.Role {
-  case user_role {
-    sql.Admin -> role.Admin
-    sql.Analyst -> role.Analyst
-    sql.Captain -> role.Captain
-    sql.Developer -> role.Developer
-    sql.Firefighter -> role.Firefighter
-    sql.Sargeant -> role.Sargeant
-  }
 }
