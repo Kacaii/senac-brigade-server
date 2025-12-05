@@ -40,8 +40,8 @@ pub fn handle_request(
   use body <- wisp.require_json(request)
 
   case decode.run(body, body_decoder()) {
-    Ok(body) -> handle_body(request:, ctx:, body:)
     Error(err) -> web.handle_decode_error(err)
+    Ok(body) -> handle_body(request:, ctx:, body:)
   }
 }
 
@@ -61,37 +61,23 @@ type RequestBody {
   )
 }
 
-/// Registering a new brigade can fail
 type RegisterBrigadeError {
   /// Uuid contain invalid format
   InvalidUuid(String)
-  /// An error occurred while accessing the Database
+  /// Failed to access the DataBase
   DataBase(pog.QueryError)
   /// Brigade not found in the Database
-  BrigadeNotFound
+  NotFound
   /// Error related to Authentication / Authorization
   AccessControl(user.AccessControlError)
 }
 
 fn body_decoder() {
-  let uuid_decoder = {
-    use maybe_uuid <- decode.then(decode.string)
-    case uuid.from_string(maybe_uuid) {
-      Error(_) -> decode.failure(uuid.v7(), "uuid")
-      Ok(value) -> decode.success(value)
-    }
-  }
-
-  let members_decoder = {
-    use members <- decode.then(decode.list(of: uuid_decoder))
-    decode.success(members)
-  }
-
-  use leader_id <- decode.field("liderId", uuid_decoder)
+  use leader_id <- decode.field("liderId", uuid_decoder())
   use name <- decode.field("nome", decode.string)
   use vehicle_code <- decode.field("codigoViatura", decode.string)
   use is_active <- decode.field("ativo", decode.bool)
-  use members_id <- decode.field("membros", members_decoder)
+  use members_id <- decode.field("membros", members_id_decoder())
 
   decode.success(RequestBody(
     leader_id:,
@@ -107,9 +93,9 @@ fn handle_body(
   ctx ctx: Context,
   body body: RequestBody,
 ) -> wisp.Response {
-  case try_register_brigade(request:, ctx:, body:) {
+  case try_register_brigade(request, ctx, body) {
+    Error(err) -> handle_error(request, err)
     Ok(body) -> wisp.json_response(body, 201)
-    Error(err) -> handle_error(request:, err:)
   }
 }
 
@@ -141,7 +127,7 @@ fn try_register_brigade(
 
   use row <- result.try(
     list.first(returned.rows)
-    |> result.replace_error(BrigadeNotFound),
+    |> result.replace_error(NotFound),
   )
 
   use assigned_members <- result.map(try_assign_members(
@@ -179,7 +165,7 @@ fn try_assign_members(
     row.inserted_user_id
   }
 
-  //   BROADCAST --------------------------------------------------------------
+  //   BROADCAST
   let registry = group_registry.get_registry(ctx.registry_name)
   list.each(assigned_members, fn(user_id) {
     let body =
@@ -192,13 +178,27 @@ fn try_assign_members(
 
 fn handle_error(request request, err err: RegisterBrigadeError) -> wisp.Response {
   case err {
-    InvalidUuid(user_id) ->
-      wisp.bad_request("Usuário possui UUID inválido: " <> user_id)
+    InvalidUuid(id) -> wisp.bad_request("Usuário possui UUID inválido: " <> id)
     DataBase(err) -> web.handle_database_error(err)
     AccessControl(err) -> user.handle_access_control_error(request, err)
-    BrigadeNotFound ->
+    NotFound ->
       "O Banco de Dados não retornou informações sobre a nova equipe após a inserção"
       |> wisp.Text
       |> wisp.set_body(wisp.not_found(), _)
+  }
+}
+
+// DECODERS -------------------------------------------------------------------
+
+fn members_id_decoder() -> decode.Decoder(List(uuid.Uuid)) {
+  use members <- decode.then(decode.list(of: uuid_decoder()))
+  decode.success(members)
+}
+
+fn uuid_decoder() {
+  use maybe_uuid <- decode.then(decode.string)
+  case uuid.from_string(maybe_uuid) {
+    Error(_) -> decode.failure(uuid.v7(), "uuid")
+    Ok(value) -> decode.success(value)
   }
 }
