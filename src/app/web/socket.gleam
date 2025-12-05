@@ -16,7 +16,7 @@ import gleam/http/response
 import gleam/int
 import gleam/json
 import gleam/list
-import gleam/option
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
@@ -65,12 +65,23 @@ pub opaque type State {
     ///   User connected to this socket
     user_uuid: uuid.Uuid,
     ///   Selector being used for the process
-    selector: option.Option(process.Selector(msg.Msg)),
-    /// 󱥁  Notifications that the user wants to receive
+    selector: Option(process.Selector(msg.Msg)),
+    /// 󱥁  Occurrence notifications than an user is subscribed to
     subscribed: List(category.Category),
     ///   Brigades that an user has been assigned to
     brigade_list: List(uuid.Uuid),
   )
+}
+
+///   Broadcast a message to all active users
+pub fn broadcast(
+  registry registry: group_registry.GroupRegistry(msg.Msg),
+  message message: msg.Msg,
+) -> Nil {
+  let members = group_registry.members(registry, ws_topic)
+
+  use member <- list.each(members)
+  process.spawn(fn() { process.send(member, message) })
 }
 
 fn handle_connection(
@@ -81,31 +92,29 @@ fn handle_connection(
 ) -> response.Response(mist.ResponseData) {
   case fetch_user_data(ctx, user_uuid) {
     Error(err) -> handle_error(err)
-    Ok(state) ->
-      case request.path_segments(req) {
-        ["ws"] ->
-          mist.websocket(
-            request: req,
-            on_init: ws_on_init(_, req:, ctx:, registry:, state:),
-            on_close: ws_on_close(_, ctx:, registry:),
-            handler: fn(state, msg, conn) {
-              ws_handler(state:, msg:, conn:, ctx:, registry:)
-            },
-          )
-
-        _ -> send_response("Not found", 404)
-      }
+    Ok(state) -> route_request(req, ctx, registry, state)
   }
 }
 
-/// Queries the Database and builds the initial state of the user
-fn fetch_user_data(
+fn route_request(
+  req: request.Request(mist.Connection),
   ctx: Context,
-  user_uuid: uuid.Uuid,
-) -> Result(State, WebSocketError) {
-  use brigade_list <- result.try(fetch_brigades(ctx, user_uuid))
-  use subscribed <- result.map(fetch_categories(ctx, user_uuid))
-  State(user_uuid:, subscribed:, brigade_list:, selector: option.None)
+  registry: group_registry.GroupRegistry(msg.Msg),
+  state: State,
+) -> response.Response(mist.ResponseData) {
+  case request.path_segments(req) {
+    ["ws"] ->
+      mist.websocket(
+        request: req,
+        on_init: ws_on_init(_, req:, ctx:, registry:, state:),
+        on_close: ws_on_close(_, ctx:, registry:),
+        handler: fn(state, msg, conn) {
+          ws_handler(state:, msg:, conn:, ctx:, registry:)
+        },
+      )
+
+    _ -> send_response("Not found", 404)
+  }
 }
 
 fn ws_handler(
@@ -310,7 +319,7 @@ fn ws_on_init(
   ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
   state state: State,
-) -> #(State, option.Option(process.Selector(msg.Msg))) {
+) -> #(State, Option(process.Selector(msg.Msg))) {
   let self = process.self()
   let group_subject = group_registry.join(registry, ws_topic, self)
 
@@ -323,17 +332,27 @@ fn ws_on_init(
     |> process.select(user_subject)
 
   let selector = {
-    use acc, value <- list.fold(over: state.subscribed, from: selector)
-    let topic = "occurrence:new_" <> category.to_string(value)
+    use selector, category <- list.fold(over: state.subscribed, from: selector)
+    let topic = "occurrence:new_" <> category.to_string(category)
 
-    let occ_subj = group_registry.join(registry, topic, self)
-    process.select(acc, occ_subj)
+    let subject = group_registry.join(registry, topic, self)
+    process.select(selector, subject)
   }
 
-  #(state, option.Some(selector))
+  #(state, Some(selector))
 }
 
-/// 󰀖  Find all brigades that an user is assigned to
+/// Queries the Database and builds the initial state of the user
+fn fetch_user_data(
+  ctx: Context,
+  user_uuid: uuid.Uuid,
+) -> Result(State, WebSocketError) {
+  use brigade_list <- result.try(fetch_brigades(ctx, user_uuid))
+  use subscribed <- result.map(fetch_subscribed_categories(ctx, user_uuid))
+  State(user_uuid:, subscribed:, brigade_list:, selector: None)
+}
+
+/// 󰀖  Find all brigades that a given user is assigned to
 fn fetch_brigades(
   ctx: Context,
   for: uuid.Uuid,
@@ -347,7 +366,7 @@ fn fetch_brigades(
 }
 
 /// 󰩉  Find all occurrence categories an user wants to be notified of
-fn fetch_categories(
+fn fetch_subscribed_categories(
   ctx: Context,
   for: uuid.Uuid,
 ) -> Result(List(category.Category), WebSocketError) {
@@ -385,17 +404,6 @@ fn ws_on_close(
 }
 
 // HELPERS ---------------------------------------------------------------------
-
-///   Broadcast a message to all active users
-pub fn broadcast(
-  registry registry: group_registry.GroupRegistry(msg.Msg),
-  message message: msg.Msg,
-) -> Nil {
-  let members = group_registry.members(registry, ws_topic)
-
-  use member <- list.each(members)
-  process.spawn(fn() { process.send(member, message) })
-}
 
 fn send_response(
   body: String,
@@ -456,11 +464,12 @@ fn handle_database_error(
       |> send_response(500)
 
     pog.PostgresqlError(code:, name:, message:) ->
-      json.object([
+      [
         #("code", json.string(code)),
         #("name", json.string(name)),
         #("message", json.string(message)),
-      ])
+      ]
+      |> json.object
       |> json.to_string
       |> send_response(500)
 
@@ -469,28 +478,31 @@ fn handle_database_error(
       |> send_response(500)
 
     pog.ConstraintViolated(message:, constraint:, detail:) ->
-      json.object([
+      [
         #("message", json.string(message)),
         #("constraint", json.string(constraint)),
         #("detail", json.string(detail)),
-      ])
+      ]
+      |> json.object
       |> json.to_string
       |> send_response(409)
 
     pog.UnexpectedArgumentCount(expected:, got:) -> {
-      json.object([
+      [
         #("expected", json.int(expected)),
         #("got", json.int(got)),
-      ])
+      ]
+      |> json.object
       |> json.to_string
       |> send_response(400)
     }
 
     pog.UnexpectedArgumentType(expected:, got:) -> {
-      json.object([
+      [
         #("expected", json.string(expected)),
         #("got", json.string(got)),
-      ])
+      ]
+      |> json.object
       |> json.to_string
       |> send_response(400)
     }
@@ -505,11 +517,12 @@ pub fn handle_decode_error(
   case list.first(decode_errors) {
     Error(_) -> send_response("Ok", 200)
     Ok(err) ->
-      json.object([
+      [
         #("expected", json.string(err.expected)),
         #("found", json.string(err.found)),
         #("path", json.string(string.join(err.path, "/"))),
-      ])
+      ]
+      |> json.object
       |> json.to_string
       |> send_response(400)
   }
