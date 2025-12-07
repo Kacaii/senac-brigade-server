@@ -20,10 +20,12 @@ pub fn broadcast(
   use returned <- result.map(sql.query_participants(ctx.db, occ_id))
 
   use row <- list.each(returned.rows)
-  process.spawn(fn() { user.broadcast(registry, row.user_id, message) })
+  user.broadcast(registry, row.user_id, message)
 }
 
 ///   Notify subscribed users that a new occurrence has been added
+///
+/// 󱓊  Spawns a new process
 pub fn notify_new_occurrence(
   registry registry: group_registry.GroupRegistry(msg.Msg),
   new id: uuid.Uuid,
@@ -34,6 +36,7 @@ pub fn notify_new_occurrence(
 
   use subject <- list.each(members)
   process.spawn(fn() {
-    process.send(subject, msg.Domain(msg.OccurrenceCreated(id:, category:)))
+    let msg = msg.Domain(msg.OccurrenceCreated(id:, category:))
+    process.send(subject, msg)
   })
 }

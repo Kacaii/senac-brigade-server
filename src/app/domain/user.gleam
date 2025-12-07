@@ -19,7 +19,7 @@ pub type AccessControlError {
   /// 󰗹  Authentication failed
   Authentication(AuthenticationError)
   ///   User is authentication but lacks permissions
-  Authorization(
+  AuthorizationError(
     user_uuid: uuid.Uuid,
     user_role: role.Role,
     authorized_roles: List(role.Role),
@@ -40,7 +40,9 @@ pub type AuthenticationError {
   InvalidUUID(String)
 }
 
-///   Broadcast a message to an user
+///   Broadcast an arbitrary message to an user
+///
+/// 󱓊  Spawns a new process
 pub fn broadcast(
   registry: group_registry.GroupRegistry(msg.Msg),
   user_id: uuid.Uuid,
@@ -63,17 +65,18 @@ pub fn get_user_role(
     |> result.map_error(DataBase),
   )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(RoleNotFound)
-    Ok(row) ->
-      Ok(case row.user_role {
-        sql.Admin -> role.Admin
-        sql.Analyst -> role.Analyst
-        sql.Captain -> role.Captain
-        sql.Developer -> role.Developer
-        sql.Firefighter -> role.Firefighter
-        sql.Sargeant -> role.Sargeant
-      })
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(RoleNotFound),
+  )
+
+  case row.user_role {
+    sql.Admin -> role.Admin
+    sql.Analyst -> role.Analyst
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
   }
 }
 
@@ -99,9 +102,8 @@ pub fn check_role_authorization(
   cookie_name cookie_name: String,
   authorized_roles authorized_roles: List(role.Role),
 ) -> Result(#(uuid.Uuid, role.Role), AccessControlError) {
-  //   Indentify who is sending the request
   use user_uuid <- result.try(
-    extract_uuid(request:, cookie_name:)
+    extract_uuid(request, cookie_name)
     |> result.map_error(Authentication),
   )
 
@@ -111,7 +113,7 @@ pub fn check_role_authorization(
   // 󰈞  Check if that role has authorization
   use user_role <- result.map(
     list.find(authorized_roles, fn(authorized) { user_role == authorized })
-    |> result.replace_error(Authorization(
+    |> result.replace_error(AuthorizationError(
       user_uuid:,
       user_role:,
       authorized_roles:,
@@ -124,11 +126,12 @@ pub fn check_role_authorization(
 pub fn handle_authentication_error(err: AuthenticationError) {
   case err {
     InvalidUUID(id) ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("ID de usuário inválido: " <> id))
+      wisp.Text("ID de usuário inválido: " <> id)
+      |> wisp.set_body(wisp.response(401), _)
     MissingCookie ->
-      wisp.response(401)
-      |> wisp.set_body(wisp.Text("Cookie de autenticação ausente"))
+      "Cookie de autenticação ausente"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(401), _)
   }
 }
 
@@ -141,13 +144,11 @@ pub fn handle_access_control_error(req: wisp.Request, err: AccessControlError) {
       |> wisp.Text
       |> wisp.set_body(wisp.response(401), _)
 
-    InvalidRole(str) -> {
-      let body = "Usuário autenticado possui cargo inválido: " <> str
-      wisp.Text(body)
+    InvalidRole(str) ->
+      wisp.Text("Usuário autenticado possui cargo inválido: " <> str)
       |> wisp.set_body(wisp.response(401), _)
-    }
 
-    Authorization(user_uuid:, user_role:, authorized_roles:) -> {
+    AuthorizationError(user_uuid:, user_role:, authorized_roles:) -> {
       role.log_unauthorized_access_attempt(
         request: req,
         user_uuid:,

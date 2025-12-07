@@ -63,7 +63,6 @@ fn try_delete_user(
   ctx: Context,
   target_id: String,
 ) -> Result(String, DeleteUserError) {
-  // User that is going to be deleted
   use target_user_uuid <- result.try(
     uuid.from_string(target_id)
     |> result.replace_error(InvalidUserUuid(target_id)),
@@ -79,7 +78,6 @@ fn try_delete_user(
     |> result.map_error(AccessControl),
   )
 
-  // Check if the authenticated user is trying to delete theirself
   case uuid.to_string(user_uuid) == target_id {
     True -> Error(CantDeleteSelf)
     False -> {
@@ -88,17 +86,17 @@ fn try_delete_user(
         |> result.map_error(DataBase),
       )
 
-      case list.first(returned.rows) {
-        Error(_) -> Error(UserNotFound(user_uuid))
-        Ok(row) -> {
-          json.object([
-            #("id", json.string(uuid.to_string(row.id))),
-            #("full_name", json.string(row.full_name)),
-          ])
-          |> json.to_string
-          |> Ok
-        }
-      }
+      use row <- result.map(
+        list.first(returned.rows)
+        |> result.replace_error(UserNotFound(user_uuid)),
+      )
+
+      [
+        #("id", json.string(uuid.to_string(row.id))),
+        #("full_name", json.string(row.full_name)),
+      ]
+      |> json.object
+      |> json.to_string
     }
   }
 }

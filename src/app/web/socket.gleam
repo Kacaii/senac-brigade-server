@@ -74,6 +74,8 @@ pub opaque type State {
 }
 
 ///   Broadcast a message to all active users
+///
+/// 󱓊  Spawns a new process
 pub fn broadcast(
   registry registry: group_registry.GroupRegistry(msg.Msg),
   message message: msg.Msg,

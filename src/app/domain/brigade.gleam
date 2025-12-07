@@ -2,7 +2,6 @@ import app/domain/brigade/sql
 import app/domain/user
 import app/web/context.{type Context}
 import app/web/socket/message as msg
-import gleam/erlang/process
 import gleam/list
 import gleam/result
 import group_registry
@@ -19,5 +18,5 @@ pub fn broadcast(
   use returned <- result.map(sql.query_members_id(ctx.db, brigade_id))
 
   use row <- list.each(returned.rows)
-  process.spawn(fn() { user.broadcast(registry, row.id, message) })
+  user.broadcast(registry, row.id, message)
 }
