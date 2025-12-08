@@ -30,7 +30,6 @@ pub fn start(
   let mist_pool_child =
     webserver_handler
     |> mist.new
-    |> mist.bind("0.0.0.0")
     |> mist.port(8000)
 
   // Starting supervision
