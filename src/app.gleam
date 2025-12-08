@@ -69,6 +69,7 @@ pub fn main() -> Nil {
   // Start all essential processes under a supervision tree
   let assert Ok(_) =
     supervision_tree.start(
+      ctx:,
       pog_config:,
       wisp_handler:,
       ws_handler:,

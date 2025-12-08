@@ -1,3 +1,4 @@
+import app/web/context
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
@@ -11,6 +12,7 @@ import wisp/wisp_mist
 
 /// 󰪋  Start the application supervisor
 pub fn start(
+  ctx ctx: context.Context,
   pog_config pog_config: pog.Config,
   wisp_handler wisp_handler: fn(wisp.Request) -> wisp.Response,
   ws_handler ws_handler: fn(request.Request(mist.Connection)) ->
@@ -26,10 +28,16 @@ pub fn start(
     }
   }
 
+  let bind_to = case ctx.env {
+    context.Dev -> "localhost"
+    context.Production -> "0.0.0.0"
+  }
+
   // Adding Mist to the supervision tree
   let mist_pool_child =
     webserver_handler
     |> mist.new
+    |> mist.bind(bind_to)
     |> mist.port(8000)
 
   // Starting supervision
