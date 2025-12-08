@@ -39,25 +39,10 @@ pub fn middleware(
   use <- wisp.log_request(request)
   use <- wisp.rescue_crashes()
   use request <- wisp.handle_head(request)
-  use request <- setup_cors(request, ctx)
+  use request <- cors.wisp_middleware(request, cors_config())
 
   use <- wisp.serve_static(request, under: path, from: ctx.static_directory)
   handler(request)
-}
-
-///   Disable CORS during development 
-fn setup_cors(
-  request request: wisp.Request,
-  ctx ctx: context.Context,
-  next handler: fn(wisp.Request) -> wisp.Response,
-) -> wisp.Response {
-  case ctx.env {
-    context.Dev -> handler(request)
-    context.Production -> {
-      use request <- cors.wisp_middleware(request, cors_config())
-      handler(request)
-    }
-  }
 }
 
 ///   Configure the Erlang logger
@@ -81,11 +66,13 @@ fn log_directory() -> String {
 
 fn cors_config() -> cors.Cors {
   cors.new()
+  |> cors.allow_origin("http://localhost:5173")
   |> cors.allow_origin("https://sigo.cbpm.vercel.app")
   |> cors.allow_method(http.Get)
   |> cors.allow_method(http.Post)
   |> cors.allow_method(http.Put)
   |> cors.allow_method(http.Delete)
+  |> cors.allow_method(http.Options)
   |> cors.allow_header("authorization")
   |> cors.allow_header("content-type")
   |> cors.allow_header("origin")
