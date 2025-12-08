@@ -44,20 +44,18 @@ pub fn handle_request(
 }
 
 fn handle_body(req: wisp.Request, body: SignUp, ctx: Context) -> wisp.Response {
-  case try_insert_into_database(request: req, ctx:, signup: body) {
+  case query_database(request: req, ctx:, signup: body) {
+    Error(err) -> handle_error(req, err)
     Ok(new_user) -> {
       log_signup(body)
       wisp.json_response(new_user, 201)
     }
-
-    //   Server errors ----------------------------------------------------
-    Error(err) -> handle_error(req, err)
   }
 }
 
 /// 󰆼  Inserts the user in the database.
 /// 󱔼  Hashes the user `password` before inserting.
-fn try_insert_into_database(
+fn query_database(
   request request: wisp.Request,
   signup data: SignUp,
   ctx ctx: Context,
@@ -83,6 +81,15 @@ fn try_insert_into_database(
     |> result.map_error(InvalidRole),
   )
 
+  let role_enum = case user_role {
+    role.Admin -> sql.Admin
+    role.Analyst -> sql.Analyst
+    role.Captain -> sql.Captain
+    role.Developer -> sql.Developer
+    role.Firefighter -> sql.Firefighter
+    role.Sargeant -> sql.Sargeant
+  }
+
   use returned <- result.try(
     sql.insert_new_user(
       ctx.db,
@@ -91,7 +98,7 @@ fn try_insert_into_database(
       data.phone_number,
       data.email,
       hashed_password.encoded_hash,
-      role_to_enum(user_role),
+      role_enum,
     )
     |> result.map_error(DataBase),
   )
@@ -101,7 +108,8 @@ fn try_insert_into_database(
     |> result.replace_error(MissingSignupConfirmation),
   )
 
-  json.object([#("id", json.string(uuid.to_string(row.id)))])
+  let id = uuid.to_string(row.id)
+  json.object([#("id", json.string(id))])
   |> json.to_string
 }
 
@@ -122,21 +130,27 @@ fn signup_form() -> form.Form(SignUp) {
     use name <- form.field("nome", {
       form.parse_string |> form.check_not_empty()
     })
+
     use registration <- form.field("matricula", {
       form.parse_string |> form.check_not_empty()
     })
+
     use phone_number <- form.field("telefone", {
       form.parse_phone_number |> form.check_not_empty()
     })
+
     use email <- form.field("email", {
       form.parse_email |> form.check_not_empty()
     })
+
     use password <- form.field("senha", {
       form.parse_string |> form.check_not_empty()
     })
+
     use _ <- form.field("confirma_senha", {
       form.parse_string |> form.check_confirms(password)
     })
+
     use user_role <- form.field("cargo", {
       form.parse_string |> form.check_not_empty()
     })
@@ -166,26 +180,21 @@ fn log_signup(signup: SignUp) -> Nil {
 fn handle_database_error(err: pog.QueryError) -> wisp.Response {
   case err {
     pog.ConstraintViolated(_, _, constraint: "user_account_registration_key") -> {
-      let resp = wisp.response(409)
-      let body = wisp.Text("Matrícula já cadastrada. Experimente fazer login")
-
-      wisp.set_body(resp, body)
+      "Matrícula já cadastrada. Experimente fazer login"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
     }
 
     pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
-      let resp = wisp.response(409)
-      let body =
-        wisp.Text("Email já cadastrado. Por favor, utilize um diferente")
-
-      wisp.set_body(resp, body)
+      "Email já cadastrado. Por favor, utilize um diferente"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
     }
 
     pog.ConstraintViolated(_, _, constraint: "user_account_phone_key") -> {
-      let resp = wisp.response(409)
-      let body =
-        wisp.Text("Telefone já cadastrado. Por favor, utilize um diferente")
-
-      wisp.set_body(resp, body)
+      "Telefone já cadastrado. Por favor, utilize um diferente"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
     }
 
     err -> web.handle_database_error(err)
@@ -194,27 +203,27 @@ fn handle_database_error(err: pog.QueryError) -> wisp.Response {
 
 fn handle_error(req: wisp.Request, err: SignupError) {
   case err {
-    HashError -> {
-      let body =
-        "Ocorreu um erro ao encriptografar a senha do usuário"
-        |> wisp.Text
-
-      wisp.internal_server_error()
-      |> wisp.set_body(body)
-    }
-    DataBase(err) -> handle_database_error(err)
-    InvalidRole(unknown) ->
-      wisp.bad_request("O novo usuário possui um cargo inválido: " <> unknown)
     AccessControl(err) -> user.handle_access_control_error(req, err)
+    DataBase(err) -> handle_database_error(err)
+
+    HashError -> {
+      "Ocorreu um erro ao encriptografar a senha do usuário"
+      |> wisp.Text
+      |> wisp.set_body(wisp.internal_server_error(), _)
+    }
+
+    InvalidRole(unknown) -> {
+      let body = "O novo usuário possui um cargo inválido: " <> unknown
+      wisp.bad_request(body)
+    }
+
     MissingSignupConfirmation ->
-      wisp.internal_server_error()
-      |> wisp.set_body(wisp.Text(
-        "Não foi possível confirmar a inserção do novo usuário no sistema",
-      ))
+      "Não foi possível confirmar a inserção do novo usuário no sistema"
+      |> wisp.Text
+      |> wisp.set_body(wisp.internal_server_error(), _)
   }
 }
 
-///   Signup can fail
 type SignupError {
   /// 󱔼  Hashing went wrong
   HashError
@@ -226,15 +235,4 @@ type SignupError {
   AccessControl(user.AccessControlError)
   /// 󰡦  Database didnt return information about the new user
   MissingSignupConfirmation
-}
-
-fn role_to_enum(user_role: role.Role) -> sql.UserRoleEnum {
-  case user_role {
-    role.Admin -> sql.Admin
-    role.Analyst -> sql.Analyst
-    role.Captain -> sql.Captain
-    role.Developer -> sql.Developer
-    role.Firefighter -> sql.Firefighter
-    role.Sargeant -> sql.Sargeant
-  }
 }

@@ -51,7 +51,7 @@ fn handle_data(
   ctx: Context,
   data: dict.Dict(category.Category, Bool),
 ) -> wisp.Response {
-  case try_update_preferences(req, ctx, data) {
+  case query_database(req, ctx, data) {
     Error(err) -> handle_error(err)
     Ok(updated_values) ->
       json.dict(updated_values, category.to_string_pt_br, json.bool)
@@ -87,7 +87,7 @@ fn handle_error(err: UpdateNotificationPreferencesError) -> wisp.Response {
   }
 }
 
-fn try_update_preferences(
+fn query_database(
   req: wisp.Request,
   ctx: Context,
   preferences: dict.Dict(category.Category, Bool),

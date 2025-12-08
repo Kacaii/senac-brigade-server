@@ -26,7 +26,7 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Delete)
 
-  case try_delete_user(req, ctx, user_id) {
+  case query_database(req, ctx, user_id) {
     Ok(deleted_user) -> wisp.json_response(deleted_user, 200)
     Error(err) -> handle_error(req, err)
   }
@@ -58,7 +58,7 @@ fn handle_error(req: wisp.Request, err: DeleteUserError) -> wisp.Response {
   }
 }
 
-fn try_delete_user(
+fn query_database(
   req: wisp.Request,
   ctx: Context,
   target_id: String,

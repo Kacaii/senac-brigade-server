@@ -30,7 +30,7 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
-  case try_query_database(req, ctx) {
+  case query_database(req, ctx) {
     Error(err) -> handle_error(err)
     Ok(body) -> wisp.json_response(body, 200)
   }
@@ -43,7 +43,7 @@ fn handle_error(err: GetNotificationPreferencesError) -> wisp.Response {
   }
 }
 
-fn try_query_database(
+fn query_database(
   req: wisp.Request,
   ctx: Context,
 ) -> Result(String, GetNotificationPreferencesError) {

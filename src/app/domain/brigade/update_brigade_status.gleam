@@ -41,7 +41,7 @@ fn handle_body(
   brigade_id: String,
   is_active: Bool,
 ) -> wisp.Response {
-  case try_update_status(ctx, brigade_id, is_active) {
+  case query_database(ctx, brigade_id, is_active) {
     Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_error(err)
   }
@@ -64,7 +64,7 @@ fn handle_error(err: UpdateBrigadeStatusError) -> wisp.Response {
   }
 }
 
-fn try_update_status(
+fn query_database(
   ctx: Context,
   id: String,
   is_active: Bool,

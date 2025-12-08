@@ -1,4 +1,4 @@
-//// Handler for retrieving members from the same brigade as a given user.
+//// Handler for retrieving members from the same brigades as a given user.
 
 import app/domain/role
 import app/domain/user/sql
@@ -45,7 +45,7 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
-  case try_query_database(ctx:, user_id:) {
+  case query_database(ctx, user_id) {
     Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_err(err)
   }
@@ -58,7 +58,7 @@ type GetCrewMembersError {
   DataBase(pog.QueryError)
 }
 
-fn try_query_database(
+fn query_database(
   ctx ctx: Context,
   user_id user_id: String,
 ) -> Result(String, GetCrewMembersError) {
@@ -78,21 +78,19 @@ fn try_query_database(
 }
 
 fn row_to_json(row: sql.QueryCrewMembersRow) -> json.Json {
-  let role_name =
-    case row.user_role {
-      sql.Admin -> role.Admin
-      sql.Analyst -> role.Analyst
-      sql.Captain -> role.Captain
-      sql.Developer -> role.Developer
-      sql.Firefighter -> role.Firefighter
-      sql.Sargeant -> role.Sargeant
-    }
-    |> role.to_string_pt_br
+  let user_role = case row.user_role {
+    sql.Admin -> role.Admin
+    sql.Analyst -> role.Analyst
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
+  }
 
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
     #("full_name", json.string(row.full_name)),
-    #("user_role", json.string(role_name)),
+    #("user_role", json.string(role.to_string_pt_br(user_role))),
     #("brigade_id", json.string(uuid.to_string(row.brigade_id))),
   ])
 }

@@ -43,7 +43,7 @@ fn handle_body(
   user_id: String,
   is_active: Bool,
 ) -> wisp.Response {
-  case try_update_user_status(req:, ctx:, user_id:, is_active:) {
+  case query_database(req, ctx, user_id, is_active) {
     Error(err) -> handle_error(req, err)
     Ok(resp) -> wisp.json_response(resp, 200)
   }
@@ -60,7 +60,7 @@ type UpdateUserStatusError {
   DataBase(pog.QueryError)
 }
 
-fn try_update_user_status(
+fn query_database(
   req req: wisp.Request,
   ctx ctx: Context,
   user_id user_id: String,

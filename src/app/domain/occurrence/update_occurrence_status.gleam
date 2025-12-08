@@ -43,14 +43,14 @@ pub fn handle_request(
   case req.method {
     // Mark an occurrence as resolved
     http.Post ->
-      case try_resolve_occurrence(req, ctx, occurrence_id) {
+      case resolve_occurrence(req, ctx, occurrence_id) {
         Error(err) -> handle_error(err)
         Ok(body) -> wisp.json_response(body, 200)
       }
 
     // Reopen a resolved occurrence
     http.Delete ->
-      case try_reopen_occurrence(req, ctx, occurrence_id) {
+      case reopen_occurrence(req, ctx, occurrence_id) {
         Error(err) -> handle_error(err)
         Ok(body) -> wisp.json_response(body, 200)
       }
@@ -59,7 +59,7 @@ pub fn handle_request(
   }
 }
 
-fn try_resolve_occurrence(
+fn resolve_occurrence(
   req: wisp.Request,
   ctx: Context,
   occ_id: String,
@@ -111,7 +111,7 @@ fn try_resolve_occurrence(
   )
 }
 
-fn try_reopen_occurrence(
+fn reopen_occurrence(
   req: wisp.Request,
   ctx: Context,
   occ_id: String,

@@ -49,7 +49,7 @@ fn handle_body(
   body: RequestBody,
   user_id: String,
 ) -> wisp.Response {
-  case try_update_user(req, ctx, body, user_id) {
+  case query_database(req, ctx, body, user_id) {
     Ok(body) -> wisp.json_response(body, 200)
     Error(err) -> handle_error(req, body, err)
   }
@@ -112,7 +112,7 @@ fn handle_error(
   }
 }
 
-fn try_update_user(
+fn query_database(
   req: wisp.Request,
   ctx: Context,
   body: RequestBody,

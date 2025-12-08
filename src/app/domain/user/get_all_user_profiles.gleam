@@ -37,16 +37,12 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Get)
 
-  // 󰡦  Find available users
-  case try_query_database(req, ctx) {
-    // 󰨮  Handle possible errors
+  case query_database(req, ctx) {
     Error(err) -> handle_error(req, err)
-    //   Send the data to the client
     Ok(body) -> wisp.json_response(body, 200)
   }
 }
 
-/// 󰀖  Gathering the user list can fail
 type GetAllUsersError {
   ///   Errors related to user authentication / authorization
   AccessControl(user.AccessControlError)
@@ -61,7 +57,7 @@ fn handle_error(req: wisp.Request, err: GetAllUsersError) -> wisp.Response {
   }
 }
 
-fn try_query_database(
+fn query_database(
   req: wisp.Request,
   ctx: Context,
 ) -> Result(String, GetAllUsersError) {

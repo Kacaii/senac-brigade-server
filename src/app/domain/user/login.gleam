@@ -87,7 +87,7 @@ fn handle_login(
   data data: RequestBody,
   cookie_name cookie_name: String,
 ) -> response.Response(wisp.Body) {
-  case query_login_token(data:, ctx:) {
+  case query_database(data:, ctx:) {
     Error(err) -> handle_error(err)
     Ok(resp) -> {
       log_login(data)
@@ -145,7 +145,7 @@ fn log_login(login: RequestBody) -> Nil {
 
 ///   Check if the provided password matches the one inside our database
 /// Returns the user's UUID if successfull.
-fn query_login_token(
+fn query_database(
   data data: RequestBody,
   ctx ctx: Context,
 ) -> Result(LoginToken, LoginError) {

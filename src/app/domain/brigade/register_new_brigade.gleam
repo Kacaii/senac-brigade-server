@@ -93,13 +93,13 @@ fn handle_body(
   ctx ctx: Context,
   body body: RequestBody,
 ) -> wisp.Response {
-  case try_register_brigade(request, ctx, body) {
+  case query_database(request, ctx, body) {
     Error(err) -> handle_error(request, err)
     Ok(body) -> wisp.json_response(body, 201)
   }
 }
 
-fn try_register_brigade(
+fn query_database(
   request request: wisp.Request,
   ctx ctx: Context,
   body body: RequestBody,

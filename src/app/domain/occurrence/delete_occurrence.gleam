@@ -39,13 +39,13 @@ pub fn handle_request(
 ) -> wisp.Response {
   use <- wisp.require_method(req, http.Delete)
 
-  case try_delete_occurrence(req, ctx, occurrence_id_str) {
+  case query_database(req, ctx, occurrence_id_str) {
     Ok(deleted_id) -> wisp.json_response(deleted_id, 200)
     Error(err) -> handle_error(err)
   }
 }
 
-fn try_delete_occurrence(
+fn query_database(
   req: wisp.Request,
   ctx: Context,
   id_str: String,
