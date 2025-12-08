@@ -21,11 +21,7 @@ pub fn global_data() -> Context {
   global_value.create_with_unique_name("global_context", fn() {
     let db_process_name = process.new_name("db_conn")
     let registry_name = process.new_name("registry")
-
-    let env = case envoy.get("SIGO_PROD") {
-      Error(_) -> context.Dev
-      Ok(_) -> context.Production
-    }
+    let env = context.Dev
 
     let assert Ok(config) = app.read_connection_url(db_process_name, env)
     let assert Ok(secret_key_base) = envoy.get("COOKIE_TOKEN")
