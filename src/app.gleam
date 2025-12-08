@@ -31,6 +31,12 @@ import wisp/simulate
 pub fn main() -> Nil {
   web.configure_logger()
 
+  // Enviroment where the code is running on
+  let env = case envoy.get("SIGO_PROD") {
+    Error(_) -> context.Dev
+    Ok(_) -> context.Production
+  }
+
   // NAMES ---------------------------------------------------------------------
   // 󰩵  Setup registry process name
   let registry_name = process.new_name("registry")
@@ -44,7 +50,7 @@ pub fn main() -> Nil {
     as "  Cookie secret key is available"
 
   // Postgresql connection URI
-  let assert Ok(pog_config) = read_connection_uri(db_process_name)
+  let assert Ok(pog_config) = read_connection_url(db_process_name, env)
     as "  DataBase connection URI is available"
 
   // Pass the application context to the router
@@ -54,6 +60,7 @@ pub fn main() -> Nil {
       db: pog.named_connection(db_process_name),
       registry_name:,
       secret_key_base:,
+      env:,
     )
 
   let wisp_handler = http_router.handle_request(_, ctx)
@@ -75,16 +82,19 @@ pub fn main() -> Nil {
 
 ///   Read the `DATABASE_URL` environment variable and then
 /// build the `pog.Config` from that database URI.
-pub fn read_connection_uri(
+///
+///   Disables SSL during development
+pub fn read_connection_url(
   name: process.Name(pog.Message),
+  env: context.Enviroment,
 ) -> Result(pog.Config, Nil) {
   // Remember to set the enviroment variable before running the app
   use postgres_url <- result.try(envoy.get("DATABASE_URL"))
 
-  // Disable SSL when not in production
-  case envoy.get("SIGO_PROD") {
-    Error(_) -> pog.url_config(name, postgres_url)
-    Ok(_) -> {
+  //   Disable SSL when not in production
+  case env {
+    context.Dev -> pog.url_config(name, postgres_url)
+    context.Production -> {
       use config <- result.map(pog.url_config(name, postgres_url))
       pog.ssl(config, pog.SslVerified)
     }

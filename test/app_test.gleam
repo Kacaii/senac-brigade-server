@@ -22,7 +22,12 @@ pub fn global_data() -> Context {
     let db_process_name = process.new_name("db_conn")
     let registry_name = process.new_name("registry")
 
-    let assert Ok(config) = app.read_connection_uri(db_process_name)
+    let env = case envoy.get("SIGO_PROD") {
+      Error(_) -> context.Dev
+      Ok(_) -> context.Production
+    }
+
+    let assert Ok(config) = app.read_connection_url(db_process_name, env)
     let assert Ok(secret_key_base) = envoy.get("COOKIE_TOKEN")
 
     let db = pog.named_connection(db_process_name)
@@ -33,6 +38,7 @@ pub fn global_data() -> Context {
       db:,
       registry_name:,
       secret_key_base:,
+      env:,
     )
   })
 }

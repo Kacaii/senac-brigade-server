@@ -11,5 +11,14 @@ pub type Context {
     db: pog.Connection,
     secret_key_base: String,
     registry_name: process.Name(group_registry.Message(msg.Msg)),
+    env: Enviroment,
   )
+}
+
+/// Enviroment where the code is running on
+pub type Enviroment {
+  ///   Code is running locally
+  Dev
+  ///   Code is running in production
+  Production
 }

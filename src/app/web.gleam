@@ -17,7 +17,6 @@
 
 import app/web/context
 import cors_builder as cors
-import envoy
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
@@ -32,7 +31,7 @@ import wisp
 pub fn middleware(
   request req: wisp.Request,
   context ctx: context.Context,
-  next handle_request: fn(wisp.Request) -> wisp.Response,
+  next handler: fn(wisp.Request) -> wisp.Response,
 ) -> wisp.Response {
   let path = "/static"
   let request = wisp.method_override(req)
@@ -40,10 +39,25 @@ pub fn middleware(
   use <- wisp.log_request(request)
   use <- wisp.rescue_crashes()
   use request <- wisp.handle_head(request)
-  use request <- cors.wisp_middleware(request, cors_config())
+  use request <- setup_cors(request, ctx)
 
   use <- wisp.serve_static(request, under: path, from: ctx.static_directory)
-  handle_request(request)
+  handler(request)
+}
+
+///   Disable CORS during development 
+fn setup_cors(
+  request request: wisp.Request,
+  ctx ctx: context.Context,
+  next handler: fn(wisp.Request) -> wisp.Response,
+) -> wisp.Response {
+  case ctx.env {
+    context.Dev -> handler(request)
+    context.Production -> {
+      use request <- cors.wisp_middleware(request, cors_config())
+      handler(request)
+    }
+  }
 }
 
 ///   Configure the Erlang logger
@@ -65,22 +79,17 @@ fn log_directory() -> String {
   priv_directory <> "/log"
 }
 
-///   Disable CORS when not in production
 fn cors_config() -> cors.Cors {
-  case envoy.get("SIGO_PROD") {
-    Error(_) -> cors.new()
-    Ok(_) ->
-      cors.new()
-      |> cors.allow_origin("https://sigo.cbpm.vercel.app")
-      |> cors.allow_method(http.Get)
-      |> cors.allow_method(http.Post)
-      |> cors.allow_method(http.Put)
-      |> cors.allow_method(http.Delete)
-      |> cors.allow_header("authorization")
-      |> cors.allow_header("content-type")
-      |> cors.allow_header("origin")
-      |> cors.allow_credentials()
-  }
+  cors.new()
+  |> cors.allow_origin("https://sigo.cbpm.vercel.app")
+  |> cors.allow_method(http.Get)
+  |> cors.allow_method(http.Post)
+  |> cors.allow_method(http.Put)
+  |> cors.allow_method(http.Delete)
+  |> cors.allow_header("authorization")
+  |> cors.allow_header("content-type")
+  |> cors.allow_header("origin")
+  |> cors.allow_credentials()
 }
 
 pub fn handle_decode_error(
