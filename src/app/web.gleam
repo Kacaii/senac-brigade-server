@@ -17,7 +17,6 @@
 
 import app/web/context
 import cors_builder as cors
-import envoy
 import gleam/dynamic/decode
 import gleam/http
 import gleam/json
@@ -40,7 +39,7 @@ pub fn middleware(
   use <- wisp.log_request(request)
   use <- wisp.rescue_crashes()
   use request <- wisp.handle_head(request)
-  use request <- cors.wisp_middleware(request, cors_config())
+  use request <- cors.wisp_middleware(request, cors_config(ctx))
 
   use <- wisp.serve_static(request, under: path, from: ctx.static_directory)
   handler(request)
@@ -65,7 +64,7 @@ fn log_directory() -> String {
   priv_directory <> "/log"
 }
 
-fn cors_config() -> cors.Cors {
+fn cors_config(ctx: context.Context) -> cors.Cors {
   let config =
     cors.new()
     |> cors.allow_origin("https://sigo.cbpm.vercel.app")
@@ -79,9 +78,9 @@ fn cors_config() -> cors.Cors {
     |> cors.allow_header("origin")
     |> cors.allow_credentials()
 
-  case envoy.get("SIGO_HOST") {
-    Ok(host) -> cors.allow_origin(config, host)
-    Error(_) -> config
+  case ctx.env {
+    context.Dev -> cors.allow_all_origins(config)
+    context.Production -> config
   }
 }
 
