@@ -91,14 +91,12 @@ pub fn read_connection_url(
 ) -> Result(pog.Config, Nil) {
   // Remember to set the enviroment variable before running the app
   use postgres_url <- result.try(envoy.get("DATABASE_URL"))
+  use config <- result.map(pog.url_config(name, postgres_url))
 
   //   Disable SSL when not in production
   case env {
-    context.Dev -> pog.url_config(name, postgres_url)
-    context.Production -> {
-      use config <- result.map(pog.url_config(name, postgres_url))
-      pog.ssl(config, pog.SslVerified)
-    }
+    context.Dev -> config
+    context.Production -> pog.ssl(config, pog.SslVerified)
   }
 }
 
