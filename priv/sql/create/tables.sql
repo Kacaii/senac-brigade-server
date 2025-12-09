@@ -60,7 +60,7 @@ create type occurrence_priority_enum as enum (
 -- 󰓶  TABLES -------------------------------------------------------------------
 
 create table if not exists public.user_account (
-    id uuid primary key default uuidv7(),
+    id uuid default uuidv7(),
     user_role user_role_enum not null,
     full_name text not null,
     password_hash text not null,
@@ -69,7 +69,8 @@ create table if not exists public.user_account (
     email text not null unique,
     is_active boolean not null default true,
     created_at timestamp not null default current_timestamp,
-    updated_at timestamp not null default current_timestamp
+    updated_at timestamp not null default current_timestamp,
+    primary key (id)
 );
 
 create index if not exists idx_user_registration
@@ -77,19 +78,20 @@ on public.user_account (registration);
 
 
 create table if not exists public.user_notification_preference (
-    id uuid primary key default uuidv7(),
+    id uuid default uuidv7(),
     user_id uuid not null references public.user_account (id)
     on update cascade on delete cascade,
     notification_type notification_type_enum not null,
     enabled boolean not null default false,
     created_at timestamp not null default current_timestamp,
     updated_at timestamp not null default current_timestamp,
-    unique (user_id, notification_type)
+    unique (user_id, notification_type),
+    primary key (id)
 );
 
 
 create table if not exists public.brigade (
-    id uuid primary key default uuidv7(),
+    id uuid default uuidv7(),
     leader_id uuid not null references public.user_account (id)
     on update cascade on delete cascade,
     vehicle_code text not null,
@@ -97,7 +99,8 @@ create table if not exists public.brigade (
     description text default null,
     is_active boolean not null default false,
     created_at timestamp not null default current_timestamp,
-    updated_at timestamp not null default current_timestamp
+    updated_at timestamp not null default current_timestamp,
+    primary key (id)
 );
 
 create index if not exists idx_brigade_leader_id
@@ -105,12 +108,13 @@ on public.brigade (leader_id);
 
 
 create table if not exists public.brigade_membership (
-    id uuid primary key default uuidv7(),
+    id uuid default uuidv7(),
     brigade_id uuid not null references public.brigade (id)
     on update cascade on delete cascade,
     user_id uuid not null references public.user_account (id)
     on update cascade on delete cascade,
-    unique (user_id, brigade_id)
+    unique (user_id, brigade_id),
+    primary key (id)
 );
 
 create index if not exists idx_brigade_membership_user_id
@@ -121,7 +125,7 @@ on public.brigade_membership (brigade_id);
 
 
 create table if not exists public.occurrence (
-    id uuid primary key default uuidv7(),
+    id uuid default uuidv7(),
     applicant_id uuid not null references public.user_account (id)
     on update cascade on delete cascade,
     occurrence_category occurrence_category_enum not null,
@@ -133,7 +137,8 @@ create table if not exists public.occurrence (
     created_at timestamp not null default current_timestamp,
     arrived_at timestamp default null,
     updated_at timestamp not null default current_timestamp,
-    resolved_at timestamp default null
+    resolved_at timestamp default null,
+    primary key (id)
 );
 
 create index if not exists idx_occurrence_applicant_id
@@ -144,12 +149,13 @@ on public.occurrence (created_at);
 
 
 create table if not exists public.occurrence_brigade (
-    id uuid primary key default uuidv7(),
+    id uuid default uuidv7(),
     occurrence_id uuid not null references public.occurrence (id)
     on update cascade on delete cascade,
     brigade_id uuid not null references public.brigade (id)
     on update cascade on delete cascade,
-    unique (occurrence_id, brigade_id)
+    unique (occurrence_id, brigade_id),
+    primary key (id)
 );
 
 create index if not exists idx_occurrence_brigade_occurrence_id
