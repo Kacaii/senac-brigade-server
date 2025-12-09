@@ -16,15 +16,16 @@
 //// - Static file serving from `/static` path
 
 import app/web/context
-import cors_builder as cors
 import gleam/dynamic/decode
-import gleam/http
 import gleam/json
 import gleam/list
 import gleam/string
 import glight
 import pog
 import wisp
+
+// import cors_builder as cors
+// import gleam/http
 
 /// Middleware that runs before every request.
 /// It sets up the request, and then calls the next handler.
@@ -39,7 +40,7 @@ pub fn middleware(
   use <- wisp.log_request(request)
   use <- wisp.rescue_crashes()
   use request <- wisp.handle_head(request)
-  use request <- cors.wisp_middleware(request, cors_config(ctx))
+  // use request <- cors.wisp_middleware(request, cors_config(ctx))
 
   use <- wisp.serve_static(request, under: path, from: ctx.static_directory)
   handler(request)
@@ -64,25 +65,25 @@ fn log_directory() -> String {
   priv_directory <> "/log"
 }
 
-fn cors_config(ctx: context.Context) -> cors.Cors {
-  let config =
-    cors.new()
-    |> cors.allow_origin("https://sigo.cbpm.vercel.app")
-    |> cors.allow_method(http.Get)
-    |> cors.allow_method(http.Post)
-    |> cors.allow_method(http.Put)
-    |> cors.allow_method(http.Delete)
-    |> cors.allow_method(http.Options)
-    |> cors.allow_header("authorization")
-    |> cors.allow_header("content-type")
-    |> cors.allow_header("origin")
-    |> cors.allow_credentials()
-
-  case ctx.env {
-    context.Dev -> cors.allow_all_origins(config)
-    context.Production -> config
-  }
-}
+// fn cors_config(ctx: context.Context) -> cors.Cors {
+//   let config =
+//     cors.new()
+//     |> cors.allow_origin("https://sigo.cbpm.vercel.app")
+//     |> cors.allow_method(http.Get)
+//     |> cors.allow_method(http.Post)
+//     |> cors.allow_method(http.Put)
+//     |> cors.allow_method(http.Delete)
+//     |> cors.allow_method(http.Options)
+//     |> cors.allow_header("authorization")
+//     |> cors.allow_header("content-type")
+//     |> cors.allow_header("origin")
+//     |> cors.allow_credentials()
+//
+//   case ctx.env {
+//     context.Dev -> cors.allow_all_origins(config)
+//     context.Production -> config
+//   }
+// }
 
 pub fn handle_decode_error(
   decode_errors: List(decode.DecodeError),
