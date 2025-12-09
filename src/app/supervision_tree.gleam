@@ -34,7 +34,7 @@ pub fn start(
     }
   }
 
-  let bind_to = case ctx.env, envoy.get("SIGO_HOST") {
+  let bind_to = case ctx.env, envoy.get("SIGO_BIND") {
     context.Production, _ -> "0.0.0.0"
     context.Dev, Ok(bind) -> bind
     context.Dev, _ -> "localhost"
