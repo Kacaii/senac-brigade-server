@@ -95,7 +95,7 @@ fn handle_connection(
   user_uuid: uuid.Uuid,
   registry: group_registry.GroupRegistry(msg.Msg),
 ) -> Response {
-  case fetch_user_data(ctx, user_uuid) {
+  case build_initial_state(ctx, user_uuid) {
     Error(err) -> handle_error(err)
     Ok(state) -> route_request(req, ctx, registry, state)
   }
@@ -344,8 +344,8 @@ fn ws_on_init(
   #(state, Some(selector))
 }
 
-/// Queries the Database and builds the initial state of the user
-fn fetch_user_data(
+/// 󰥖  Queries the Database and builds the initial state of the connection
+fn build_initial_state(
   ctx: Context,
   user_uuid: uuid.Uuid,
 ) -> Result(State, WebSocketError) {
