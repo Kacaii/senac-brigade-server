@@ -10,20 +10,25 @@ import pog
 import wisp
 import wisp/wisp_mist
 
+type Request =
+  request.Request(mist.Connection)
+
+type Response =
+  response.Response(mist.ResponseData)
+
 /// 󰪋  Start the application supervisor
 pub fn start(
   ctx ctx: context.Context,
   pog_config pog_config: pog.Config,
   wisp_handler wisp_handler: fn(wisp.Request) -> wisp.Response,
-  ws_handler ws_handler: fn(request.Request(mist.Connection)) ->
-    response.Response(mist.ResponseData),
+  ws_handler ws_handler: fn(Request) -> Response,
   secret_key_base secret_key_base: String,
   registry_name registry_name: process.Name(_),
 ) -> Result(actor.Started(supervisor.Supervisor), actor.StartError) {
   // Handler for the web server
   let webserver_handler = fn(req) {
     case wisp.path_segments(req) {
-      ["ws"] | ["ws", _] -> ws_handler(req)
+      ["ws"] -> ws_handler(req)
       _ -> wisp_mist.handler(wisp_handler, secret_key_base)(req)
     }
   }

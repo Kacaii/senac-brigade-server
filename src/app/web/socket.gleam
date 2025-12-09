@@ -27,6 +27,12 @@ import youid/uuid
 
 pub const ws_topic = "active_users"
 
+type Request =
+  request.Request(mist.Connection)
+
+type Response =
+  response.Response(mist.ResponseData)
+
 pub opaque type WebSocketError {
   /// 󱛪  Session cookie was not found
   MissingCookie
@@ -47,10 +53,7 @@ pub opaque type WebSocketError {
 }
 
 /// 󱘖  Stabilishes a websocket connection with the client
-pub fn handle_request(
-  req: request.Request(mist.Connection),
-  ctx: Context,
-) -> response.Response(mist.ResponseData) {
+pub fn handle_request(req: Request, ctx: Context) -> Response {
   let registry = group_registry.get_registry(ctx.registry_name)
 
   case extract_uuid(req, ctx) {
@@ -87,11 +90,11 @@ pub fn broadcast(
 }
 
 fn handle_connection(
-  req: request.Request(mist.Connection),
+  req: Request,
   ctx: Context,
   user_uuid: uuid.Uuid,
   registry: group_registry.GroupRegistry(msg.Msg),
-) -> response.Response(mist.ResponseData) {
+) -> Response {
   case fetch_user_data(ctx, user_uuid) {
     Error(err) -> handle_error(err)
     Ok(state) -> route_request(req, ctx, registry, state)
@@ -99,11 +102,11 @@ fn handle_connection(
 }
 
 fn route_request(
-  req: request.Request(mist.Connection),
+  req: Request,
   ctx: Context,
   registry: group_registry.GroupRegistry(msg.Msg),
   state: State,
-) -> response.Response(mist.ResponseData) {
+) -> Response {
   case request.path_segments(req) {
     ["ws"] ->
       mist.websocket(
@@ -287,10 +290,7 @@ fn send_envelope(
   }
 }
 
-fn extract_uuid(
-  req: request.Request(mist.Connection),
-  ctx: Context,
-) -> Result(uuid.Uuid, WebSocketError) {
+fn extract_uuid(req: Request, ctx: Context) -> Result(uuid.Uuid, WebSocketError) {
   let cookies = request.get_cookies(req)
   let salt = <<ctx.secret_key_base:utf8>>
 
@@ -317,7 +317,7 @@ fn extract_uuid(
 
 fn ws_on_init(
   conn _conn: mist.WebsocketConnection,
-  req _req: request.Request(mist.Connection),
+  req _req: Request,
   ctx _ctx: Context,
   registry registry: group_registry.GroupRegistry(msg.Msg),
   state state: State,
@@ -377,13 +377,14 @@ fn fetch_subscribed_categories(
     |> result.map_error(Database),
   )
 
-  use row <- list.map(returned.rows)
-  case row.notification_type {
-    notif_sql.Emergency -> category.MedicEmergency
-    notif_sql.Fire -> category.Fire
-    notif_sql.Other -> category.Other
-    notif_sql.Traffic -> category.TrafficAccident
-  }
+  list.map(returned.rows, fn(row) {
+    case row.notification_type {
+      notif_sql.Emergency -> category.MedicEmergency
+      notif_sql.Fire -> category.Fire
+      notif_sql.Other -> category.Other
+      notif_sql.Traffic -> category.TrafficAccident
+    }
+  })
 }
 
 // ON CLOSE --------------------------------------------------------------------
@@ -407,17 +408,13 @@ fn ws_on_close(
 
 // HELPERS ---------------------------------------------------------------------
 
-fn send_response(
-  body: String,
-  status: Int,
-) -> response.Response(mist.ResponseData) {
-  body
-  |> bytes_tree.from_string
+fn send_response(body body: String, status status: Int) -> Response {
+  bytes_tree.from_string(body)
   |> mist.Bytes
   |> response.set_body(response.new(status), _)
 }
 
-fn handle_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
+fn handle_error(err: WebSocketError) -> Response {
   case err {
     InvalidUuid(id) -> {
       let body = "Usuário possui Uuid inválido: " <> id
@@ -457,9 +454,7 @@ fn handle_error(err: WebSocketError) -> response.Response(mist.ResponseData) {
   }
 }
 
-fn handle_database_error(
-  err: pog.QueryError,
-) -> response.Response(mist.ResponseData) {
+fn handle_database_error(err: pog.QueryError) -> Response {
   case err {
     pog.ConnectionUnavailable ->
       "Conexão com o banco de dados não disponível"
@@ -513,24 +508,21 @@ fn handle_database_error(
   }
 }
 
-pub fn handle_decode_error(
-  decode_errors: List(decode.DecodeError),
-) -> response.Response(mist.ResponseData) {
-  case list.first(decode_errors) {
+pub fn handle_decode_error(failed: List(decode.DecodeError)) -> Response {
+  case list.first(failed) {
     Error(_) -> send_response("Ok", 200)
     Ok(err) ->
-      [
+      json.object([
         #("expected", json.string(err.expected)),
         #("found", json.string(err.found)),
         #("path", json.string(string.join(err.path, "/"))),
-      ]
-      |> json.object
+      ])
       |> json.to_string
       |> send_response(400)
   }
 }
 
-pub fn read_body(req: request.Request(mist.Connection)) {
+pub fn read_body(req: Request) {
   use header <- result.try(
     request.get_header(req, "content-length")
     |> result.replace_error(MissingContentLength),
