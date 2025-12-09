@@ -36,8 +36,8 @@ pub fn assign_brigades_to_occurrence(
   }
 
   "--    Assign as list of brigades as participants of a occurrence
-SELECT ob.inserted_brigade_id
-FROM public.assign_occurrence_brigades($1, $2) AS ob;
+select ob.inserted_brigade_id
+from public.assign_occurrence_brigades($1, $2) as ob;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -73,9 +73,9 @@ pub fn delete_occurrence_by_id(
   }
 
   "--   Remove an occurrence from the database
-DELETE FROM public.occurrence AS o
-WHERE o.id = $1
-RETURNING o.id;
+delete from public.occurrence as o
+where o.id = $1
+returning o.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -133,7 +133,7 @@ pub fn insert_new_occurence(
   }
 
   "--   Inserts a new occurrence into the database
-INSERT INTO public.occurrence AS o (
+insert into public.occurrence as o (
     applicant_id,
     occurrence_category,
     occurrence_subcategory,
@@ -141,7 +141,7 @@ INSERT INTO public.occurrence AS o (
     description,
     occurrence_location,
     reference_point
-) VALUES (
+) values (
     $1,
     $2,
     $3,
@@ -150,7 +150,7 @@ INSERT INTO public.occurrence AS o (
     $6,
     $7
 )
-RETURNING
+returning
     o.id,
     o.occurrence_category,
     o.priority,
@@ -239,37 +239,37 @@ pub fn query_occurences_by_applicant(
 
   "--   Retrieves all occurrences associated with a user,
 -- including detailed category information and resolution status.
-SELECT
+select
     o.id,
     o.resolved_at,
     o.priority,
     o.occurrence_category,
     o.occurrence_location,
-    o.description AS details,
-    u.full_name AS applicant_name,
+    o.description as details,
+    u.full_name as applicant_name,
     o.created_at,
     o.arrived_at,
-    u.registration AS applicant_registration,
+    u.registration as applicant_registration,
     o.applicant_id,
 
     (
-        SELECT JSON_AGG(JSON_BUILD_OBJECT(
+        select json_agg(json_build_object(
             'id', b.id,
             'brigade_name', b.brigade_name,
             'leader_full_name', leader_u.full_name,
             'vehicle_code', b.vehicle_code
-        )) FROM public.occurrence_brigade AS ob
-        INNER JOIN public.brigade AS b
-            ON ob.brigade_id = b.id
-        INNER JOIN public.user_account AS leader_u
-            ON b.leader_id = leader_u.id
-        WHERE ob.occurrence_id = o.id
-    ) AS brigade_list
+        )) from public.occurrence_brigade as ob
+        inner join public.brigade as b
+            on ob.brigade_id = b.id
+        inner join public.user_account as leader_u
+            on b.leader_id = leader_u.id
+        where ob.occurrence_id = o.id
+    ) as brigade_list
 
-FROM public.occurrence AS o
-INNER JOIN public.user_account AS u
-    ON o.applicant_id = u.id
-WHERE o.applicant_id = $1;
+from public.occurrence as o
+inner join public.user_account as u
+    on o.applicant_id = u.id
+where o.applicant_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -302,12 +302,12 @@ pub fn query_participants(
   }
 
   "-- 󰀖  Find all users that participated in a occurrence
-SELECT DISTINCT participant.user_id
-FROM public.brigade_membership AS participant
-INNER JOIN public.occurrence_brigade AS ob
-    ON participant.brigade_id = ob.brigade_id
-WHERE ob.occurrence_id = $1
-ORDER BY participant.user_id;
+select distinct participant.user_id
+from public.brigade_membership as participant
+inner join public.occurrence_brigade as ob
+    on participant.brigade_id = ob.brigade_id
+where ob.occurrence_id = $1
+order by participant.user_id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -370,7 +370,7 @@ pub fn query_recent_occurrences(
   }
 
   "--   Find all occurrences from the last 24 hours
-SELECT
+select
     o.id,
     o.created_at,
     o.description,
@@ -378,8 +378,8 @@ SELECT
     o.occurrence_subcategory,
     o.occurrence_location,
     o.reference_point
-FROM public.occurrence AS o
-WHERE o.created_at >= (NOW() - '1 day'::INTERVAL);
+from public.occurrence as o
+where o.created_at >= (now() - '1 day'::interval);
 "
   |> pog.query
   |> pog.returning(decoder)
@@ -417,12 +417,12 @@ pub fn reopen_occurrence(
   }
 
   "-- 󰚰  Mark a occurrence as unresolved
-UPDATE public.occurrence
-SET
-    resolved_at = NULL,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING
+update public.occurrence
+set
+    resolved_at = null,
+    updated_at = current_timestamp
+where id = $1
+returning
     id,
     resolved_at,
     updated_at;
@@ -459,8 +459,8 @@ pub fn replace_occurrence_brigades(
   }
 
   "--   Replace all assigned brigades
-SELECT o.inserted_brigade_id
-FROM public.assign_occurrence_brigades($1, $2) AS o;
+select o.inserted_brigade_id
+from public.assign_occurrence_brigades($1, $2) as o;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -502,12 +502,12 @@ pub fn resolve_occurrence(
   }
 
   "-- 󰚰  Mark a occurrence as resolved
-UPDATE public.occurrence
-SET
-    resolved_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING
+update public.occurrence
+set
+    resolved_at = current_timestamp,
+    updated_at = current_timestamp
+where id = $1
+returning
     id,
     resolved_at,
     updated_at;

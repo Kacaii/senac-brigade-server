@@ -33,11 +33,11 @@ pub fn query_active_notifications(
   }
 
   "--   Find the active notifications from an user
-SELECT np.notification_type
-FROM public.user_notification_preference AS np
-WHERE
+select np.notification_type
+from public.user_notification_preference as np
+where
     np.user_id = $1
-    AND np.enabled = TRUE;
+    and np.enabled = true;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -74,11 +74,11 @@ pub fn query_notification_preferences(
   }
 
   "--   Find the notification preferences for an user
-SELECT
+select
     np.notification_type,
     np.enabled
-FROM public.user_notification_preference AS np
-WHERE np.user_id = $1;
+from public.user_notification_preference as np
+where np.user_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -120,14 +120,14 @@ pub fn update_notification_preferences(
   }
 
   "--   Update user notification preference
-UPDATE public.user_notification_preference AS np
-SET
+update public.user_notification_preference as np
+set
     enabled = $3,
-    updated_at = CURRENT_TIMESTAMP
-WHERE
+    updated_at = current_timestamp
+where
     np.user_id = $1
-    AND np.notification_type = $2
-RETURNING
+    and np.notification_type = $2
+returning
     new.notification_type,
     new.enabled;
 "

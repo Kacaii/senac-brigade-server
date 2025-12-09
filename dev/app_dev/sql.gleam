@@ -18,8 +18,8 @@ pub fn soft_truncate_user_account(
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
-  "DELETE FROM public.user_account
-WHERE registration != '000';
+  "delete from public.user_account
+where registration != '000';
 "
   |> pog.query
   |> pog.returning(decoder)
@@ -37,7 +37,7 @@ pub fn truncate_brigade(
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
-  "TRUNCATE TABLE public.brigade CASCADE;
+  "truncate table public.brigade cascade;
 "
   |> pog.query
   |> pog.returning(decoder)
@@ -55,7 +55,7 @@ pub fn truncate_occurrence(
 ) -> Result(pog.Returned(Nil), pog.QueryError) {
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
-  "TRUNCATE TABLE public.occurrence CASCADE;
+  "truncate table public.occurrence cascade;
 "
   |> pog.query
   |> pog.returning(decoder)

@@ -36,8 +36,8 @@ pub fn assign_brigade_members(
   }
 
   "--   Assign a list of members to a brigade
-SELECT b.inserted_user_id
-FROM public.assign_brigade_members($1, $2) AS b;
+select b.inserted_user_id
+from public.assign_brigade_members($1, $2) as b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -74,9 +74,9 @@ pub fn delete_brigade_by_id(
   }
 
   "--   Remove a brigade from the DataBase
-DELETE FROM public.brigade AS b
-WHERE b.id = $1
-RETURNING
+delete from public.brigade as b
+where b.id = $1
+returning
     b.id,
     b.brigade_name;
 "
@@ -115,17 +115,17 @@ pub fn insert_new_brigade(
   }
 
   "--   Register a new brigade into the database
-INSERT INTO public.brigade AS b (
+insert into public.brigade as b (
     leader_id,
     brigade_name,
     vehicle_code,
     is_active
-) VALUES (
+) values (
     $1,
     $2,
     $3,
     $4
-) RETURNING
+) returning
     b.id,
     b.created_at;
 "
@@ -175,14 +175,14 @@ pub fn query_all_brigades(
   }
 
   "-- 󱉯  Find all registered brigades
-SELECT
+select
     b.id,
     b.brigade_name,
-    u.full_name AS leader_name,
+    u.full_name as leader_name,
     b.is_active
-FROM public.brigade AS b
-LEFT JOIN public.user_account AS u
-    ON b.leader_id = u.id;
+from public.brigade as b
+left join public.user_account as u
+    on b.leader_id = u.id;
 "
   |> pog.query
   |> pog.returning(decoder)
@@ -227,15 +227,15 @@ pub fn query_brigade_info(
   }
 
   "-- 󰡦  Find details about a specific brigade
-SELECT
+select
     b.id,
     b.brigade_name,
-    u.id AS leader_name,
+    u.id as leader_name,
     b.is_active
-FROM public.brigade AS b
-INNER JOIN public.user_account AS u
-    ON b.leader_id = u.id
-WHERE b.id = $1;
+from public.brigade as b
+inner join public.user_account as u
+    on b.leader_id = u.id
+where b.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -268,11 +268,11 @@ pub fn query_members_id(
   }
 
   "--   Find the id of all members assigned a specific brigade
-SELECT u.id
-FROM public.user_account AS u
-INNER JOIN public.brigade_membership AS bm
-    ON u.id = bm.user_id
-WHERE bm.brigade_id = $1;
+select u.id
+from public.user_account as u
+inner join public.brigade_membership as bm
+    on u.id = bm.user_id
+where bm.brigade_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -307,14 +307,14 @@ pub fn query_members_info(
   }
 
   "--   Find all members of a brigade
-SELECT
+select
     u.id,
     u.full_name,
     u.user_role
-FROM public.user_account AS u
-INNER JOIN public.brigade_membership AS bm
-    ON u.id = bm.user_id
-WHERE bm.brigade_id = $1;
+from public.user_account as u
+inner join public.brigade_membership as bm
+    on u.id = bm.user_id
+where bm.brigade_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -348,8 +348,8 @@ pub fn replace_brigade_members(
   }
 
   "--   Replace all brigade members
-SELECT b.inserted_user_id
-FROM public.replace_brigade_members($1, $2) AS b;
+select b.inserted_user_id
+from public.replace_brigade_members($1, $2) as b;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -388,12 +388,12 @@ pub fn update_brigade_status(
   }
 
   "--   Set the brigade is_active status to ON or OFF
-UPDATE public.brigade AS b
-SET
+update public.brigade as b
+set
     is_active = $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE b.id = $1
-RETURNING
+    updated_at = current_timestamp
+where b.id = $1
+returning
     b.id,
     b.is_active,
     b.updated_at;

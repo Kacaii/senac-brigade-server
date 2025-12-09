@@ -35,9 +35,9 @@ pub fn delete_user_by_id(
   }
 
   "--   Remove and user from the database
-DELETE FROM public.user_account AS u
-WHERE u.id = $1
-RETURNING u.id, u.full_name;
+delete from public.user_account as u
+where u.id = $1
+returning u.id, u.full_name;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -88,14 +88,14 @@ pub fn get_complete_user_profiles(
   }
 
   "-- 󰀖  Find all users on the database
-SELECT
+select
     u.id,
     u.full_name,
     u.registration,
     u.email,
     u.user_role,
     u.is_active
-FROM public.user_account AS u;
+from public.user_account as u;
 "
   |> pog.query
   |> pog.returning(decoder)
@@ -132,7 +132,7 @@ pub fn insert_new_user(
   }
 
   "--   Inserts a new user into the database
-INSERT INTO public.user_account AS u
+insert into public.user_account as u
 (
     full_name,
     registration,
@@ -141,8 +141,8 @@ INSERT INTO public.user_account AS u
     password_hash,
     user_role
 )
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING u.id;
+values ($1, $2, $3, $4, $5, $6)
+returning u.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
@@ -190,14 +190,14 @@ pub fn query_crew_members(
 
   "-- 󰢫  Retrieves detailed information about fellow brigade members
 -- for a given user, including their names and role details.
-SELECT
+select
     u.id,
     u.full_name,
     u.user_role,
     crew.brigade_id
-FROM public.query_crew_members($1) AS crew
-INNER JOIN public.user_account AS u
-    ON crew.member_id = u.id;
+from public.query_crew_members($1) as crew
+inner join public.user_account as u
+    on crew.member_id = u.id;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -234,12 +234,12 @@ pub fn query_login_token(
 
   "--   Retrieves a user's ID and password hash from their registration
 -- number for authentication purposes.
-SELECT
+select
     u.id,
     u.password_hash,
     u.user_role
-FROM public.user_account AS u
-WHERE u.registration = $1;
+from public.user_account as u
+where u.registration = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
@@ -272,13 +272,13 @@ pub fn query_occurrences_by_participant(
   }
 
   "-- 󰡦  Find all occurrences a user participated in
-SELECT u.id
-FROM public.user_account AS u
-INNER JOIN public.brigade_membership AS bm
-    ON u.id = bm.user_id
-INNER JOIN public.occurrence_brigade AS ob
-    ON bm.brigade_id = ob.brigade_id
-WHERE ob.occurrence_id = $1;
+select u.id
+from public.user_account as u
+inner join public.brigade_membership as bm
+    on u.id = bm.user_id
+inner join public.occurrence_brigade as ob
+    on bm.brigade_id = ob.brigade_id
+where ob.occurrence_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -311,9 +311,9 @@ pub fn query_user_brigades(
   }
 
   "--    Find all brigades an user is assigned to
-SELECT bm.brigade_id
-FROM public.brigade_membership AS bm
-WHERE bm.user_id = $1;
+select bm.brigade_id
+from public.brigade_membership as bm
+where bm.user_id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -346,9 +346,9 @@ pub fn query_user_id_by_registration(
   }
 
   "--   Retrieves a user's ID from their registration number.
-SELECT u.id
-FROM public.user_account AS u
-WHERE u.registration = $1;
+select u.id
+from public.user_account as u
+where u.registration = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(arg_1))
@@ -381,9 +381,9 @@ pub fn query_user_name(
   }
 
   "--   Retrieves a user's full name by their user ID.
-SELECT u.full_name
-FROM public.user_account AS u
-WHERE u.id = $1;
+select u.full_name
+from public.user_account as u
+where u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -416,9 +416,9 @@ pub fn query_user_password(
   }
 
   "--   Find the password hash from an user
-SELECT u.password_hash
-FROM public.user_account AS u
-WHERE u.id = $1;
+select u.password_hash
+from public.user_account as u
+where u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -470,15 +470,15 @@ pub fn query_user_profile(
   }
 
   "-- 󰀖  Find basic information about an user account
-SELECT
+select
     u.id,
     u.full_name,
     u.registration,
     u.user_role,
     u.email,
     u.phone
-FROM public.user_account AS u
-WHERE u.id = $1;
+from public.user_account as u
+where u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -511,10 +511,10 @@ pub fn query_user_role(
   }
 
   "-- 󰀖  Find user access level
-SELECT u.user_role
-FROM
-    public.user_account AS u
-WHERE u.id = $1;
+select u.user_role
+from
+    public.user_account as u
+where u.id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -535,11 +535,11 @@ pub fn update_user_password(
   let decoder = decode.map(decode.dynamic, fn(_) { Nil })
 
   "--   Set an new value to the password of an user
-UPDATE public.user_account
-SET
+update public.user_account
+set
     password_hash = $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1;
+    updated_at = current_timestamp
+where id = $1;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
@@ -578,12 +578,12 @@ pub fn update_user_profile(
   }
 
   "--   Update an authenticated user profile
-UPDATE public.user_account AS u SET
+update public.user_account as u set
     full_name = $2,
     email = $3,
     phone = $4
-WHERE u.id = $1
-RETURNING
+where u.id = $1
+returning
     u.full_name,
     u.email,
     u.phone;
@@ -624,12 +624,12 @@ pub fn update_user_status(
   }
 
   "-- 󰚰  Update an user `is_active` field
-UPDATE public.user_account AS u
-SET
+update public.user_account as u
+set
     is_active = $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE u.id = $1
-RETURNING u.id, u.is_active;
+    updated_at = current_timestamp
+where u.id = $1
+returning u.id, u.is_active;
 "
   |> pog.query
   |> pog.parameter(pog.text(uuid.to_string(arg_1)))
