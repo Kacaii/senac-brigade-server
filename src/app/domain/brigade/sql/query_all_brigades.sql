@@ -1,9 +1,9 @@
 -- 󱉯  Find all registered brigades
-SELECT
+select
     b.id,
     b.brigade_name,
-    u.full_name AS leader_name,
+    u.full_name as leader_name,
     b.is_active
-FROM public.brigade AS b
-LEFT JOIN public.user_account AS u
-    ON b.leader_id = u.id;
+from public.brigade as b
+left join public.user_account as u
+    on b.leader_id = u.id;

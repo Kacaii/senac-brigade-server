@@ -1,10 +1,10 @@
 -- 󰚰  Mark a occurrence as resolved
-UPDATE public.occurrence
-SET
-    resolved_at = CURRENT_TIMESTAMP,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING
+update public.occurrence
+set
+    resolved_at = current_timestamp,
+    updated_at = current_timestamp
+where id = $1
+returning
     id,
     resolved_at,
     updated_at;

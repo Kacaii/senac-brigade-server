@@ -1,2 +1,2 @@
-DELETE FROM public.user_account
-WHERE registration != '000';
+delete from public.user_account
+where registration != '000';

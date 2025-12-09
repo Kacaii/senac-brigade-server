@@ -1,14 +1,14 @@
 --   Update an user's information as admin
-UPDATE public.user_account AS u
-SET
+update public.user_account as u
+set
     full_name = $2,
     email = $3,
     user_role = $4,
     registration = $5,
     is_active = $6,
-    updated_at = CURRENT_TIMESTAMP
-WHERE u.id = $1
-RETURNING
+    updated_at = current_timestamp
+where u.id = $1
+returning
     u.id,
     u.full_name,
     u.email,

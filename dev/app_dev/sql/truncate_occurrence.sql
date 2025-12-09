@@ -1,1 +1,1 @@
-TRUNCATE TABLE public.occurrence CASCADE;
+truncate table public.occurrence cascade;

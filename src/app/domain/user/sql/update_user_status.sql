@@ -1,7 +1,7 @@
 -- 󰚰  Update an user `is_active` field
-UPDATE public.user_account AS u
-SET
+update public.user_account as u
+set
     is_active = $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE u.id = $1
-RETURNING u.id, u.is_active;
+    updated_at = current_timestamp
+where u.id = $1
+returning u.id, u.is_active;

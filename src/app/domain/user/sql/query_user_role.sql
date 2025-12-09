@@ -1,5 +1,5 @@
 -- 󰀖  Find user access level
-SELECT u.user_role
-FROM
-    public.user_account AS u
-WHERE u.id = $1;
+select u.user_role
+from
+    public.user_account as u
+where u.id = $1;

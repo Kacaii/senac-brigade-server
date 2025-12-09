@@ -1,6 +1,6 @@
 --   Set an new value to the password of an user
-UPDATE public.user_account
-SET
+update public.user_account
+set
     password_hash = $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1;
+    updated_at = current_timestamp
+where id = $1;

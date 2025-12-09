@@ -1,1 +1,1 @@
-TRUNCATE TABLE public.brigade CASCADE;
+truncate table public.brigade cascade;

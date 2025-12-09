@@ -1,4 +1,4 @@
 --   Find the password hash from an user
-SELECT u.password_hash
-FROM public.user_account AS u
-WHERE u.id = $1;
+select u.password_hash
+from public.user_account as u
+where u.id = $1;

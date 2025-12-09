@@ -1,8 +1,8 @@
-BEGIN;
+begin;
 
 -- 󱈤  TYPES --------------------------------------------------------------------
 
-CREATE TYPE public.user_role_enum AS ENUM (
+create type public.user_role_enum as enum (
     'admin',
     'analyst',
     'firefighter',
@@ -11,21 +11,21 @@ CREATE TYPE public.user_role_enum AS ENUM (
     'sargeant'
 );
 
-CREATE TYPE public.notification_type_enum AS ENUM (
+create type public.notification_type_enum as enum (
     'fire',
     'emergency',
     'traffic',
     'other'
 );
 
-CREATE TYPE public.occurrence_category_enum AS ENUM (
+create type public.occurrence_category_enum as enum (
     'medic_emergency',
     'fire',
     'traffic_accident',
     'other'
 );
 
-CREATE TYPE public.occurrence_subcategory_enum AS ENUM (
+create type public.occurrence_subcategory_enum as enum (
     -- 󰋠  Medic Emergency,
     'heart_stop',
     'pre_hospital_care',
@@ -51,7 +51,7 @@ CREATE TYPE public.occurrence_subcategory_enum AS ENUM (
     'injured_animal'
 );
 
-CREATE TYPE occurrence_priority_enum AS ENUM (
+create type occurrence_priority_enum as enum (
     'low',
     'medium',
     'high'
@@ -59,103 +59,103 @@ CREATE TYPE occurrence_priority_enum AS ENUM (
 
 -- 󰓶  TABLES -------------------------------------------------------------------
 
-CREATE TABLE IF NOT EXISTS public.user_account (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    user_role USER_ROLE_ENUM NOT NULL,
-    full_name TEXT NOT NULL,
-    password_hash TEXT NOT NULL,
-    registration TEXT UNIQUE NOT NULL,
-    phone TEXT UNIQUE DEFAULT NULL,
-    email TEXT NOT NULL UNIQUE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+create table if not exists public.user_account (
+    id uuid primary key default uuidv7(),
+    user_role user_role_enum not null,
+    full_name text not null,
+    password_hash text not null,
+    registration text unique not null,
+    phone text unique default null,
+    email text not null unique,
+    is_active boolean not null default true,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_registration
-ON public.user_account (registration);
+create index if not exists idx_user_registration
+on public.user_account (registration);
 
 
-CREATE TABLE IF NOT EXISTS public.user_notification_preference (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    user_id UUID NOT NULL REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    notification_type NOTIFICATION_TYPE_ENUM NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (user_id, notification_type)
+create table if not exists public.user_notification_preference (
+    id uuid primary key default uuidv7(),
+    user_id uuid not null references public.user_account (id)
+    on update cascade on delete cascade,
+    notification_type notification_type_enum not null,
+    enabled boolean not null default false,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
+    unique (user_id, notification_type)
 );
 
 
-CREATE TABLE IF NOT EXISTS public.brigade (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    leader_id UUID NOT NULL REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    vehicle_code TEXT NOT NULL,
-    brigade_name TEXT NOT NULL,
-    description TEXT DEFAULT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+create table if not exists public.brigade (
+    id uuid primary key default uuidv7(),
+    leader_id uuid not null references public.user_account (id)
+    on update cascade on delete cascade,
+    vehicle_code text not null,
+    brigade_name text not null,
+    description text default null,
+    is_active boolean not null default false,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp
 );
 
-CREATE INDEX IF NOT EXISTS idx_brigade_leader_id
-ON public.brigade (leader_id);
+create index if not exists idx_brigade_leader_id
+on public.brigade (leader_id);
 
 
-CREATE TABLE IF NOT EXISTS public.brigade_membership (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    brigade_id UUID NOT NULL REFERENCES public.brigade (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (user_id, brigade_id)
+create table if not exists public.brigade_membership (
+    id uuid primary key default uuidv7(),
+    brigade_id uuid not null references public.brigade (id)
+    on update cascade on delete cascade,
+    user_id uuid not null references public.user_account (id)
+    on update cascade on delete cascade,
+    unique (user_id, brigade_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_brigade_membership_user_id
-ON public.brigade_membership (user_id);
+create index if not exists idx_brigade_membership_user_id
+on public.brigade_membership (user_id);
 
-CREATE INDEX IF NOT EXISTS idx_brigade_membership_brigade_id
-ON public.brigade_membership (brigade_id);
+create index if not exists idx_brigade_membership_brigade_id
+on public.brigade_membership (brigade_id);
 
 
-CREATE TABLE IF NOT EXISTS public.occurrence (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    applicant_id UUID NOT NULL REFERENCES public.user_account (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    occurrence_category OCCURRENCE_CATEGORY_ENUM NOT NULL,
-    occurrence_subcategory OCCURRENCE_SUBCATEGORY_ENUM,
-    priority OCCURRENCE_PRIORITY_ENUM NOT NULL,
-    description TEXT,
-    occurrence_location FLOAT [],
-    reference_point TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    arrived_at TIMESTAMP DEFAULT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    resolved_at TIMESTAMP DEFAULT NULL
+create table if not exists public.occurrence (
+    id uuid primary key default uuidv7(),
+    applicant_id uuid not null references public.user_account (id)
+    on update cascade on delete cascade,
+    occurrence_category occurrence_category_enum not null,
+    occurrence_subcategory occurrence_subcategory_enum,
+    priority occurrence_priority_enum not null,
+    description text,
+    occurrence_location float [],
+    reference_point text,
+    created_at timestamp not null default current_timestamp,
+    arrived_at timestamp default null,
+    updated_at timestamp not null default current_timestamp,
+    resolved_at timestamp default null
 );
 
-CREATE INDEX IF NOT EXISTS idx_occurrence_applicant_id
-ON public.occurrence (applicant_id);
+create index if not exists idx_occurrence_applicant_id
+on public.occurrence (applicant_id);
 
-CREATE INDEX IF NOT EXISTS idx_occurrence_created_at
-ON public.occurrence (created_at);
+create index if not exists idx_occurrence_created_at
+on public.occurrence (created_at);
 
 
-CREATE TABLE IF NOT EXISTS public.occurrence_brigade (
-    id UUID PRIMARY KEY DEFAULT UUIDV7(),
-    occurrence_id UUID NOT NULL REFERENCES public.occurrence (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    brigade_id UUID NOT NULL REFERENCES public.brigade (id)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (occurrence_id, brigade_id)
+create table if not exists public.occurrence_brigade (
+    id uuid primary key default uuidv7(),
+    occurrence_id uuid not null references public.occurrence (id)
+    on update cascade on delete cascade,
+    brigade_id uuid not null references public.brigade (id)
+    on update cascade on delete cascade,
+    unique (occurrence_id, brigade_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_occurrence_id
-ON public.occurrence_brigade (occurrence_id);
+create index if not exists idx_occurrence_brigade_occurrence_id
+on public.occurrence_brigade (occurrence_id);
 
-CREATE INDEX IF NOT EXISTS idx_occurrence_brigade_brigade_id
-ON public.occurrence_brigade (brigade_id);
+create index if not exists idx_occurrence_brigade_brigade_id
+on public.occurrence_brigade (brigade_id);
 
-COMMIT;
+commit;

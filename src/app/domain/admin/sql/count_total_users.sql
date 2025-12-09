@@ -1,3 +1,3 @@
 -- 󰆙  Count the total number of users in our system
-SELECT COUNT(u.id) AS total
-FROM public.user_account AS u;
+select count(u.id) as total
+from public.user_account as u;

@@ -1,11 +1,11 @@
 --   Update user notification preference
-UPDATE public.user_notification_preference AS np
-SET
+update public.user_notification_preference as np
+set
     enabled = $3,
-    updated_at = CURRENT_TIMESTAMP
-WHERE
+    updated_at = current_timestamp
+where
     np.user_id = $1
-    AND np.notification_type = $2
-RETURNING
+    and np.notification_type = $2
+returning
     new.notification_type,
     new.enabled;

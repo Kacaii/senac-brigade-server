@@ -1,6 +1,6 @@
 --   Find the active notifications from an user
-SELECT np.notification_type
-FROM public.user_notification_preference AS np
-WHERE
+select np.notification_type
+from public.user_notification_preference as np
+where
     np.user_id = $1
-    AND np.enabled = TRUE;
+    and np.enabled = true;

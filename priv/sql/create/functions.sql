@@ -1,117 +1,117 @@
-BEGIN;
+begin;
 
 -- DROP ------------------------------------------------------------------------
-DROP FUNCTION IF EXISTS public.query_crew_members;
-DROP FUNCTION IF EXISTS public.assign_brigade_members;
-DROP FUNCTION IF EXISTS public.replace_brigade_members;
-DROP FUNCTION IF EXISTS public.assign_occurrence_brigades;
-DROP FUNCTION IF EXISTS public.replace_occurrence_brigades;
+drop function if exists public.query_crew_members;
+drop function if exists public.assign_brigade_members;
+drop function if exists public.replace_brigade_members;
+drop function if exists public.assign_occurrence_brigades;
+drop function if exists public.replace_occurrence_brigades;
 
 -- CREATE ----------------------------------------------------------------------
 
 --   Returns all users that are in the same brigades as the target user
-CREATE OR REPLACE FUNCTION public.query_crew_members(p_user_id UUID)
-RETURNS TABLE (member_id UUID, brigade_id UUID)
-LANGUAGE plpgsql
-STABLE
-PARALLEL SAFE
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT DISTINCT bm.user_id as member_id, bm.brigade_id as brigade_id
-    FROM public.brigade_membership AS bm
-    INNER JOIN public.brigade_membership AS target_bm
-        ON bm.brigade_id = target_bm.brigade_id
-    WHERE target_bm.user_id = p_user_id
-        AND bm.user_id <> p_user_id;
-END;
+create or replace function public.query_crew_members(p_user_id uuid)
+returns table (member_id uuid, brigade_id uuid)
+language plpgsql
+stable
+parallel safe
+as $$
+begin
+    return query
+    select distinct bm.user_id as member_id, bm.brigade_id as brigade_id
+    from public.brigade_membership as bm
+    inner join public.brigade_membership as target_bm
+        on bm.brigade_id = target_bm.brigade_id
+    where target_bm.user_id = p_user_id
+        and bm.user_id <> p_user_id;
+end;
 $$;
 
 -- 󰮆  Assign members to a brigade
-CREATE OR REPLACE FUNCTION public.assign_brigade_members(
-    p_brigade_id UUID,
-    p_members_id UUID []
+create or replace function public.assign_brigade_members(
+    p_brigade_id uuid,
+    p_members_id uuid []
 )
-RETURNS TABLE (inserted_user_id UUID)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    RETURN QUERY
-    INSERT INTO public.brigade_membership AS bm
+returns table (inserted_user_id uuid)
+language plpgsql
+as $$
+begin
+    return query
+    insert into public.brigade_membership as bm
         (brigade_id, user_id)
-    SELECT
+    select
         p_brigade_id,
         member_id
-    FROM unnest(p_members_id) as member_id
-    ON CONFLICT (brigade_id, user_id)
-    DO NOTHING
-    RETURNING user_id;
-END;
+    from unnest(p_members_id) as member_id
+    on conflict (brigade_id, user_id)
+    do nothing
+    returning user_id;
+end;
 $$;
 
 
 -- 󰮆  Replace assigned members from a brigade
-CREATE OR REPLACE FUNCTION public.replace_brigade_members(
-    p_brigade_id UUID,
-    p_members_id UUID []
+create or replace function public.replace_brigade_members(
+    p_brigade_id uuid,
+    p_members_id uuid []
 )
-RETURNS TABLE (inserted_user_id UUID)
-LANGUAGE plpgsql
-AS $$
-BEGIN
+returns table (inserted_user_id uuid)
+language plpgsql
+as $$
+begin
     --   Remove all current members
-    DELETE FROM public.brigade_membership AS bm
-    WHERE bm.brigade_id = p_brigade_id;
+    delete from public.brigade_membership as bm
+    where bm.brigade_id = p_brigade_id;
 
-    --  Assign the new ones
-    RETURN QUERY
-    SELECT b.inserted_user_id
-    FROM public.assign_brigade_members(p_brigade_id, p_members_id) AS b;
-END;
+    --   Assign the new ones
+    return query
+    select b.inserted_user_id
+    from public.assign_brigade_members(p_brigade_id, p_members_id) as b;
+end;
 $$;
 
 
 -- 󰮆  Assign brigades to a occurrence
-CREATE OR REPLACE FUNCTION public.assign_occurrence_brigades(
-    p_occurrence_id UUID,
-    p_brigades_id UUID []
+create or replace function public.assign_occurrence_brigades(
+    p_occurrence_id uuid,
+    p_brigades_id uuid []
 )
-RETURNS TABLE (inserted_brigade_id UUID)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    RETURN QUERY
-    INSERT INTO public.occurrence_brigade AS oc
+returns table (inserted_brigade_id uuid)
+language plpgsql
+as $$
+begin
+    return query
+    insert into public.occurrence_brigade as oc
         (occurrence_id, brigade_id)
-    SELECT
+    select
         p_occurrence_id,
         brigade_id
-    FROM unnest(p_brigades_id) as brigade_id
-    ON CONFLICT (occurrence_id, brigade_id)
-    DO NOTHING
-    RETURNING brigade_id;
-END;
+    from unnest(p_brigades_id) as brigade_id
+    on conflict (occurrence_id, brigade_id)
+    do nothing
+    returning brigade_id;
+end;
 $$;
 
 
--- 󰮆  Replace assigned brigades from a occurrence
-CREATE OR REPLACE FUNCTION public.replace_occurrence_brigades(
-    p_occurrence_id UUID,
-    p_brigades_id UUID []
+-- 󰮆  replace assigned brigades from a occurrence
+create or replace function public.replace_occurrence_brigades(
+    p_occurrence_id uuid,
+    p_brigades_id uuid []
 )
-RETURNS TABLE (inserted_brigade_id UUID)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    --    Remove all current assigned brigades
-    DELETE FROM public.occurrence_brigade AS ob
-    WHERE ob.occurrence_id = p_occurrence_id;
+returns table (inserted_brigade_id uuid)
+language plpgsql
+as $$
+begin
+    --   Remove all current assigned brigades
+    delete from public.occurrence_brigade as ob
+    where ob.occurrence_id = p_occurrence_id;
 
-    --    Assign the new ones
-    RETURN QUERY
-    SELECT o.inserted_brigade_id
-    FROM public.assign_occurrence_brigades(p_occurrence_id, p_brigades_id) AS o;
-END;
+    --   Assign the new ones
+    return query
+    select o.inserted_brigade_id
+    from public.assign_occurrence_brigades(p_occurrence_id, p_brigades_id) as o;
+end;
 $$;
 
-COMMIT;
+commit;

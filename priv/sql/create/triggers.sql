@@ -1,22 +1,22 @@
 --   Sets default user notification preferences when inserting a new one
-CREATE OR REPLACE FUNCTION public.set_default_notification_preferences()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    INSERT INTO public.user_notification_preference (user_id, notification_type)
-    VALUES
-        (NEW.id, 'fire'),
-        (NEW.id, 'emergency'),
-        (NEW.id, 'traffic'),
-        (NEW.id, 'other')
-    ON CONFLICT (user_id, notification_type) DO NOTHING;
+create or replace function public.set_default_notification_preferences()
+returns trigger
+language plpgsql
+as $$
+begin
+    insert into public.user_notification_preference (user_id, notification_type)
+    values
+        (new.id, 'fire'),
+        (new.id, 'emergency'),
+        (new.id, 'traffic'),
+        (new.id, 'other')
+    on conflict (user_id, notification_type) do nothing;
 
-    RETURN NEW;
-END;
+    return new;
+end;
 $$;
 
-CREATE OR REPLACE TRIGGER tgr_default_notification_preferences
-AFTER INSERT ON public.user_account
-FOR EACH ROW
-EXECUTE FUNCTION public.set_default_notification_preferences();
+create or replace trigger tgr_default_notification_preferences
+after insert on public.user_account
+for each row
+execute function public.set_default_notification_preferences();

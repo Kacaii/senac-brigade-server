@@ -1,5 +1,5 @@
 --   Inserts a new occurrence into the database
-INSERT INTO public.occurrence AS o (
+insert into public.occurrence as o (
     applicant_id,
     occurrence_category,
     occurrence_subcategory,
@@ -7,7 +7,7 @@ INSERT INTO public.occurrence AS o (
     description,
     occurrence_location,
     reference_point
-) VALUES (
+) values (
     $1,
     $2,
     $3,
@@ -16,7 +16,7 @@ INSERT INTO public.occurrence AS o (
     $6,
     $7
 )
-RETURNING
+returning
     o.id,
     o.occurrence_category,
     o.priority,
