@@ -1,5 +1,4 @@
 import app/web/context
-import envoy
 import gleam/erlang/process
 import gleam/http/request
 import gleam/http/response
@@ -34,10 +33,9 @@ pub fn start(
     }
   }
 
-  let bind_to = case ctx.env, envoy.get("SIGO_BIND") {
-    context.Production, _ -> "0.0.0.0"
-    context.Dev, Ok(bind) -> bind
-    context.Dev, _ -> "localhost"
+  let bind_to = case ctx.env {
+    context.Production -> "0.0.0.0"
+    context.Dev -> "localhost"
   }
 
   // Adding Mist to the supervision tree
