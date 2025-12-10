@@ -33,8 +33,7 @@ prod:
 # 󰜉  Rebuild the database
 [group('  postgres')]
 [group('  dev')]
-@rebuild_empty:
-    just clear_log_file
+rebuild_empty: clear_log_file
     psql $DATABASE_URL -f priv/sql/drop.sql
     psql $DATABASE_URL -f priv/sql/create/tables.sql
     psql $DATABASE_URL -f priv/sql/create/triggers.sql
@@ -43,9 +42,7 @@ prod:
 
 # 󱊏  Rebuild the database and setup default admin
 [group('  dev')]
-@rebuild_full:
-    just rebuild_empty
-    just setup_admin
+@rebuild_full: rebuild_empty setup_admin
 
 #   Connect to the websocket. Requires cookies
 [group('  dev')]
@@ -89,8 +86,7 @@ list_brigades:
 
 #   Clears the server's log file
 [group('  dev')]
-@clear_log_file:
-    just generate_log_directory
+@clear_log_file: generate_log_directory
     echo "" > {{ log_file_path }}
 
 [group('  dev')]
