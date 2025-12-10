@@ -118,7 +118,7 @@ pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
         #("constraint", json.string(constraint)),
         #("detail", json.string(detail)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> wisp.json_response(500)
     }
 
@@ -133,7 +133,7 @@ pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
         #("name", json.string(name)),
         #("message", json.string(message)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> wisp.json_response(500)
     }
 
@@ -142,7 +142,7 @@ pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
         #("expected", json.int(expected)),
         #("got", json.int(got)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> wisp.json_response(500)
     }
 
@@ -151,7 +151,7 @@ pub fn handle_database_error(err: pog.QueryError) -> wisp.Response {
         #("expected", json.string(expected)),
         #("got", json.string(got)),
       ])
-      |> json.to_string()
+      |> json.to_string
       |> wisp.json_response(500)
     }
 
