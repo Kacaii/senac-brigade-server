@@ -9,7 +9,6 @@ import app/web
 import app/web/context.{type Context}
 import argus
 import formal/form
-import gleam/bool
 import gleam/float
 import gleam/http/response
 import gleam/json
@@ -40,21 +39,6 @@ type LoginToken {
   LoginToken(body: String, user_id: uuid.Uuid)
 }
 
-/// 󱐁  A form that decodes the `LogIn` value.
-fn login_form() -> form.Form(RequestBody) {
-  form.new({
-    use registration <- form.field("matricula", {
-      form.parse_string |> form.check_not_empty()
-    })
-
-    use password <- form.field("senha", {
-      form.parse_string |> form.check_not_empty()
-    })
-
-    form.success(RequestBody(registration:, password:))
-  })
-}
-
 ///   Handles user login authentication and session management
 /// On success, sets a cookie on the client containing the User UUID,
 /// It will then be used on later requests for authetication.
@@ -75,31 +59,29 @@ pub fn handle_request(request request: wisp.Request, ctx ctx: Context) {
 
   case form_result {
     Error(_) -> wisp.unprocessable_content()
-    Ok(data) ->
-      user.uuid_cookie_name
-      |> handle_login(request:, ctx:, data:, cookie_name: _)
+    Ok(data) -> {
+      let cookie = user.uuid_cookie_name
+      handle_login(request, ctx, data, cookie)
+    }
   }
 }
 
 fn handle_login(
-  request request: wisp.Request,
-  ctx ctx: Context,
-  data data: RequestBody,
-  cookie_name cookie_name: String,
+  request: wisp.Request,
+  ctx: Context,
+  data: RequestBody,
+  name: String,
 ) -> response.Response(wisp.Body) {
-  case query_database(data:, ctx:) {
+  case query_database(data, ctx) {
     Error(err) -> handle_error(err)
-    Ok(resp) -> {
-      log_login(data)
-      set_token(resp, request, cookie_name)
-    }
+    Ok(resp) -> set_token(resp, request, name)
   }
 }
 
 fn set_token(
   resp: LoginToken,
   request: wisp.Request,
-  cookie_name name: String,
+  name: String,
 ) -> wisp.Response {
   let response = wisp.json_response(resp.body, 200)
   let value = uuid.to_string(resp.user_id)
@@ -111,6 +93,22 @@ fn set_token(
     |> float.round
 
   wisp.set_cookie(response:, request:, name:, value:, security:, max_age:)
+}
+
+/// 󱐁  A form that decodes the `LogIn` value.
+fn login_form() -> form.Form(RequestBody) {
+  form.new({
+    use registration <- form.field("matricula", {
+      form.parse_string |> form.check_not_empty()
+    })
+
+    use password <- form.field("senha", {
+      form.parse_string |> form.check_not_empty()
+    })
+
+    RequestBody(registration:, password:)
+    |> form.success
+  })
 }
 
 fn handle_error(err: LoginError) -> response.Response(wisp.Body) {
@@ -146,8 +144,8 @@ fn log_login(login: RequestBody) -> Nil {
 ///   Check if the provided password matches the one inside our database
 /// Returns the user's UUID if successfull.
 fn query_database(
-  data data: RequestBody,
-  ctx ctx: Context,
+  data: RequestBody,
+  ctx: Context,
 ) -> Result(LoginToken, LoginError) {
   use returned <- result.try(
     sql.query_login_token(ctx.db, data.registration)
@@ -159,12 +157,7 @@ fn query_database(
     |> result.replace_error(UserNotFound),
   )
 
-  use correct_password <- result.try(
-    argus.verify(row.password_hash, data.password)
-    |> result.replace_error(HashError),
-  )
-
-  use <- bool.guard(correct_password == False, Error(InvalidPassword))
+  use _ <- result.map(verify_correct_password(row, data))
 
   let user_role = case row.user_role {
     sql.Admin -> role.Admin
@@ -175,11 +168,27 @@ fn query_database(
     sql.Sargeant -> role.Sargeant
   }
 
+  log_login(data)
+
   json.object([
     #("id", json.string(uuid.to_string(row.id))),
     #("role", json.string(role.to_string_pt_br(user_role))),
   ])
   |> json.to_string
   |> LoginToken(body: _, user_id: row.id)
-  |> Ok
+}
+
+fn verify_correct_password(
+  row: sql.QueryLoginTokenRow,
+  data: RequestBody,
+) -> Result(Nil, LoginError) {
+  use correct_password <- result.try(
+    argus.verify(row.password_hash, data.password)
+    |> result.replace_error(HashError),
+  )
+
+  case correct_password {
+    False -> Error(InvalidPassword)
+    True -> Ok(Nil)
+  }
 }
