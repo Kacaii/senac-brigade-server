@@ -375,14 +375,13 @@ fn fetch_subscribed_categories(
     |> result.map_error(Database),
   )
 
-  list.map(returned.rows, fn(row) {
-    case row.notification_type {
-      notif_sql.Emergency -> category.MedicEmergency
-      notif_sql.Fire -> category.Fire
-      notif_sql.Other -> category.Other
-      notif_sql.Traffic -> category.TrafficAccident
-    }
-  })
+  use row <- list.map(returned.rows)
+  case row.notification_type {
+    notif_sql.Emergency -> category.MedicEmergency
+    notif_sql.Fire -> category.Fire
+    notif_sql.Other -> category.Other
+    notif_sql.Traffic -> category.TrafficAccident
+  }
 }
 
 // ON CLOSE --------------------------------------------------------------------
@@ -459,12 +458,11 @@ fn handle_database_error(err: pog.QueryError) -> Response {
       |> send_response(500)
 
     pog.PostgresqlError(code:, name:, message:) ->
-      [
+      json.object([
         #("code", json.string(code)),
         #("name", json.string(name)),
         #("message", json.string(message)),
-      ]
-      |> json.object
+      ])
       |> json.to_string
       |> send_response(500)
 
@@ -473,31 +471,28 @@ fn handle_database_error(err: pog.QueryError) -> Response {
       |> send_response(500)
 
     pog.ConstraintViolated(message:, constraint:, detail:) ->
-      [
+      json.object([
         #("message", json.string(message)),
         #("constraint", json.string(constraint)),
         #("detail", json.string(detail)),
-      ]
-      |> json.object
+      ])
       |> json.to_string
       |> send_response(409)
 
     pog.UnexpectedArgumentCount(expected:, got:) -> {
-      [
+      json.object([
         #("expected", json.int(expected)),
         #("got", json.int(got)),
-      ]
-      |> json.object
+      ])
       |> json.to_string
       |> send_response(400)
     }
 
     pog.UnexpectedArgumentType(expected:, got:) -> {
-      [
+      json.object([
         #("expected", json.string(expected)),
         #("got", json.string(got)),
-      ]
-      |> json.object
+      ])
       |> json.to_string
       |> send_response(400)
     }
