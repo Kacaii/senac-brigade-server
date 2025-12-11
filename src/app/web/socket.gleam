@@ -200,10 +200,8 @@ fn handle_domain_event(
       )
 
     msg.OccurrenceCreated(id:, category:) -> {
-      use <- bool.guard(
-        when: list.any(state.subscribed, fn(sub) { sub == category }),
-        return: mist.continue(state),
-      )
+      let found = list.any(state.subscribed, fn(sub) { sub == category })
+      use <- bool.guard(when: !found, return: mist.continue(state))
 
       send_envelope(
         state:,
