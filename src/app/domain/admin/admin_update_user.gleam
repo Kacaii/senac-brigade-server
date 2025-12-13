@@ -55,6 +55,32 @@ fn handle_body(
   }
 }
 
+type RequestBody {
+  RequestBody(
+    full_name: String,
+    email: String,
+    user_role: role.Role,
+    registration: String,
+    is_active: Bool,
+  )
+}
+
+fn body_decoder() -> decode.Decoder(RequestBody) {
+  use full_name <- decode.field("full_name", decode.string)
+  use email <- decode.field("email", decode.string)
+  use user_role <- decode.field("user_role", role.decoder())
+  use registration <- decode.field("registration", decode.string)
+  use is_active <- decode.field("is_active", decode.bool)
+
+  decode.success(RequestBody(
+    full_name:,
+    email:,
+    user_role:,
+    registration:,
+    is_active:,
+  ))
+}
+
 type AdminUpdateUserError {
   /// Failed to access the DataBase
   DataBase(pog.QueryError)
@@ -63,7 +89,7 @@ type AdminUpdateUserError {
   /// Authentication / Authorization failed
   AccessControl(user.AccessControlError)
   /// User not found in the DataBase
-  UserNotFound(uuid.Uuid)
+  NotFound(uuid.Uuid)
 }
 
 fn handle_error(
@@ -76,39 +102,34 @@ fn handle_error(
 
     InvalidUuid(id) -> wisp.bad_request("Usuário possui Uuid inválido: " <> id)
 
-    UserNotFound(id) -> {
-      let body = "Usuário não encontrado: " <> uuid.to_string(id)
-
-      body
-      |> wisp.Text
+    NotFound(id) ->
+      wisp.Text("Usuário não encontrado: " <> uuid.to_string(id))
       |> wisp.set_body(wisp.not_found(), _)
+
+    DataBase(err) -> handle_database_error(err, body)
+  }
+}
+
+fn handle_database_error(
+  err: pog.QueryError,
+  body: RequestBody,
+) -> wisp.Response {
+  case err {
+    pog.ConstraintViolated(_, _, constraint: "user_account_email_key") ->
+      wisp.Text("Email já está sendo utilizado: " <> body.email)
+      |> wisp.set_body(wisp.response(409), _)
+
+    pog.ConstraintViolated(_, _, constraint: "user_account_registration_key") ->
+      wisp.Text("Matrícula já está sendo utilizada: " <> body.registration)
+      |> wisp.set_body(wisp.response(409), _)
+
+    pog.ConstraintViolated(_, _, constraint: "user_account_phone_key") -> {
+      "Telefone já cadastrado. Por favor, utilize um diferente"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
     }
 
-    DataBase(err) -> {
-      case err {
-        pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
-          let body = "Email já está sendo utilizado: " <> body.email
-
-          body
-          |> wisp.Text
-          |> wisp.set_body(wisp.response(409), _)
-        }
-
-        pog.ConstraintViolated(
-          _,
-          _,
-          constraint: "user_account_registration_key",
-        ) -> {
-          let body = "Matrícula já está sendo utilizada: " <> body.registration
-
-          body
-          |> wisp.Text
-          |> wisp.set_body(wisp.response(409), _)
-        }
-
-        err -> web.handle_database_error(err)
-      }
-    }
+    err -> web.handle_database_error(err)
   }
 }
 
@@ -146,37 +167,36 @@ fn query_database(
     |> result.map_error(DataBase),
   )
 
-  case list.first(returned.rows) {
-    Error(_) -> Error(UserNotFound(user_uuid))
-    Ok(row) -> {
-      let user_role = case row.user_role {
-        sql.Admin -> role.Admin
-        sql.Analyst -> role.Analyst
-        sql.Captain -> role.Captain
-        sql.Developer -> role.Developer
-        sql.Firefighter -> role.Firefighter
-        sql.Sargeant -> role.Sargeant
-      }
+  use row <- result.map(
+    list.first(returned.rows)
+    |> result.replace_error(NotFound(user_uuid)),
+  )
 
-      let updated_at_json =
-        json.float(
-          row.updated_at
-          |> timestamp.to_unix_seconds(),
-        )
-
-      json.object([
-        #("id", json.string(uuid.to_string(row.id))),
-        #("full_name", json.string(row.full_name)),
-        #("email", json.string(row.email)),
-        #("user_role", json.string(role.to_string_pt_br(user_role))),
-        #("registration", json.string(row.registration)),
-        #("updated_at", updated_at_json),
-        #("is_active", json.bool(row.is_active)),
-      ])
-      |> json.to_string
-      |> Ok
-    }
+  let user_role = case row.user_role {
+    sql.Admin -> role.Admin
+    sql.Analyst -> role.Analyst
+    sql.Captain -> role.Captain
+    sql.Developer -> role.Developer
+    sql.Firefighter -> role.Firefighter
+    sql.Sargeant -> role.Sargeant
   }
+
+  let updated_at_json =
+    json.float(
+      row.updated_at
+      |> timestamp.to_unix_seconds(),
+    )
+
+  json.object([
+    #("id", json.string(uuid.to_string(row.id))),
+    #("full_name", json.string(row.full_name)),
+    #("email", json.string(row.email)),
+    #("user_role", json.string(role.to_string_pt_br(user_role))),
+    #("registration", json.string(row.registration)),
+    #("updated_at", updated_at_json),
+    #("is_active", json.bool(row.is_active)),
+  ])
+  |> json.to_string
 }
 
 fn role_to_enum(role: role.Role) {
@@ -188,30 +208,4 @@ fn role_to_enum(role: role.Role) {
     role.Firefighter -> sql.Firefighter
     role.Sargeant -> sql.Sargeant
   }
-}
-
-fn body_decoder() {
-  use full_name <- decode.field("full_name", decode.string)
-  use email <- decode.field("email", decode.string)
-  use user_role <- decode.field("user_role", role.decoder())
-  use registration <- decode.field("registration", decode.string)
-  use is_active <- decode.field("is_active", decode.bool)
-
-  decode.success(RequestBody(
-    full_name:,
-    email:,
-    user_role:,
-    registration:,
-    is_active:,
-  ))
-}
-
-type RequestBody {
-  RequestBody(
-    full_name: String,
-    email: String,
-    user_role: role.Role,
-    registration: String,
-    is_active: Bool,
-  )
 }

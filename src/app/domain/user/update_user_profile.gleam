@@ -50,30 +50,28 @@ fn handle_body(
 fn handle_error(err: UpdateProfileError) -> wisp.Response {
   case err {
     Authentication(err) -> user.handle_authentication_error(err)
-
-    NotFound(id) -> {
-      let body = "Usuário não encontrado" <> uuid.to_string(id)
-      wisp.Text(body)
+    Database(err) -> handle_database_error(err)
+    NotFound(id) ->
+      wisp.Text("Usuário não encontrado" <> uuid.to_string(id))
       |> wisp.set_body(wisp.not_found(), _)
+  }
+}
+
+fn handle_database_error(err: pog.QueryError) {
+  case err {
+    pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
+      "Email já cadastrado. Por favor, utilize um diferente"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
     }
 
-    Database(err) -> {
-      case err {
-        pog.ConstraintViolated(_, _, constraint: "user_account_email_key") -> {
-          "Email já cadastrado. Por favor, utilize um diferente"
-          |> wisp.Text
-          |> wisp.set_body(wisp.response(409), _)
-        }
-
-        pog.ConstraintViolated(_, _, constraint: "user_account_phone_key") -> {
-          "Telefone já cadastrado. Por favor, utilize um diferente"
-          |> wisp.Text
-          |> wisp.set_body(wisp.response(409), _)
-        }
-
-        err -> web.handle_database_error(err)
-      }
+    pog.ConstraintViolated(_, _, constraint: "user_account_phone_key") -> {
+      "Telefone já cadastrado. Por favor, utilize um diferente"
+      |> wisp.Text
+      |> wisp.set_body(wisp.response(409), _)
     }
+
+    other -> web.handle_database_error(other)
   }
 }
 
