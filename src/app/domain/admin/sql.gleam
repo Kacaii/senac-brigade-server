@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/domain/admin/sql`.
-//// > 🐿️ This module was generated automatically using v4.5.0 of
+//// > 🐿️ This module was generated automatically using v4.6.0 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -12,7 +12,7 @@ import youid/uuid.{type Uuid}
 /// A row you get from running the `admin_update_user` query
 /// defined in `./src/app/domain/admin/sql/admin_update_user.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.6.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type AdminUpdateUserRow {
@@ -29,7 +29,7 @@ pub type AdminUpdateUserRow {
 
 ///   Update an user's information as admin
 ///
-/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > 🐿️ This function was generated automatically using v4.6.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn admin_update_user(
@@ -93,7 +93,7 @@ returning
 /// A row you get from running the `count_total_users` query
 /// defined in `./src/app/domain/admin/sql/count_total_users.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.6.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type CountTotalUsersRow {
@@ -102,7 +102,7 @@ pub type CountTotalUsersRow {
 
 /// 󰆙  Count the total number of users in our system
 ///
-/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > 🐿️ This function was generated automatically using v4.6.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn count_total_users(
@@ -126,7 +126,7 @@ from public.user_account as u;
 
 /// Corresponds to the Postgres `user_role_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.6.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UserRoleEnum {

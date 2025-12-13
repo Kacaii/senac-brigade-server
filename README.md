@@ -31,6 +31,7 @@
 | /user/password                 | Update authenticated user password                          | PUT (JSON)    |
 | /brigade/{{id}}/members        | List brigade members                                        | GET           |
 | /dashboard/stats               | Fetch stats for the dashboard page                          | GET           |
+| /analysis/occurrence           | Fetch data for analysis about occurrences                   | GET           |
 | /occurrence/new                | Register a new occurrence                                   | POST (Form)   |
 | /occurrence/resolve/{{id}}     | Update an occurrence `resolved_at` field                    | POST / DELETE |
 

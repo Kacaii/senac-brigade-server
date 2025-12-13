@@ -1,6 +1,6 @@
 //// This module contains the code to run the sql queries defined in
 //// `./src/app/domain/role/sql`.
-//// > 🐿️ This module was generated automatically using v4.5.0 of
+//// > 🐿️ This module was generated automatically using v4.6.0 of
 //// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ////
 
@@ -10,7 +10,7 @@ import pog
 /// A row you get from running the `query_available_user_roles` query
 /// defined in `./src/app/domain/role/sql/query_available_user_roles.sql`.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.6.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type QueryAvailableUserRolesRow {
@@ -19,7 +19,7 @@ pub type QueryAvailableUserRolesRow {
 
 ///   Find all available user roles
 ///
-/// > 🐿️ This function was generated automatically using v4.5.0 of
+/// > 🐿️ This function was generated automatically using v4.6.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub fn query_available_user_roles(
@@ -42,7 +42,7 @@ select unnest(enum_range(null::public.user_role_enum)) as available_role;
 
 /// Corresponds to the Postgres `user_role_enum` enum.
 ///
-/// > 🐿️ This type definition was generated automatically using v4.5.0 of the
+/// > 🐿️ This type definition was generated automatically using v4.6.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
 pub type UserRoleEnum {

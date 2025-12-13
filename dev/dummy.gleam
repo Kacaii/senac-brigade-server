@@ -7,6 +7,7 @@ import app/domain/occurrence/sql as o_sql
 import app/domain/occurrence/subcategory
 import app/domain/role
 import app/domain/user/sql as u_sql
+import app/web/context
 import gleam/float
 import gleam/list
 import gleam/set
@@ -281,6 +282,27 @@ pub fn random_occurrence(
     as "Some brigades were not assigned"
 
   created_occurrence_row.id
+}
+
+pub fn update_occurrence_status(
+  occ: uuid.Uuid,
+  ctx: context.Context,
+  is_active: Bool,
+) {
+  let updated = case is_active {
+    False -> {
+      let assert Ok(returned) = o_sql.reopen_occurrence(ctx.db, occ)
+      let assert Ok(row) = list.first(returned.rows)
+      row.id
+    }
+    True -> {
+      let assert Ok(returned) = o_sql.resolve_occurrence(ctx.db, occ)
+      let assert Ok(row) = list.first(returned.rows)
+      row.id
+    }
+  }
+
+  assert occ == updated as "Update the correct occurrence"
 }
 
 /// Panic on failure

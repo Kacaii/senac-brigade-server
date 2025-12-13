@@ -15,6 +15,7 @@ import app/domain/brigade/get_brigade_members
 import app/domain/brigade/register_new_brigade
 import app/domain/brigade/update_brigade_status
 import app/domain/dashboard
+import app/domain/data_analysis/analysis_occurrence_volume
 import app/domain/notification/get_notification_preferences
 import app/domain/notification/update_notification_preferences
 import app/domain/occurrence/delete_occurrence
@@ -82,6 +83,10 @@ pub fn handle_request(
 
     // 󰨇  Dashboard stats ------------------------------------------------------
     http.Get, ["dashboard", "stats"] -> dashboard.handle_request(request:, ctx:)
+
+    // 󰕮  Data analysis routes
+    http.Get, ["analysis", "occurrence"] ->
+      analysis_occurrence_volume.handle_request(request:, ctx:)
 
     //   User data routes -----------------------------------------------------
     http.Get, ["user", id, "occurrences"] ->

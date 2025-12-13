@@ -52,12 +52,21 @@ fn dummy_data(ctx: Context) {
     |> list.sized_chunk(n_occurences / n_brigades)
 
   io.println(" 󱐁  Registrando ocorrências..")
+
   let dummy_occurrences =
     list.map(list.range(1, n_occurences), fn(_) {
       let assert Ok(applicant_id) = list.first(list.sample(dummy_users, 1))
       let assert Ok(assign) = list.first(list.sample(assigned_brigades, 1))
       dummy.random_occurrence(conn: ctx.db, applicant_id:, assign:)
     })
+
+  list.each(dummy_occurrences, fn(occ) {
+    case int.random(2) {
+      0 -> dummy.update_occurrence_status(occ, ctx, False)
+      1 -> dummy.update_occurrence_status(occ, ctx, True)
+      _ -> panic as "how?"
+    }
+  })
 
   // ALL DONE ------------------------------------------------------------------
   let n_created_brigades_str =
