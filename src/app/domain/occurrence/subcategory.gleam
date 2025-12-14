@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/json
 import gleam/string
 
 pub type Subcategory {
@@ -39,6 +40,11 @@ pub fn to_string(subcategory: Subcategory) -> String {
     HeartStop -> "heart_stop"
     PreHospitalCare -> "pre_hospital_care"
   }
+}
+
+pub fn to_json(subcategory: Subcategory) -> json.Json {
+  to_string(subcategory)
+  |> json.string
 }
 
 pub fn to_string_pt_br(subcategory: Subcategory) -> String {

@@ -10,14 +10,14 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import youid/uuid.{type Uuid}
 
-/// A row you get from running the `occurrence_volume` query
-/// defined in `./src/app/domain/data_analysis/sql/occurrence_volume.sql`.
+/// A row you get from running the `occurrence_dataset` query
+/// defined in `./src/app/domain/data_analysis/sql/occurrence_dataset.sql`.
 ///
 /// > 🐿️ This type definition was generated automatically using v4.6.0 of the
 /// > [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub type OccurrenceVolumeRow {
-  OccurrenceVolumeRow(
+pub type OccurrenceDatasetRow {
+  OccurrenceDatasetRow(
     occurrence_id: Uuid,
     reported_timestamp: Timestamp,
     arrival_timestamp: Option(Timestamp),
@@ -37,9 +37,9 @@ pub type OccurrenceVolumeRow {
 /// > 🐿️ This function was generated automatically using v4.6.0 of
 /// > the [squirrel package](https://github.com/giacomocavalieri/squirrel).
 ///
-pub fn occurrence_volume(
+pub fn occurrence_dataset(
   db: pog.Connection,
-) -> Result(pog.Returned(OccurrenceVolumeRow), pog.QueryError) {
+) -> Result(pog.Returned(OccurrenceDatasetRow), pog.QueryError) {
   let decoder = {
     use occurrence_id <- decode.field(0, uuid_decoder())
     use reported_timestamp <- decode.field(1, pog.timestamp_decoder())
@@ -67,7 +67,7 @@ pub fn occurrence_volume(
     )
     use latitude <- decode.field(9, decode.float)
     use longitude <- decode.field(10, decode.float)
-    decode.success(OccurrenceVolumeRow(
+    decode.success(OccurrenceDatasetRow(
       occurrence_id:,
       reported_timestamp:,
       arrival_timestamp:,

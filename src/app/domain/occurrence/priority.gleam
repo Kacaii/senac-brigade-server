@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/json
 
 pub type Priority {
   High
@@ -12,6 +13,11 @@ pub fn to_string(value: Priority) {
     Low -> "low"
     Medium -> "medium"
   }
+}
+
+pub fn to_json(priority: Priority) -> json.Json {
+  to_string(priority)
+  |> json.string
 }
 
 pub fn to_string_pt_br(value: Priority) {

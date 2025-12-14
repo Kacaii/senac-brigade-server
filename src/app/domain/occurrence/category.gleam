@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/json
 import gleam/string
 
 pub type Category {
@@ -15,6 +16,11 @@ pub fn to_string(category: Category) {
     Fire -> "fire"
     MedicEmergency -> "medic_emergency"
   }
+}
+
+pub fn to_json(category: Category) {
+  to_string(category)
+  |> json.string
 }
 
 pub fn to_string_pt_br(category: Category) {

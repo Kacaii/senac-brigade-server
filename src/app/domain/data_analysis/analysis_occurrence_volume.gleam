@@ -16,10 +16,33 @@ import wisp
 import youid/uuid
 
 type AnalysisError {
+  /// Failed to query the DataBase
   Database(pog.QueryError)
+  /// User does not have access to this endpoint
   AccessControl(user.AccessControlError)
 }
 
+/// 󰕮  Retrieve general information about occurrences and send it as JSON
+///
+/// ## Response
+///
+/// ```jsonc
+/// [
+///   {
+///     "occurrence_id": "019b19c2-8311-799c-99db-3f777732df4a",
+///     "reported_timestamp": 1765652936.593211,
+///     "arrival_timestamp": null,
+///     "resolved_timestamp": null,
+///     "occurrence_category": "fire",
+///     "occurrence_subcategory": "injured_animal",
+///     "priority": "high",
+///     "applicant_name": "João Fulano",
+///     "applicant_role": "analyst",
+///     "latitude": 6.906980184619583,
+///     "longitude": 75.57821949630532
+///   }
+/// ]
+/// ```
 pub fn handle_request(
   request req: wisp.Request,
   ctx ctx: Context,
@@ -51,7 +74,7 @@ fn query_database(req: wisp.Request, ctx: Context) {
   )
 
   use returned <- result.map(
-    sql.occurrence_volume(ctx.db)
+    sql.occurrence_dataset(ctx.db)
     |> result.map_error(Database),
   )
 
@@ -60,92 +83,77 @@ fn query_database(req: wisp.Request, ctx: Context) {
   |> json.to_string
 }
 
-fn row_to_json(row: sql.OccurrenceVolumeRow) -> json.Json {
+fn row_to_json(row: sql.OccurrenceDatasetRow) -> json.Json {
   let timestamp_to_json = fn(t: timestamp.Timestamp) {
-    timestamp.to_unix_seconds(t) |> json.float
+    timestamp.to_unix_seconds(t)
+    |> json.float
   }
 
-  let maybe_timestamp_to_json = fn(t: option.Option(timestamp.Timestamp)) {
-    case t {
-      option.None -> json.null()
-      option.Some(t) -> timestamp_to_json(t)
-    }
-  }
-
-  let cat_to_json = fn(c: sql.OccurrenceCategoryEnum) {
-    case c {
+  let category = {
+    case row.occurrence_category {
       sql.Fire -> category.Fire
       sql.MedicEmergency -> category.MedicEmergency
       sql.Other -> category.Other
       sql.TrafficAccident -> category.TrafficAccident
     }
-    |> category.to_string
-    |> json.string
   }
 
-  let subcat_to_json = fn(s: option.Option(sql.OccurrenceSubcategoryEnum)) -> json.Json {
-    case s {
-      option.None -> json.null()
-      option.Some(value) ->
-        case value {
-          sql.Collision -> subcategory.Collision
-          sql.Comercial -> subcategory.Comercial
-          sql.Flood -> subcategory.Flood
-          sql.HeartStop -> subcategory.HeartStop
-          sql.InjuredAnimal -> subcategory.InjuredAnimal
-          sql.Intoxication -> subcategory.Intoxication
-          sql.MotorcycleCrash -> subcategory.MotorcycleCrash
-          sql.PreHospitalCare -> subcategory.PreHospitalCare
-          sql.Residential -> subcategory.Residential
-          sql.Rollover -> subcategory.Rollover
-          sql.RunOver -> subcategory.RunOver
-          sql.Seizure -> subcategory.Seizure
-          sql.SeriousInjury -> subcategory.SeriousInjury
-          sql.TreeCrash -> subcategory.TreeCrash
-          sql.Vegetation -> subcategory.Vegetation
-          sql.Vehicle -> subcategory.Vehicle
-        }
-        |> subcategory.to_string
-        |> json.string
+  let subcategory = {
+    use subcategory <- option.map(row.occurrence_subcategory)
+    case subcategory {
+      sql.Collision -> subcategory.Collision
+      sql.Comercial -> subcategory.Comercial
+      sql.Flood -> subcategory.Flood
+      sql.HeartStop -> subcategory.HeartStop
+      sql.InjuredAnimal -> subcategory.InjuredAnimal
+      sql.Intoxication -> subcategory.Intoxication
+      sql.MotorcycleCrash -> subcategory.MotorcycleCrash
+      sql.PreHospitalCare -> subcategory.PreHospitalCare
+      sql.Residential -> subcategory.Residential
+      sql.Rollover -> subcategory.Rollover
+      sql.RunOver -> subcategory.RunOver
+      sql.Seizure -> subcategory.Seizure
+      sql.SeriousInjury -> subcategory.SeriousInjury
+      sql.TreeCrash -> subcategory.TreeCrash
+      sql.Vegetation -> subcategory.Vegetation
+      sql.Vehicle -> subcategory.Vehicle
     }
   }
 
-  let maybe_role_to_json = fn(r: option.Option(sql.UserRoleEnum)) -> json.Json {
-    case r {
-      option.None -> json.null()
-      option.Some(value) ->
-        case value {
-          sql.Admin -> role.Admin
-          sql.Analyst -> role.Analyst
-          sql.Captain -> role.Captain
-          sql.Developer -> role.Developer
-          sql.Firefighter -> role.Firefighter
-          sql.Sargeant -> role.Sargeant
-        }
-        |> role.to_json
+  let role = {
+    use role <- option.map(row.applicant_role)
+    case role {
+      sql.Admin -> role.Admin
+      sql.Analyst -> role.Analyst
+      sql.Captain -> role.Captain
+      sql.Developer -> role.Developer
+      sql.Firefighter -> role.Firefighter
+      sql.Sargeant -> role.Sargeant
     }
   }
 
-  let priority_to_json = fn(p: sql.OccurrencePriorityEnum) -> json.Json {
-    case p {
-      sql.High -> priority.High
-      sql.Low -> priority.Low
-      sql.Medium -> priority.Medium
-    }
-    |> priority.to_string
-    |> json.string
+  let priority = case row.priority {
+    sql.High -> priority.High
+    sql.Low -> priority.Low
+    sql.Medium -> priority.Medium
   }
+
+  let arrival_timestamp_json =
+    json.nullable(row.arrival_timestamp, timestamp_to_json)
+
+  let resolved_timestamp_json =
+    json.nullable(row.resolved_timestamp, timestamp_to_json)
 
   json.object([
     #("occurrence_id", json.string(row.occurrence_id |> uuid.to_string)),
     #("reported_timestamp", timestamp_to_json(row.reported_timestamp)),
-    #("arrival_timestamp", maybe_timestamp_to_json(row.arrival_timestamp)),
-    #("resolved_timestamp", maybe_timestamp_to_json(row.resolved_timestamp)),
-    #("occurrence_category", cat_to_json(row.occurrence_category)),
-    #("occurrence_subcategory", subcat_to_json(row.occurrence_subcategory)),
-    #("priority", priority_to_json(row.priority)),
+    #("arrival_timestamp", arrival_timestamp_json),
+    #("resolved_timestamp", resolved_timestamp_json),
+    #("occurrence_category", category.to_json(category)),
+    #("occurrence_subcategory", json.nullable(subcategory, subcategory.to_json)),
+    #("priority", priority.to_json(priority)),
     #("applicant_name", json.nullable(row.applicant_name, json.string)),
-    #("applicant_role", maybe_role_to_json(row.applicant_role)),
+    #("applicant_role", json.nullable(role, role.to_json)),
     #("latitude", json.float(row.latitude)),
     #("longitude", json.float(row.longitude)),
   ])
