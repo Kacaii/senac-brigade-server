@@ -82,3 +82,4 @@ simplifile = { version = ">= 2.3.0 and < 3.0.0" }
 squirrel = { version = ">= 4.4.1 and < 5.0.0" }
 wisp = { version = ">= 2.0.0 and < 3.0.0" }
 youid = { version = ">= 1.5.1 and < 2.0.0" }
+gleam_community_ansi = { version = ">= 1.4.3 and < 2.0.0" }

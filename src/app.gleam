@@ -23,6 +23,7 @@ import gleam/io
 import gleam/json
 import gleam/list
 import gleam/result
+import gleam_community/ansi
 import pog
 import wisp
 import wisp/simulate
@@ -120,5 +121,7 @@ pub fn setup_admin(ctx: Context) {
   |> simulate.json_body(json.object([#("key", json.string("admin"))]))
   |> http_router.handle_request(request: _, ctx:)
 
-  io.println("  Administrador cadastrado com sucesso!")
+  "Administrador cadastrado com sucesso!"
+  |> ansi.green
+  |> io.println
 }

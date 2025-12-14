@@ -7,6 +7,7 @@ import gleam/erlang/process
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam_community/ansi
 import pog
 
 /// Number of generated user accounts
@@ -29,13 +30,13 @@ pub fn main() -> Nil {
 }
 
 fn dummy_data(ctx: Context) {
-  io.println("   Inserindo usuários..")
+  io.println(ansi.green(" ") <> "  Inserindo usuários..")
 
   let dummy_users =
     list.map(list.range(1, n_user_accounts), fn(_) { dummy.random_user(ctx.db) })
 
   // BRIGADES ------------------------------------------------------------------
-  io.println("   Formando equipes..")
+  io.println(ansi.green(" ") <> "  Formando equipes..")
 
   let assigned_members =
     list.shuffle(dummy_users)
@@ -51,7 +52,7 @@ fn dummy_data(ctx: Context) {
     list.shuffle(dummy_brigades)
     |> list.sized_chunk(n_occurences / n_brigades)
 
-  io.println(" 󱐁  Registrando ocorrências..")
+  io.println(ansi.green(" ") <> "󱐁  Registrando ocorrências..")
 
   let dummy_occurrences =
     list.map(list.range(1, n_occurences), fn(_) {
@@ -73,21 +74,24 @@ fn dummy_data(ctx: Context) {
     dummy_brigades
     |> list.length
     |> int.to_string
+    |> ansi.green
 
   let n_created_users_str =
     dummy_users
     |> list.length
     |> int.to_string
+    |> ansi.green
 
   let n_created_occ_str =
     dummy_occurrences
     |> list.length
     |> int.to_string
+    |> ansi.green
 
-  io.println("   Prontinho!")
-  io.println("Total de " <> n_created_users_str <> " usuários criados.  ")
-  io.println("Total de " <> n_created_brigades_str <> " equipes criadas.  ")
-  io.println("Total de " <> n_created_occ_str <> " ocorrências criadas.  ")
+  io.println(ansi.green(" ") <> "  Prontinho!")
+  io.println("Total de " <> n_created_users_str <> " usuários criados")
+  io.println("Total de " <> n_created_brigades_str <> " equipes criadas")
+  io.println("Total de " <> n_created_occ_str <> " ocorrências criadas")
 }
 
 fn setup_context() {
